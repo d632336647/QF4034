@@ -1,0 +1,8 @@
+<RCC>
+    <qresource prefix="/">
+        <file>rc/font/fontawesome-webfont.ttf</file>
+        <file>rc/font/qt_zh_CN.qm</file>
+        <file>rc/image/app.ico</file>
+        <file>SliChart/icon/ruler.png</file>
+    </qresource>
+</RCC>

@@ -1,0 +1,985 @@
+import QtQuick 2.0
+import QtCharts 2.1
+import QtQuick.Controls 2.2
+
+import "../qml/UI"
+
+import "../qml/Inc.js" as Com
+
+Rectangle {
+    id: root
+    color: "black"
+    property int   chIndex:  0       //通道索引
+    property real  xAxisMax: 95      //MHz
+    property real  xAxisMin: 45      //MHz
+    property real  yAxisMax: 10      //dBm
+    property real  yAxisMin: -100    //dBm
+    property real  centerFreq: 70    //MHz
+    property int   resolution: 10000 //Hz
+    property real  bandwidth: 50     //MHz
+    property int   xPrecision: 0     //小数精确的位数
+    property int   yPrecision: 0
+    property real  zoomXStep: 1.0
+    property real  zoomYStep: 1.0
+    property string  zoomXY: "x"
+    property bool  openGL: true
+    property bool  fullMode: true    //全高显示,纵向
+    property bool  fullWide: false   //全宽显示,横向
+    property int   yTicks:  fullMode ? 21 : 11
+    property bool  realTimeMode: false   //实时刷新显示
+    property color seriesColor1: Com.series_color1
+    property color seriesColor2: Com.series_color2
+    property color seriesColor3: Com.series_color3
+    property point peakPoint1:  dataSource.peakPoint0 //实际使用中， dataSource.peakPoint0 内部发送了changed信号， 但是值未改变，
+    property point peakPoint2:  dataSource.peakPoint1 //因此导致peakPoint1/2/3无法使用onChanged锚定，需要在series刷新后，手动调用
+    property point peakPoint3:  dataSource.peakPoint2 //updatePeak()刷新peak点
+
+    visible: false
+    UiCornerLine{
+        anchors.top: parent.top
+        anchors.topMargin: 4
+        anchors.right: parent.right
+        anchors.rightMargin: 4
+        anchors.left: parent.left
+        anchors.leftMargin: 4
+        anchors.bottom: parent.bottom
+        anchors.bottomMargin: 4
+    }
+    Canvas{
+        id: chName
+        visible: realTimeMode
+        anchors.top: parent.top
+        anchors.topMargin: 5
+        anchors.left: parent.left
+        anchors.leftMargin: 5
+        width: 60
+        height: 16
+        contextType: "2d";
+        onPaint: {
+            context.lineWidth = 1;
+            context.strokeStyle = "#00000000";
+            context.fillStyle = "#343536";
+            context.beginPath();
+            context.moveTo(0, 0);
+            context.lineTo(width , 0);
+            context.lineTo(0.6*width , height);
+            context.lineTo(0 , height);
+            context.closePath();
+            context.fill();
+            context.stroke();
+        }
+        Text {
+            anchors.fill: parent
+            font.pixelSize: 12
+            color:"white"
+            font.family: "幼圆"
+            text: "通道"+(chIndex+1)
+
+        }
+    }
+
+    Text {
+        id: xTitle
+        anchors.bottom: parent.bottom
+        anchors.bottomMargin: 44
+        anchors.right: parent.right
+        anchors.rightMargin: 20
+        font.pixelSize: 12
+        color:"white"
+        font.family: "Calibri"
+        text: qsTr("MHz")
+    }
+    Text {
+        id: yTitle
+        anchors.top: parent.top
+        anchors.topMargin: 14
+        anchors.left: parent.left
+        anchors.leftMargin: 50
+        font.pixelSize: 12
+        color:"white"
+        font.family: "Calibri"
+        text: qsTr("dBm")
+    }
+    Text{
+        id:refLevel
+        anchors.top: parent.top
+        anchors.topMargin: 14
+        anchors.left: parent.left
+        anchors.leftMargin: 80
+        width: 120
+        font.family: "Calibri"
+        font.pixelSize: 12
+        color:"white"
+        text: " REF: "+axisY.max.toFixed(2)+" dBm"
+    }
+
+    ChartView {
+        id: view
+        //title: "Two Series, Common Axes"
+        anchors.fill: parent
+        backgroundColor: "#00FFFFFF"
+        animationOptions: ChartView.NoAnimation
+        //theme: ChartView.ChartThemeDark
+        antialiasing: false
+        legend{
+            visible: false
+        }
+        property point hoveredPoint: Qt.point( 0, 0 )
+        property bool  hovered: false
+        ValueAxis {
+            id: axisX
+            min: xAxisMin
+            max: xAxisMax
+            tickCount: fullWide ? 11 : 6
+            gridLineColor: "#4C7049"
+            labelFormat:"%.4f";
+            //titleText: "<a style='color:red'>MHz</a>";
+            //titleText: "MHz";
+            //titleFont.pixelSize: 12;
+        }
+
+        ValueAxis {
+            id: axisY
+            min: yAxisMin
+            max: yAxisMax
+            tickCount: yTicks
+            labelFormat:"%.2f";
+            gridLineColor: "#4C7049"
+        }
+
+
+        LineSeries {
+            id: series1
+            objectName: "series1"
+            axisX: axisX
+            axisY: axisY
+            color: seriesColor1
+            style:Qt.SolidLine
+            useOpenGL: openGL
+            onHovered: {
+                //console.log("onClicked: " + point.x + ", " + point.y);
+            }
+
+        }
+
+        LineSeries {
+            id: series2
+            objectName: "series2"
+            axisX: axisX
+            axisY: axisY
+            color: seriesColor2
+            style:Qt.SolidLine
+            useOpenGL: openGL
+            onHovered: {
+                //console.log("onClicked: " + point.x + ", " + point.y);
+            }
+        }
+
+        LineSeries {
+            id: series3
+            objectName: "series3"
+            axisX: axisX
+            axisY: axisY
+            color: seriesColor3
+            style:Qt.SolidLine
+            useOpenGL: openGL
+            onHovered: {
+                //console.log("onClicked: " + point.x + ", " + point.y);
+            }
+        }
+        MouseArea {
+            anchors.fill: parent
+            hoverEnabled: true
+            cursorShape: pressed ? Qt.SizeAllCursor: Qt.ArrowCursor
+            acceptedButtons: Qt.LeftButton | Qt.RightButton;
+            property point sPoint: Qt.point( 0, 0 )
+            property point ePoint: Qt.point( 0, 0 )
+            onPositionChanged: {
+                var point = Qt.point( 0, 0 )
+                point.x = mouse.x
+                point.y = mouse.y
+                var hoveredPoint = Qt.point( 0, 0 )
+
+                hoveredPoint = view.mapToValue( point, series1 )
+
+                if( hoveredPoint.x >= axisX.min && hoveredPoint.x <= axisX.max
+                        && hoveredPoint.y >= axisY.min && hoveredPoint.y <= axisY.max)
+                {
+                    zoomXY = "x"
+                    hoveredPoint.x = hoveredPoint.x.toFixed(xPrecision);
+                    view.hovered = true
+                    view.hoveredPoint = hoveredPoint
+                }else {
+                    view.hovered = false
+                }
+                if(hoveredPoint.x < axisX.min && hoveredPoint.y >= axisY.min && hoveredPoint.y <= axisY.max)
+                {
+                    zoomXY = "y"
+                    view.hovered = true
+                    view.hoveredPoint = hoveredPoint
+                }
+                if(pressed)//drag
+                {
+                    var rateY = (yAxisMax-yAxisMin)/(axisY.max - axisY.min)
+                    var currentRangeX = axisX.max - axisX.min
+
+                    view.scrollDown(rateY*(hoveredPoint.y - sPoint.y))
+
+                    if(currentRangeX < bandwidth)
+                    {
+                        var rateX = bandwidth/currentRangeX
+                        if(axisX.max < xAxisMax && hoveredPoint.x < sPoint.x) {
+                            view.scrollLeft(rateX*(hoveredPoint.x - sPoint.x))
+                        }
+                        if(axisX.min > xAxisMin && hoveredPoint.x > sPoint.x){
+                            view.scrollRight(rateX*(sPoint.x - hoveredPoint.x))
+                        }
+                    }
+                }
+            }
+            onWheel: {
+                var minStep = resolution/10000
+                if(axisX.max - axisX.min > 3)
+                    zoomXStep = 1
+                else if(axisX.max - axisX.min > 1)
+                    zoomXStep = 0.3
+                else if(axisX.max - axisX.min > 0.1)
+                    zoomXStep = 0.03
+                else
+                    zoomXStep = minStep
+                if(zoomXStep < minStep)
+                    zoomXStep = minStep;
+
+                //console.log("resolution/10000:"+(resolution/10000))
+                view.wheelZoomXY(view.hovered, wheel, view.hoveredPoint,  zoomXY)
+                markSlider.setMarkRange()
+                updateCharts()
+            }
+            onPressed: {
+                if(mouse.button === Qt.LeftButton){
+                    sPoint.x = mouse.x
+                    sPoint.y = mouse.y
+                    sPoint = view.mapToValue(sPoint);
+                }
+
+            }
+            onReleased: {
+                if(mouse.button === Qt.LeftButton){
+                    ePoint.x = mouse.x
+                    ePoint.y = mouse.y
+                    markSlider.setMarkRange()
+                    updateCharts()
+                }
+            }
+
+        }//!--MouseArea END
+
+        function wheelZoomXY( enable, wheel, point, XY)
+        {
+            if(!enable)
+                return
+            var axis, axisMin, axisMax
+            if(XY === "x"){
+                axis = axisX
+                axisMin = xAxisMin
+                axisMax = xAxisMax
+            }else{
+                axis = axisY
+                axisMin = yAxisMin
+                axisMax = yAxisMax
+            }
+            if( wheel.angleDelta.y > 0 ) {
+                if( axis.max - axis.min <= zoomXStep ) {
+                    return
+                }
+                view.zoom_In( point , XY)
+            } else {
+                view.zoom_Out( point , XY)
+                if( axis.min <= axisMin ) {
+                    axis.min = axisMin
+                }
+                if( axis.max >= axisMax ) {
+                    axis.max = axisMax
+                }
+            }
+        }//!--function wheelZoomXY END
+
+        function zoom_In( hoveredPoint , XY) {
+            var axis, axisMin, axisMax, hoveredXY
+            if(XY === "x"){
+                axis = axisX
+                axisMin = xAxisMin
+                axisMax = xAxisMax
+                hoveredXY = hoveredPoint.x
+            }else{
+                axis = axisY
+                axisMin = yAxisMin
+                axisMax = yAxisMax
+                hoveredXY = hoveredPoint.y
+            }
+
+            var left  = hoveredXY - axis.min
+            var right = axis.max - hoveredXY
+
+            var scale = parseFloat( left / right )
+
+            var step  = (XY === "x") ? zoomXStep : zoomYStep
+
+            var tempMin = axis.min;
+            var tempMax = axis.max;
+
+
+            if(scale >=1 ){
+                tempMin  = axis.min + step
+                tempMax  = axis.max - step/scale
+            }
+            else {
+                tempMin  = axis.min + step*scale
+                tempMax  = axis.max - step
+            }
+
+            if(tempMax - tempMin > step){
+                axis.min =  tempMin
+                axis.max =  tempMax
+            }
+        }//!--function zoom_In END
+
+        function zoom_Out( hoveredPoint, XY ) {
+            var axis, axisMin, axisMax, hoveredXY
+            if(XY === "x"){
+                axis = axisX
+                axisMin = xAxisMin
+                axisMax = xAxisMax
+                hoveredXY = hoveredPoint.x
+            }else{
+                axis = axisY
+                axisMin = yAxisMin
+                axisMax = yAxisMax
+                hoveredXY = hoveredPoint.y
+            }
+            var left  = hoveredXY - axis.min
+            var right = axis.max - hoveredXY
+
+            var scale = parseFloat( left / right )
+
+            var step  = (XY === "x") ? zoomXStep : zoomYStep
+
+            var tempMin = axis.min;
+            var tempMax = axis.max;
+            if(scale >=1 ){
+                tempMin  = axis.min - step
+                tempMax  = axis.max + step/scale
+            }
+            else{
+                tempMin  = axis.min - step*scale
+                tempMax  = axis.max + step
+            }
+            axis.max =  (tempMax > axisMax) ? axisMax : tempMax
+            axis.min =  (tempMin < axisMin) ? axisMin : tempMin
+        }//!--function zoom_Out END
+    }//!-- ChartView end
+
+
+    //ctrl panel
+    UiCheckButton{
+        id:stopCapture
+        anchors.bottom: btnZoomReset.top
+        anchors.bottomMargin: 2
+        anchors.right: peakCtrl.right
+        iconFontText: checked ? "\uf127" : "\uf0c1"
+        textColor: checked ? "#C74646" : "#D3D4D4"
+        disabled: !realTimeMode
+        tips:"暂停/启动实时采集"
+        onClicked:
+        {
+            if(checked)
+            {
+                captureThread.stopCapture()
+            }
+            else
+            {
+                captureThread.startCapture()
+            }
+        }
+    }
+    UiCheckButton{
+        id:btnZoomReset
+        anchors.bottom: seriesSignal3.top
+        anchors.bottomMargin: 2
+        anchors.right: peakCtrl.right
+        iconFontText:"\uf066"
+        textColor: "#D3D4D4"
+        mode:"button"
+        checked: true
+        tips:"复位显示频谱图"
+        onClicked:
+        {
+            axisX.min = xAxisMin
+            axisX.max = xAxisMax
+            axisY.min = yAxisMin = Settings.reflevelMin()
+            axisY.max = yAxisMax = Settings.reflevelMax()
+            markSlider.setMarkRange()
+            updateCharts()
+            checked = true
+        }
+    }
+    UiCheckButton{
+        id:seriesSignal3
+        anchors.bottom: seriesSignal2.top
+        anchors.bottomMargin: 2
+        anchors.right: peakCtrl.right
+        iconFontText:"\uf159"
+        textColor: seriesColor3
+        disabled: true
+        tips:"显示/隐藏波形3"
+        onClicked:
+        {
+            series3.visible = checked
+            rtPeak3.visible = (checked && peakCtrl.checked)
+            markSlider.visible3 = (checked && peakCtrl.visible)
+
+        }
+    }
+    UiCheckButton{
+        id:seriesSignal2
+        anchors.bottom: seriesSignal1.top
+        anchors.bottomMargin: 2
+        anchors.right: peakCtrl.right
+        iconFontText:"\uf159"
+        textColor: seriesColor2
+        disabled: true
+        tips:"显示/隐藏波形2"
+        onClicked:
+        {
+            series2.visible = checked
+            rtPeak2.visible = (checked && peakCtrl.checked)
+            markSlider.visible2 = (checked && peakCtrl.visible)
+        }
+    }
+    UiCheckButton{
+        id:seriesSignal1
+        anchors.bottom: peakCtrl.top
+        anchors.bottomMargin: 2
+        anchors.right: peakCtrl.right
+        iconFontText:"\uf159"
+        textColor: seriesColor1
+        checked: true
+        tips:"显示/隐藏波形1"
+        onClicked:
+        {
+            //console.log("seriesSignal1.checked",seriesSignal1.checked)
+            series1.visible = checked
+            rtPeak1.visible = (checked && peakCtrl.checked)
+            markSlider.visible1 = (checked && peakCtrl.visible)
+        }
+    }
+    UiCheckButton{
+        id:peakCtrl
+        anchors.bottom: movePeak.top
+        anchors.bottomMargin: 2
+        anchors.right: movePeak.right
+        iconFontText:"\uf05b"
+        textColor: "#54FA00"
+        tips:"显示/关闭Peak点"
+        onClicked:
+        {
+            rtPeak1.visible = (checked && series1.visible)
+            rtPeak2.visible = (checked && series2.visible)
+            rtPeak3.visible = (checked && series3.visible)
+            if(!checked)
+            {
+                movePeak.checked   = checked
+                markSlider.visible = checked
+            }
+        }
+    }
+    UiCheckButton{
+        id:movePeak
+        anchors.bottom: parent.bottom
+        anchors.bottomMargin: 80
+        anchors.right: parent.right
+        anchors.rightMargin: 10
+        iconFontText:"\uf07e"
+        textColor: "#54FA00"
+        disabled: !peakCtrl.checked
+        tips:"显示/关闭Mark标尺"
+        onClicked:
+        {
+            if(visible)
+                markSlider.setMarkRange()
+            markSlider.visible  = checked
+            markSlider.visible1 = (checked && seriesSignal1.checked)
+            markSlider.visible2 = (checked && seriesSignal2.checked)
+            markSlider.visible3 = (checked && seriesSignal3.checked)
+        }
+    }//!--ctrl panel end
+
+
+    UiMultSlider {
+        id: fileSlider1
+        anchors.top: parent.top
+        anchors.topMargin: 32
+        anchors.left: parent.left
+        anchors.leftMargin: 40
+        width: 100
+        min:axisX.min
+        max:axisX.max
+        visible: series1.visible && !realTimeMode
+        handleColor: Com.series_color1
+        onValueChanged: {
+            var percent = value.toFixed(3);
+            dataSource.setFileOffset("series1", percent)
+            dataSource.updateFreqDodminFromFile(series1, Settings.historyFile1())
+
+            dataSource.smartUpdateSeries(series1)
+            if(Settings.analyzeMode() === 3)
+                waterfallView.updateFile(Settings.historyFile1())
+
+            //rtPeak1.updatePeak()//数据更新,peak点会emit信号自动刷新
+        }
+        onHandleReleased:
+        {
+
+        }
+    }
+    UiMultSlider {
+        id: fileSlider2
+        anchors.top: fileSlider1.bottom
+        anchors.left: fileSlider1.left
+        width: fileSlider1.width
+        min:axisX.min
+        max:axisX.max
+        visible: series2.visible && !realTimeMode
+        handleColor:Com.series_color2
+        onValueChanged: {
+            var percent = value.toFixed(3);
+            dataSource.setFileOffset("series2", percent)
+            dataSource.updateFreqDodminFromFile(series2, Settings.historyFile2())
+            dataSource.smartUpdateSeries(series2)
+        }
+    }
+    UiMultSlider {
+        id: fileSlider3
+        anchors.top: fileSlider2.bottom
+        anchors.left: fileSlider2.left
+        width: fileSlider2.width
+        min:axisX.min
+        max:axisX.max
+        visible: series3.visible && !realTimeMode
+        handleColor:Com.series_color3
+        onValueChanged: {
+            var percent = value.toFixed(3);
+            dataSource.setFileOffset("series3", percent)
+            dataSource.updateFreqDodminFromFile(series3, Settings.historyFile3())
+            dataSource.smartUpdateSeries(series3)
+        }
+    }
+
+    UiSlider {
+        id: markSlider
+        anchors.bottom: parent.bottom
+        anchors.bottomMargin: 10
+        anchors.left: parent.left
+        anchors.leftMargin: 40
+        width: 100
+        min:axisX.min
+        max:axisX.max
+        visible: false
+        /**********************************************************
+        参数说明     功能 重新标定滑动条的长度和范围
+        ***********************************************************/
+        function setMarkRange()
+        {
+            var lpoint = Qt.point(axisX.min, 0);
+            var rpoint = Qt.point(axisX.max, 0);
+            var lmargin = view.mapToPosition(lpoint, series1)
+            var rmargin = view.mapToPosition(rpoint, series1)
+            markSlider.anchors.leftMargin  = lmargin.x;
+            markSlider.width = rmargin.x-lmargin.x;
+
+            fileSlider1.anchors.leftMargin = lmargin.x
+            fileSlider1.width = rmargin.x-lmargin.x
+            //console.log("setMarkRange percent1", percent1)
+
+        }
+        onVisibleChanged:
+        {
+        }
+        onPercent1Changed: {
+            //console.log("onValue1Changed percent:", percent1, range, percent1*range+min)
+            var move_point = Qt.point(percent1*range+min, axisY.max/2);
+            root.movePeakPosition(rtPeak1, move_point,  0, series1);
+        }
+        onPercent2Changed: {
+            var move_point = Qt.point(percent2*range+min, axisY.max/2);
+            root.movePeakPosition(rtPeak2, move_point,  1, series2);
+        }
+        onPercent3Changed: {
+            var move_point = Qt.point(percent3*range+min, axisY.max/2);
+            root.movePeakPosition(rtPeak3, move_point,  2, series3);
+        }
+    }
+    PeakText{
+        id: peakShow
+        width: 190
+        height: 20
+        anchors.top: parent.top
+        anchors.topMargin: 10
+        anchors.right: parent.right
+        anchors.rightMargin: 50
+        textColor: Com.series_color1
+        visible: rtPeak1.visible
+    }
+    PeakText{
+        id: peakShow2
+        width: 190
+        height: 20
+        anchors.top: peakShow.top
+        anchors.right: peakShow.left
+        anchors.rightMargin: 4
+        textColor: Com.series_color2
+        visible: rtPeak2.visible
+    }
+    PeakText{
+        id: peakShow3
+        width: 190
+        height: 20
+        anchors.top: peakShow2.top
+        anchors.right: peakShow2.left
+        anchors.rightMargin: 4
+        textColor: Com.series_color3
+        visible: rtPeak3.visible
+    }
+
+
+    PeakRect{
+        id:rtPeak1
+        onVisibleChanged: {
+            if(visible){
+                dataSource.refreshPeakPoint(0)
+                if( (!realTimeMode) || (!captureThread.isRunning()) ){
+                    dataSource.smartUpdateSeries(series1)
+                    root.updatePeak(rtPeak1, peakPoint1, 0, series1)
+                }
+            }
+            else
+                idBottomPannel.updateMarkRange(false, 0);
+        }
+    }
+
+    PeakRect{
+        id:rtPeak2
+        onVisibleChanged: {
+            if(visible){
+                dataSource.refreshPeakPoint(1)
+                if( (!realTimeMode) || (!captureThread.isRunning()) ){
+                    dataSource.smartUpdateSeries(series2)
+                    root.updatePeak(rtPeak2, peakPoint2, 1, series2)
+                }
+            }
+        }
+    }
+
+    PeakRect{
+        id:rtPeak3
+        onVisibleChanged: {
+            if(visible){
+                dataSource.refreshPeakPoint(2)
+                if( (!realTimeMode) || (!captureThread.isRunning()) ){
+                    dataSource.smartUpdateSeries(series3)
+                    root.updatePeak(rtPeak3, peakPoint3, 2, series3)
+                }
+            }
+        }
+    }
+
+    /**********************************************************
+    参数说明     功能 刷新曲线的顶点
+    id_peak   : PeakRect的ID，
+    peak_point: dataSource计算出来的顶点
+    series_idx: LineSeries的索引， 一共有3条曲线， 从0开始， 0，1，2, 注意索引值都是从0开始， 命名值都是从1开始
+    series    : LineSeries的ID
+    ***********************************************************/
+    function updatePeak(id_peak, peak_point, series_idx, series)
+    {
+        //console.log("updatePeak  series_idx:",series_idx, "visible:",visible)
+        if(!series.visible)
+            return
+        if(!id_peak.visible && !peakCtrl.checked)
+            return
+
+        //console.log("peak_point.x:",peak_point.x, "axisX.min:",axisX.min, "axisX.max:",axisX.max)
+        if(peak_point.x<axisX.min || peak_point.x>axisX.max)
+        {
+            //console.log("peak_point.x:",peak_point.x, "axisX.min:",axisX.min, "axisX.max:",axisX.max)
+            id_peak.visible = false
+            markSlider.setVisible(series_idx, false)
+            return
+        }
+        else
+        {
+            if(movePeak.checked)
+                markSlider.setVisible(series_idx, true)
+            if(peakCtrl.checked)
+                id_peak.visible = true
+        }
+
+
+        if(peakCtrl.checked)
+            id_peak.visible = true
+
+        var point = view.mapToPosition( peak_point, series)
+
+        id_peak.x = point.x - id_peak.width/2
+        id_peak.y = point.y - id_peak.height
+
+        if(id_peak === rtPeak1)
+        {
+            peakShow.xstring  = peak_point.x.toFixed(xPrecision)
+            peakShow.ystring = peak_point.y.toFixed(3)
+            idBottomPannel.updateMarkRange(true, peakShow.ystring);
+        }
+        else if(id_peak === rtPeak2)
+        {
+            peakShow2.xstring  = peak_point.x.toFixed(xPrecision)
+            peakShow2.ystring = peak_point.y.toFixed(3)
+        }
+        else if(id_peak === rtPeak3)
+        {
+            peakShow3.xstring  = peak_point.x.toFixed(xPrecision)
+            peakShow3.ystring = peak_point.y.toFixed(3)
+        }
+        //更新slider
+        var percent = (peak_point.x-axisX.min)/(axisX.max-axisX.min)
+
+        markSlider.setX(series_idx, percent)
+    }
+
+    /**********************************************************
+    参数说明     功能 移动更新显示PeakRect坐标
+    id_peak   : PeakRect的ID，
+    point     : 由silder计算出来的X坐标点(纵坐标固定)，根据此X点计算出在series中的Y点， 然后更新PeakRect显示的位置
+    series_idx: LineSeries的索引， 一共有3条曲线， 从0开始， 0，1，2, 注意索引值都是从0开始， 命名值都是从1开始
+    series    : LineSeries的ID
+    ***********************************************************/
+    function movePeakPosition(id_peak, point, series_idx, series)
+    {
+        //console.log("movePeakPosition series_idx:", series_idx, visible, movePeak.checked)
+        if(!series.visible || !movePeak.checked)
+            return
+
+        //get the idx value
+        var idx = dataSource.getPointIndexByX(point.x, series)
+
+        //console.log("point.x:"+point.x+" idx:"+idx)
+
+        if( (!realTimeMode) || (!captureThread.isRunning()) ){
+            var seriesPoint  = series.at(idx)
+
+            var cur_point    = view.mapToPosition( seriesPoint, series)
+
+            //console.log("cur_point:"+cur_point)
+
+            id_peak.x = cur_point.x - id_peak.width/2
+            id_peak.y = cur_point.y - id_peak.height
+
+            if(id_peak === rtPeak1)
+            {
+                peakShow.xstring  = seriesPoint.x.toFixed(xPrecision)
+                peakShow.ystring = seriesPoint.y.toFixed(3)
+
+                idBottomPannel.updateMarkRange(true, peakShow.ystring);
+            }
+            else if(id_peak === rtPeak2)
+            {
+                peakShow2.xstring  = seriesPoint.x.toFixed(xPrecision)
+                peakShow2.ystring = seriesPoint.y.toFixed(3)
+            }
+            else if(id_peak === rtPeak3)
+            {
+                peakShow3.xstring  = seriesPoint.x.toFixed(xPrecision)
+                peakShow3.ystring = seriesPoint.y.toFixed(3)
+            }
+        }
+        dataSource.setCurrentPeakX(series_idx, point.x)
+    }
+    function updatePeakShow()
+    {
+        rtPeak1.visible = (peakCtrl.checked && series1.visible)
+        rtPeak2.visible = (peakCtrl.checked && series2.visible)
+        rtPeak3.visible = (peakCtrl.checked && series3.visible)
+        markSlider.visible1 = rtPeak1.visible
+        markSlider.visible2 = rtPeak2.visible
+        markSlider.visible3 = rtPeak3.visible
+        movePeak.checked = peakCtrl.checked
+    }
+    function closePeakMark()
+    {
+        peakCtrl.checked = false
+        rtPeak1.visible = false
+        rtPeak2.visible = false
+        rtPeak3.visible = false
+        movePeak.checked   = false
+        markSlider.visible = false
+    }
+
+    // Add data dynamically to the series
+    Component.onCompleted: {
+        //根据分辨率计算横坐标需要精确的位数
+        chartCtrl.setLineSeriesPenWidth(series1, 1)
+        chartCtrl.setAxisGridLinePenStyle(axisX, Qt.DotLine)//DashLine
+        chartCtrl.setAxisGridLinePenStyle(axisY, Qt.DotLine)
+
+        axisY.min = Settings.reflevelMin()
+        axisY.max = Settings.reflevelMax()
+
+    }
+    onVisibleChanged: {
+
+    }
+    onPeakPoint1Changed:
+    {
+        //console.log("onPeakPoint1Changed");
+        if(rtPeak1.visible)
+        {
+            root.updatePeak(rtPeak1, peakPoint1, 0, series1)
+        }
+    }
+    onPeakPoint2Changed:
+    {
+
+        if(rtPeak2.visible)
+        {
+            root.updatePeak(rtPeak2, peakPoint2, 1, series2)
+        }
+    }
+    onPeakPoint3Changed:
+    {
+        if(rtPeak3.visible)
+        {
+            root.updatePeak(rtPeak3, peakPoint3, 2, series3)
+        }
+
+    }
+
+    onWidthChanged:
+    {
+        markSlider.setMarkRange()
+        root.closePeakMark()
+    }
+
+
+
+
+
+    function setCaptureSeries()
+    {
+        captureThread.setSeries(series1)
+    }
+    function updateCharts()
+    {
+        if(0 === chIndex)
+            waterfallView.updateAxisXRtShow(axisX.min, axisX.max, xAxisMin, xAxisMax)
+        else
+            waterfallView2.updateAxisXRtShow(axisX.min, axisX.max, xAxisMin, xAxisMax)
+        dataSource.updateCurMinMax(axisX.min, axisX.max)
+
+        //如果是文件模式或者暂停,此处刷新peak点,实时模式无需在此刷新
+        if( (!realTimeMode) || (!captureThread.isRunning()) )
+        {
+            dataSource.smartUpdateSeries(series1)
+            dataSource.smartUpdateSeries(series2)
+            dataSource.smartUpdateSeries(series3)
+            root.updatePeak(rtPeak1, peakPoint1, 0, series1)
+            root.updatePeak(rtPeak2, peakPoint2, 1, series2)
+            root.updatePeak(rtPeak3, peakPoint3, 2, series3)
+        }
+    }
+    function setAxisYRange(min, max)
+    {
+        axisY.min = yAxisMin = min
+        axisY.max = yAxisMax = max
+    }
+    function setAxisXPrecision()
+    {
+
+        if(resolution>=100000){
+            axisX.labelFormat = "%.2f"
+            xPrecision = 1;
+        }
+        else if(resolution>=10000){
+            axisX.labelFormat = "%.3f"
+            xPrecision = 2;
+        }
+        else if(resolution>=1000){
+            axisX.labelFormat = "%.4f"
+            xPrecision = 3;
+        }
+        else if(resolution>=100){
+            axisX.labelFormat = "%.5f"
+            xPrecision = 4;
+        }
+        else if(resolution>=30){
+            axisX.labelFormat = "%.6f"
+            xPrecision = 5;
+        }
+
+    }
+    function updateParams()
+    {
+
+        captureThread.stopCapture()
+        dataSource.clearFilter();
+        centerFreq = Settings.centerFreq()
+        bandwidth  = Settings.bandWidth()
+        resolution = Settings.resolutionSize()
+        setAxisXPrecision()
+
+        axisX.min = xAxisMin = centerFreq - bandwidth/2
+        axisX.max = xAxisMax = centerFreq + bandwidth/2
+
+        markSlider.setMarkRange()
+
+        series1.visible = false
+        series2.visible = false
+        series3.visible = false
+        seriesSignal2.checked = false
+        seriesSignal2.disabled = true
+        seriesSignal3.checked = false
+        seriesSignal3.disabled = true
+
+        dataSource.setForceRefresh()
+        if(realTimeMode){
+            series1.visible = true
+            dataSource.updateCurMinMax(axisX.min, axisX.max)
+            captureThread.startCapture()
+            stopCapture.checked = false
+        }else{
+
+            if(Settings.historyFile1().length>0)
+            {
+                fileSlider1.value = dataSource.getFileOffset(0)
+                dataSource.updateFreqDodminFromFile(series1, Settings.historyFile1())
+                seriesSignal1.checked = true
+                seriesSignal1.disabled = false
+                series1.visible = true
+            }
+            if(Settings.historyFile2().length>0 && (realTimeMode == false) && fullMode)
+            {
+                dataSource.updateFreqDodminFromFile(series2, Settings.historyFile2())
+                seriesSignal2.checked = true
+                seriesSignal2.disabled = false
+                series2.visible = true
+            }
+            if(Settings.historyFile3().length>0 && (realTimeMode == false) && fullMode)
+            {
+                dataSource.updateFreqDodminFromFile(series3, Settings.historyFile3())
+                seriesSignal3.checked = true
+                seriesSignal3.disabled = false
+                series3.visible = true
+            }
+        }
+        updateCharts()
+        updatePeakShow()
+    }
+}

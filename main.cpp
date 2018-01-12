@@ -1,0 +1,164 @@
+﻿#include <QGuiApplication>
+#include <QtWidgets/QApplication>
+#include <QQmlApplicationEngine>
+#include <QtQuick/QQuickView>
+#include <QtQml>
+#include <QFontDatabase>
+
+
+#include "fileIO.h"
+#include "settings.h"
+#include "SliChart/waterfallplot.h"
+#include "SliChart/ChartCtrl.h"
+#include "SliChart/datasource.h"
+#include "SliChart/capturethread.h"
+QT_CHARTS_USE_NAMESPACE
+
+void clearLog(){
+    QFile file("log.txt");
+    file.open(QIODevice::WriteOnly | QIODevice::Truncate);
+    file.close();
+}
+void outputMessage(QtMsgType type, const QMessageLogContext &context, const QString &msg)
+{
+    static QMutex mutex;
+    mutex.lock();
+
+    QString text;
+    switch(type)
+    {
+    case QtDebugMsg:
+        text = QString("Debug:");
+        break;
+
+    case QtWarningMsg:
+        text = QString("Warning:");
+        break;
+
+    case QtCriticalMsg:
+        text = QString("Critical:");
+        break;
+
+    case QtFatalMsg:
+        text = QString("Fatal:");
+    }
+
+//    QString context_info = QString("File:(%1) Line:(%2)").arg(QString(context.file)).arg(context.line);
+//    QString current_date_time = QDateTime::currentDateTime().toString("yyyy-MM-dd hh:mm:ss ddd");
+    QString current_date_time = QDateTime::currentDateTime().toString("yyyy-MM-dd hh:mm:ss");
+    QString current_date = QString("(%1)").arg(current_date_time);
+//    QString message = QString("%1 %2 %3 %4").arg(text).arg(context_info).arg(msg).arg(current_date);
+    QString message = QString("%1 %2 %3").arg(text).arg(msg).arg(current_date);
+
+    QFile file("log.txt");
+    file.open(QIODevice::WriteOnly | QIODevice::Append);
+    QTextStream text_stream(&file);
+    text_stream.setCodec("utf-8");
+    text_stream << message << "\r\n";
+    file.flush();
+    file.close();
+
+    mutex.unlock();
+}
+
+/*
+void testCPCI(){
+    PciDevice pciDev;
+    pciDev.scanCard();
+    CpciCard *cpciCard = (CpciCard*)pciDev.getCard(1);
+    if(cpciCard){
+        PCI_DEVICE_INFO *cardInfo = cpciCard->cardInfo();
+        qDebug() <<"scanCard---cardInfo---" <<cardInfo->mainType<<cardInfo->subType;
+        qDebug() <<"scanCard---selfCheck---" << cpciCard->selfCheck();
+
+//        qDebug() <<"scanCard---softReset---" <<cpciCard->softReset();
+//        qDebug() <<"scanCard---hardReset---" <<cpciCard->hardReset();
+//        qDebug() <<"scanCard---allReset---" << cpciCard->allReset();
+
+        cpciCard->setClockTrigger();
+        cpciCard->setDDC();
+//        Sleep(3000);
+        StoreParam &storeParam = cpciCard->getStoreParam();
+        storeParam.m_storeMode = SizeFixedType;
+        storeParam.m_recordSource = TestDataSource;
+        storeParam.m_storeSize = 10;
+        cpciCard->startStore();
+    }
+}
+*/
+
+void GetMemory( char **p, int num )
+{
+    *p = (char *)malloc(num);
+}
+
+
+#include "secureprotect.h"
+
+int main(int argc, char *argv[])
+{
+
+    QApplication app(argc, argv);
+
+
+
+    QDir::setCurrent(app.applicationDirPath());
+    qDebug()<<QDir::currentPath();
+
+    //QString ss = app.applicationDirPath()+"/qf4034.exe";
+
+    //SecureProtect sp(ss.toStdString());
+
+#if (NATIVE_DEBUG == 1)
+    //注册MessageHandler
+    clearLog();
+    qInstallMessageHandler(outputMessage);
+    qDebug() << "\r\n+++++++++app start++++++++++++";
+#endif
+
+    //载入字体资源文件
+    QFontDatabase::addApplicationFont("://rc/font/fontawesome-webfont.ttf");
+
+
+    QQuickView viewer;
+    QObject::connect(viewer.engine(), &QQmlEngine::quit, &viewer, &QWindow::close);
+    //QObject::connect(viewer.engine(), SIGNAL(quit()), qApp, SLOT(quit()));
+
+
+    viewer.setTitle(QStringLiteral("Spectrum Analyzer"));
+
+    //qDebug()<<app.applicationDirPath()+"/QMLPlugin";
+    viewer.engine()->addImportPath("D:/QMLPlugin");
+    Settings   settings(&viewer);
+    settings.load();
+    DataSource dataSource(&viewer, &settings);
+    ChartCtrl  chartCtrl(&viewer);
+
+    CaptureThread captureThread(&dataSource);
+    captureThread.start();
+    viewer.rootContext()->setContextProperty("dataSource", &dataSource);
+    viewer.rootContext()->setContextProperty("chartCtrl",  &chartCtrl);
+    viewer.rootContext()->setContextProperty("fileIO", new FileIO);
+    viewer.rootContext()->setContextProperty("Settings", &settings);
+    viewer.rootContext()->setContextProperty("captureThread", &captureThread);
+    qmlRegisterType<WaterfallPlot>("WaterfallPlot", 1, 0, "WaterfallPlot");
+
+    //QObject::connect(viewer.engine(), SIGNAL(quit()), &captureThread, SLOT(exit()));
+
+
+    viewer.setSource(QUrl("qrc:/qml/main.qml"));
+    viewer.setResizeMode(QQuickView::SizeRootObjectToView);
+    viewer.setColor(QColor("#404040"));
+
+
+    viewer.setFlags(Qt::Window | Qt::FramelessWindowHint);
+
+    //将viewer注册为mainWindow对象
+    viewer.rootContext()->setContextProperty("mainWindow",&viewer);
+
+
+
+    viewer.show();
+
+    return app.exec();
+}

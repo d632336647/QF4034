@@ -1,0 +1,2 @@
+module Slibx.Uart
+plugin QMLUart
