@@ -161,7 +161,7 @@ Rectangle{
     }
     function setParam(val)
     {
-       Settings.captureMode(Settings.Set, val)
+       Settings.captureMode(Com.OpSet, val)
        gatherMenu.updateParams()
     }
 

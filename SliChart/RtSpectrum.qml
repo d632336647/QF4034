@@ -5,6 +5,7 @@ import QtQuick.Controls 2.2
 import "../qml/UI"
 
 import "../qml/Inc.js" as Com
+import SpectrumData 1.0
 
 Rectangle {
     id: root
@@ -30,11 +31,10 @@ Rectangle {
     property color seriesColor1: Com.series_color1
     property color seriesColor2: Com.series_color2
     property color seriesColor3: Com.series_color3
-    property point peakPoint1:  dataSource.peakPoint0 //实际使用中， dataSource.peakPoint0 内部发送了changed信号， 但是值未改变，
-    property point peakPoint2:  dataSource.peakPoint1 //因此导致peakPoint1/2/3无法使用onChanged锚定，需要在series刷新后，手动调用
-    property point peakPoint3:  dataSource.peakPoint2 //updatePeak()刷新peak点
+
 
     visible: false
+
     UiCornerLine{
         anchors.top: parent.top
         anchors.topMargin: 4
@@ -530,8 +530,8 @@ Rectangle {
             var percent = value.toFixed(3);
             dataSource.setFileOffset("series1", percent)
             dataSource.updateFreqDodminFromFile(series1, Settings.historyFile1())
+            fftData.refreshSeriesPoints(root.chIndex, 0);
 
-            dataSource.smartUpdateSeries(series1)
             if(Settings.analyzeMode() === 3)
                 waterfallView.updateFile(Settings.historyFile1())
 
@@ -555,7 +555,7 @@ Rectangle {
             var percent = value.toFixed(3);
             dataSource.setFileOffset("series2", percent)
             dataSource.updateFreqDodminFromFile(series2, Settings.historyFile2())
-            dataSource.smartUpdateSeries(series2)
+            fftData.refreshSeriesPoints(root.chIndex, 1);
         }
     }
     UiMultSlider {
@@ -571,7 +571,7 @@ Rectangle {
             var percent = value.toFixed(3);
             dataSource.setFileOffset("series3", percent)
             dataSource.updateFreqDodminFromFile(series3, Settings.historyFile3())
-            dataSource.smartUpdateSeries(series3)
+            fftData.refreshSeriesPoints(root.chIndex, 2);
         }
     }
 
@@ -656,10 +656,11 @@ Rectangle {
         id:rtPeak1
         onVisibleChanged: {
             if(visible){
-                dataSource.refreshPeakPoint(0)
+                //dataSource.refreshPeakPoint(0)
+                fftData.refreshPeakPoint(root.chIndex, 0)
                 if( (!realTimeMode) || (!captureThread.isRunning()) ){
-                    dataSource.smartUpdateSeries(series1)
-                    root.updatePeak(rtPeak1, peakPoint1, 0, series1)
+                    fftData.refreshSeriesPoints(root.chIndex, 0);
+                    root.updatePeak(rtPeak1, fftData.peakPoint0, 0, series1)
                 }
             }
             else
@@ -671,10 +672,11 @@ Rectangle {
         id:rtPeak2
         onVisibleChanged: {
             if(visible){
-                dataSource.refreshPeakPoint(1)
+                //dataSource.refreshPeakPoint(1)
+                fftData.refreshPeakPoint(root.chIndex, 1)
                 if( (!realTimeMode) || (!captureThread.isRunning()) ){
-                    dataSource.smartUpdateSeries(series2)
-                    root.updatePeak(rtPeak2, peakPoint2, 1, series2)
+                    fftData.refreshSeriesPoints(root.chIndex, 1);
+                    root.updatePeak(rtPeak2, fftData.peakPoint1, 1, series2)
                 }
             }
         }
@@ -684,10 +686,11 @@ Rectangle {
         id:rtPeak3
         onVisibleChanged: {
             if(visible){
-                dataSource.refreshPeakPoint(2)
+                //dataSource.refreshPeakPoint(2)
+                fftData.refreshPeakPoint(root.chIndex, 2)
                 if( (!realTimeMode) || (!captureThread.isRunning()) ){
-                    dataSource.smartUpdateSeries(series3)
-                    root.updatePeak(rtPeak3, peakPoint3, 2, series3)
+                    fftData.refreshSeriesPoints(root.chIndex, 2);
+                    root.updatePeak(rtPeak3, fftData.peakPoint2, 2, series3)
                 }
             }
         }
@@ -769,7 +772,7 @@ Rectangle {
             return
 
         //get the idx value
-        var idx = dataSource.getPointIndexByX(point.x, series)
+        var idx = fftData.getPointIndexByX(point.x, series)
 
         //console.log("point.x:"+point.x+" idx:"+idx)
 
@@ -801,7 +804,8 @@ Rectangle {
                 peakShow3.ystring = seriesPoint.y.toFixed(3)
             }
         }
-        dataSource.setCurrentPeakX(series_idx, point.x)
+        //dataSource.setCurrentPeakX(series_idx, point.x)//deprecate
+        fftData.setCurrentPeakX(root.chIndex, series_idx, point.x)
     }
     function updatePeakShow()
     {
@@ -822,7 +826,32 @@ Rectangle {
         movePeak.checked   = false
         markSlider.visible = false
     }
+    onVisibleChanged: {
 
+    }
+    onWidthChanged:
+    {
+        markSlider.setMarkRange()
+        root.closePeakMark()
+    }
+    SpectrumData{
+        id:fftData
+        channelIdx: chIndex
+        source: dataSource
+        seriesHandle0: series1
+        seriesHandle1: series2
+        seriesHandle2: series3
+        onPeakPointChanged:{
+            if(rtPeak1.visible){
+                if(0 == idx)
+                    root.updatePeak(rtPeak1, fftData.peakPoint0, 0, series1)
+                else if(1 == idx)
+                    root.updatePeak(rtPeak2, fftData.peakPoint1, 1, series2)
+                else if(2 == idx)
+                    root.updatePeak(rtPeak3, fftData.peakPoint2, 2, series3)
+            }
+        }
+    }
     // Add data dynamically to the series
     Component.onCompleted: {
         //根据分辨率计算横坐标需要精确的位数
@@ -830,69 +859,24 @@ Rectangle {
         chartCtrl.setAxisGridLinePenStyle(axisX, Qt.DotLine)//DashLine
         chartCtrl.setAxisGridLinePenStyle(axisY, Qt.DotLine)
 
-        axisY.min = Settings.reflevelMin()
-        axisY.max = Settings.reflevelMax()
-
-    }
-    onVisibleChanged: {
-
-    }
-    onPeakPoint1Changed:
-    {
-        //console.log("onPeakPoint1Changed");
-        if(rtPeak1.visible)
-        {
-            root.updatePeak(rtPeak1, peakPoint1, 0, series1)
-        }
-    }
-    onPeakPoint2Changed:
-    {
-
-        if(rtPeak2.visible)
-        {
-            root.updatePeak(rtPeak2, peakPoint2, 1, series2)
-        }
-    }
-    onPeakPoint3Changed:
-    {
-        if(rtPeak3.visible)
-        {
-            root.updatePeak(rtPeak3, peakPoint3, 2, series3)
-        }
-
+        //axisY.min = Settings.reflevelMin()
+        //axisY.max = Settings.reflevelMax()
     }
 
-    onWidthChanged:
-    {
-        markSlider.setMarkRange()
-        root.closePeakMark()
-    }
-
-
-
-
-
-    function setCaptureSeries()
-    {
-        captureThread.setSeries(series1)
-    }
     function updateCharts()
     {
         if(0 === chIndex)
             waterfallView.updateAxisXRtShow(axisX.min, axisX.max, xAxisMin, xAxisMax)
         else
             waterfallView2.updateAxisXRtShow(axisX.min, axisX.max, xAxisMin, xAxisMax)
-        dataSource.updateCurMinMax(axisX.min, axisX.max)
+        fftData.updateCurMinMax(root.chIndex, axisX.min, axisX.max);
 
         //如果是文件模式或者暂停,此处刷新peak点,实时模式无需在此刷新
         if( (!realTimeMode) || (!captureThread.isRunning()) )
         {
-            dataSource.smartUpdateSeries(series1)
-            dataSource.smartUpdateSeries(series2)
-            dataSource.smartUpdateSeries(series3)
-            root.updatePeak(rtPeak1, peakPoint1, 0, series1)
-            root.updatePeak(rtPeak2, peakPoint2, 1, series2)
-            root.updatePeak(rtPeak3, peakPoint3, 2, series3)
+            fftData.refreshSeriesPoints(root.chIndex, 0)
+            fftData.refreshSeriesPoints(root.chIndex, 1)
+            fftData.refreshSeriesPoints(root.chIndex, 2)
         }
     }
     function setAxisYRange(min, max)
@@ -929,7 +913,7 @@ Rectangle {
     {
 
         captureThread.stopCapture()
-        dataSource.clearFilter();
+        //dataSource.clearFilter(); //not use
         centerFreq = Settings.centerFreq()
         bandwidth  = Settings.bandWidth()
         resolution = Settings.resolutionSize()
@@ -948,11 +932,11 @@ Rectangle {
         seriesSignal3.checked = false
         seriesSignal3.disabled = true
 
-        dataSource.setForceRefresh()
+        //dataSource.setForceRefresh()//deprecate
+        fftData.setForceRefresh(root.chIndex)
         if(realTimeMode){
             series1.visible = true
-            dataSource.updateCurMinMax(axisX.min, axisX.max)
-            captureThread.startCapture()
+            fftData.updateCurMinMax(root.chIndex, axisX.min, axisX.max)
             stopCapture.checked = false
         }else{
 

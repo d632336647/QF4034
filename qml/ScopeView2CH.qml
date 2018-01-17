@@ -75,6 +75,17 @@ Item{
             anchors.fill: parent
         }
     }
+    Component.onCompleted: {
+        var ymin_ch0 = Settings.reflevelMin(Com.OpGet, 0, 0);
+        var ymax_ch0 = Settings.reflevelMax(Com.OpGet, 0, 0);
+        var ymin_ch1 = Settings.reflevelMin(Com.OpGet, 0, 1);
+        var ymax_ch1 = Settings.reflevelMax(Com.OpGet, 0, 1);
+        spectrumView.setAxisYRange(ymin_ch0,  ymax_ch0)
+        spectrumView2.setAxisYRange(ymin_ch1, ymax_ch1)
+        waterfallView.updateWaterfallPlotRef(ymin_ch0,  ymax_ch0)
+        waterfallView2.updateWaterfallPlotRef(ymin_ch1, ymax_ch1)
+        changeAnalyzeMode()
+    }
     function changeLayout(mod)//analyzeMode
     {
         if(0 === mod){
@@ -157,9 +168,12 @@ Item{
 
         analyzeMode = Settings.analyzeMode()
 
+        console.log("changeAnalyzeMode", analyzeMode)
+
         captureThread.stopCapture()
         dataSource.stopSample()
-        dataSource.closeWaterfallRtCapture()
+        waterfallView.closeWTFRtData()
+        waterfallView2.closeWTFRtData()
 
         spectrumView.fullMode     = spectrumView2.fullMode     = true
         spectrumView.visible      = spectrumView2.visible      = false
@@ -169,12 +183,10 @@ Item{
 
         //ch1
         waterfallView.stopRtTimer()
-        spectrumView.setCaptureSeries()
         spectrumView.closePeakMark()
 
         //ch2
         waterfallView2.stopRtTimer()
-        spectrumView2.setCaptureSeries()
         spectrumView2.closePeakMark()
 
         timeDomainWave.visible    = false
@@ -184,15 +196,18 @@ Item{
             //ch1
             spectrumView.visible      = true
             spectrumView.realTimeMode = true
-            spectrumView.updateParams()
-            dataSource.startSample()
 
             //ch2
             spectrumView2.visible      = true
             spectrumView2.realTimeMode = true
-            spectrumView2.updateParams()
-            dataSource.startSample()
 
+            changeChannelMode(Settings.channelMode())
+
+            spectrumView.updateParams()
+            spectrumView2.updateParams()
+
+            dataSource.startSample()
+            captureThread.startCapture()
         }
         else if(analyzeMode === 1)   //实时瀑布图
         {
@@ -204,10 +219,6 @@ Item{
             waterfallView.visible     = true
             waterfallView.realTimeMode= true
 
-            spectrumView.updateParams()
-            waterfallView.updateParams()
-            dataSource.startSample()
-
             //ch2
             spectrumView2.fullMode     = false
             spectrumView2.visible      = true
@@ -216,45 +227,62 @@ Item{
             waterfallView2.visible     = true
             waterfallView2.realTimeMode= true
 
+            changeChannelMode(Settings.channelMode())
+
+            spectrumView.updateParams()
+            waterfallView.updateParams()
             spectrumView2.updateParams()
             waterfallView2.updateParams()
+
             dataSource.startSample()
+            //dataSource.openWaterfallRtCapture(waterfallPlot) //deprecate
+            captureThread.startCapture()
         }
         else if(analyzeMode === 2)  //历史文件频谱对比分析
         {
             spectrumView.visible = true
+
+            changeChannelMode(Settings.channelMode())
             spectrumView.updateParams()
         }
         else if(analyzeMode === 3)  //历史文件瀑布图分析
         {
             spectrumView.fullMode = false
             spectrumView.visible = true
-            spectrumView.updateParams()
-
             waterfallView.visible = true
+
+            changeChannelMode(Settings.channelMode())
+            spectrumView.updateParams()
             waterfallView.updateParams()
         }
         else if(analyzeMode === 4)  //历史文件时域波形
         {
             timeDomainWave.visible    = true
+
+            changeChannelMode(Settings.channelMode())
             timeDomainWave.updateParams()
         }
-        changeChannelMode(Settings.channelMode())
     }
+
     function updateSepctrumAxisY(min, max)
     {
+        var ch = Settings.paramsSetCh();
+        console.log("updateSepctrumAxisY min",min,"max",max, "ch", ch)
         if(parseFloat(min)<-140)
             min = -140
         if(parseFloat(max)>40)
             max = 40
         if(parseFloat(max) < parseFloat(min))
             return
-        //console.log("updateSepctrumAxisY",max, min)
-        spectrumView.setAxisYRange(min, max)
-        waterfallView.updateWaterfallPlotRef(min, max)
-        waterfallView.updateParams()
+        if(ch === 0){
+            spectrumView.setAxisYRange(min, max)
+            waterfallView.updateWaterfallPlotRef(min, max)
+            waterfallView.updateParams()
+        }else{
+            spectrumView2.setAxisYRange(min, max)
+            waterfallView2.updateWaterfallPlotRef(min, max)
+            waterfallView2.updateParams()
+        }
     }
-    Component.onCompleted: {
-       //由外部初始化
-    }
+
 }

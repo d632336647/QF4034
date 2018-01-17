@@ -54,7 +54,7 @@ Settings::~Settings()
 }
 
 
-int Settings::clkMode(option op, int val)
+int Settings::clkMode(option op, int val, int ch)
 {
     //此参数所有通道一致
     if(op == Settings::Set){
@@ -65,7 +65,7 @@ int Settings::clkMode(option op, int val)
     }
     return clk_mode[SAME];
 }
-int Settings::triggerMode(option op, int val)
+int Settings::triggerMode(option op, int val, int ch)
 {
     //此参数所有通道一致
     if(op == Settings::Set){
@@ -76,7 +76,7 @@ int Settings::triggerMode(option op, int val)
     }
     return trigger_mode[SAME];
 }
-int Settings::captureMode(option op, int val)
+int Settings::captureMode(option op, int val, int ch)
 {
     //此参数所有通道一致
     if(op == Settings::Set){
@@ -87,7 +87,7 @@ int Settings::captureMode(option op, int val)
     }
     return capture_mode[SAME];
 }
-int Settings::captureSize(option op, int val)
+int Settings::captureSize(option op, int val, int ch)
 {
     //此参数所有通道一致
     if(op == Settings::Set){
@@ -98,22 +98,25 @@ int Settings::captureSize(option op, int val)
     }
     return capture_size[SAME];
 }
-qreal Settings::captureRate(option op, qreal val)
+qreal Settings::captureRate(option op, qreal val, int ch)
 {
+    if(ch>=MAXCH)
+        ch = current_ch;
     if(op == Settings::Set){
-        capture_rate[current_ch] = val;
-        _settings->beginGroup(keyString("capture", current_ch));
-        _settings->setValue("capture_rate", capture_rate[current_ch]);
+        capture_rate[ch] = val;
+        _settings->beginGroup(keyString("capture", ch));
+        _settings->setValue("capture_rate", capture_rate[ch]);
         _settings->endGroup();
     }
-    return capture_rate[current_ch];
+    return capture_rate[ch];
 }
 
 
 
-int Settings::analyzeMode(option op, int val)
+int Settings::analyzeMode(option op,int val,  int ch)
 {
     //此参数所有通道一致
+    //qDebug()<<"analyzeMode op:"<<op<<"ch:"<<ch<<"val:"<<val;
     if(op == Settings::Set){
         analyze_mode[SAME] = val;
         _settings->beginGroup(keyString("analyze", SAME));
@@ -122,11 +125,13 @@ int Settings::analyzeMode(option op, int val)
     }
     return analyze_mode[SAME];
 }
-qreal Settings::centerFreq(option op, qreal val)
+qreal Settings::centerFreq(option op, qreal val, int ch)
 {
+    if(ch>=MAXCH)
+        ch = current_ch;
     if(op == Settings::Set){
         //参数校正
-        if(0 == current_ch){
+        if(0 == ch){
             if(val>84.5)
                 val = 84.5;
             if(val<55.5)
@@ -135,7 +140,7 @@ qreal Settings::centerFreq(option op, qreal val)
             qreal left  = val - 55;
             qreal maxbw = (right>left ? left :right)*2;
 
-            if( bandwidth[current_ch] > maxbw )
+            if( bandwidth[ch] > maxbw )
             {
                 this->bandWidth(Settings::Set, maxbw);
             }
@@ -143,20 +148,22 @@ qreal Settings::centerFreq(option op, qreal val)
         else{
 
         }
-        center_freq[current_ch] = val;
-        _settings->beginGroup(keyString("analyze", current_ch));
-        _settings->setValue("center_freq", center_freq[current_ch]);
+        center_freq[ch] = val;
+        _settings->beginGroup(keyString("analyze", ch));
+        _settings->setValue("center_freq", center_freq[ch]);
         _settings->endGroup();
     }
-    return center_freq[current_ch];
+    return center_freq[ch];
 }
-qreal Settings::bandWidth(option op, qreal val)
+qreal Settings::bandWidth(option op, qreal val, int ch)
 {
+    if(ch>=MAXCH)
+        ch = current_ch;
     if(op == Settings::Set){
         //参数校正
         if(0 == current_ch){
-            qreal right = 85 - center_freq[current_ch];
-            qreal left  = center_freq[current_ch] - 55;
+            qreal right = 85 - center_freq[ch];
+            qreal left  = center_freq[ch] - 55;
             qreal maxbw = (right>left ? left :right)*2;
             if( val > maxbw )
                 val = maxbw;
@@ -175,31 +182,33 @@ qreal Settings::bandWidth(option op, qreal val)
             //只限定实时模式
             //if( analyze_mode < 2)
             {
-                if(resolution[current_ch] != min_res)
+                if(resolution[ch] != min_res)
                     resolutionSize(Settings::Set, min_res);
             }
         }
         else{
 
         }
-        bandwidth[current_ch] = val;
-        _settings->beginGroup(keyString("analyze", current_ch));
-        _settings->setValue("bandwidth", bandwidth[current_ch]);
+        bandwidth[ch] = val;
+        _settings->beginGroup(keyString("analyze", ch));
+        _settings->setValue("bandwidth", bandwidth[ch]);
         _settings->endGroup();
     }
-    return bandwidth[current_ch];
+    return bandwidth[ch];
 }
-int Settings::resolutionSize(option op, int val)
+int Settings::resolutionSize(option op, int val, int ch)
 {
+    if(ch>=MAXCH)
+        ch = current_ch;
     if(op == Settings::Set){
         if(0 == current_ch){
-            int min_res = bandwidth[current_ch] * 10;
-            if( bandwidth[current_ch] > 3 )
-                min_res = bandwidth[current_ch] * 40;
-            if( bandwidth[current_ch] > 10 )
-                min_res = bandwidth[current_ch] * 80;
-            if( bandwidth[current_ch] > 15 )
-                min_res = bandwidth[current_ch] * 100;
+            int min_res = bandwidth[ch] * 10;
+            if( bandwidth[ch] > 3 )
+                min_res = bandwidth[ch] * 40;
+            if( bandwidth[ch] > 10 )
+                min_res = bandwidth[ch] * 80;
+            if( bandwidth[ch] > 15 )
+                min_res = bandwidth[ch] * 100;
 
             if(val < min_res)
                 val = min_res;
@@ -209,36 +218,42 @@ int Settings::resolutionSize(option op, int val)
         else{
 
         }
-        resolution[current_ch] = val;
-        _settings->beginGroup(keyString("analyze", current_ch));
-        _settings->setValue("resolution", resolution[current_ch]);
+        resolution[ch] = val;
+        _settings->beginGroup(keyString("analyze", ch));
+        _settings->setValue("resolution", resolution[ch]);
         _settings->endGroup();
     }
-    return resolution[current_ch];
+    return resolution[ch];
 }
-qreal Settings::reflevelMin(option op, qreal val)
+qreal Settings::reflevelMin(option op, qreal val, int ch)
 {
+    //qDebug()<<"reflevelMin op:"<<((op == Settings::Set)?"set":"get")<<"val:"<<val<<"ch:"<<ch;
+    if(ch>=MAXCH)
+        ch = current_ch;
     if(op == Settings::Set){
-        if( val > reflevel_max[current_ch] )
-            return reflevel_min[current_ch];
-        reflevel_min[current_ch] = val;
-        _settings->beginGroup(keyString("analyze", current_ch));
-        _settings->setValue("reflevel_min", reflevel_min[current_ch]);
+        if( val > reflevel_max[ch] )
+            return reflevel_min[ch];
+        reflevel_min[ch] = val;
+        _settings->beginGroup(keyString("analyze", ch));
+        _settings->setValue("reflevel_min", reflevel_min[ch]);
         _settings->endGroup();
     }
-    return reflevel_min[current_ch];
+    //qDebug()<<"reflevel_min[ch]:"<<reflevel_min[ch]<<"ch:"<<ch;
+    return reflevel_min[ch];
 }
-qreal Settings::reflevelMax(option op, qreal val)
+qreal Settings::reflevelMax(option op, qreal val, int ch)
 {
+    if(ch>=MAXCH)
+        ch = current_ch;
     if(op == Settings::Set){
-        if( val < reflevel_min[current_ch] )
-            return reflevel_max[current_ch];
-        reflevel_max[current_ch] = val;
-        _settings->beginGroup(keyString("analyze", current_ch));
-        _settings->setValue("reflevel_max", reflevel_max[current_ch]);
+        if( val < reflevel_min[ch] )
+            return reflevel_max[ch];
+        reflevel_max[ch] = val;
+        _settings->beginGroup(keyString("analyze", ch));
+        _settings->setValue("reflevel_max", reflevel_max[ch]);
         _settings->endGroup();
     }
-    return reflevel_max[current_ch];
+    return reflevel_max[ch];
 }
 
 

@@ -83,7 +83,7 @@ Flipable{
     Component.onCompleted:
     {
         root.state = "toBack"
-        idScopeView.updateSepctrumAxisY(numberEdit.min, numberEdit.max)
+        //idScopeView.updateSepctrumAxisY(numberEdit.min, numberEdit.max)
     }
     function loadParam()
     {
@@ -104,9 +104,9 @@ Flipable{
         }
 
         if(parseFloat(min) !== Settings.reflevelMin())
-            Settings.reflevelMin(Settings.Set, min)
+            Settings.reflevelMin(Com.OpSet, min)
         if(parseFloat(max) !== Settings.reflevelMax())
-            Settings.reflevelMax(Settings.Set, max)
+            Settings.reflevelMax(Com.OpSet, max)
         idScopeView.updateSepctrumAxisY(min, max)
         //analyzeMenu.updateParams()
     }

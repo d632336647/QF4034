@@ -147,7 +147,7 @@ Rectangle{
     }
     function setParam(val)
     {
-        Settings.triggerMode(Settings.Set, val)
+        Settings.triggerMode(Com.OpSet, val)
         gatherMenu.updateParams()
     }
 }

@@ -40,7 +40,7 @@
 #include <math.h>
 #include <string.h>
 
-#include "datasource.h"
+#include "DataSource.h"
 
 QT_CHARTS_USE_NAMESPACE
 
@@ -57,16 +57,14 @@ DataSource::DataSource(QObject *parent, Settings *st)
     , m_captureSize(0)
     , m_isStoring(0)
     , m_pcieCard(NULL)
-    , m_start_wf(false)
-    , m_waterfall(nullptr)
-    , m_wf_fps(0)
 {
     qRegisterMetaType<QAbstractSeries*>();
     qRegisterMetaType<QAbstractAxis*>();
 
 
     m_pcieCard = NULL;
-    m_pciDev = new PciDeviceAPI("spectrumAnalyzer");
+#if 1
+    m_pciDev = new PciDeviceAPI("spectrumAnalyzer", 0x1556, 0x1100);
     m_pciDev->scanCard();
     PcieCard *pcieObj = (PcieCard*)m_pciDev->getCard(1);
     if(pcieObj){
@@ -91,31 +89,35 @@ DataSource::DataSource(QObject *parent, Settings *st)
         qDebug() <<"Card Init Failed!";
         m_pcieCard = NULL;
     }
-    m_filePath.clear();
-    m_force_refresh = false;
 
-    refresh_peak[0] = true;
-    refresh_peak[1] = true;
-    refresh_peak[2] = true;
-    m_peak_x[0]   = 0.0;
-    m_peak_x[1]   = 0.0;
-    m_peak_x[2]   = 0.0;
-    m_peakpoint[0] = QPointF(0.0, 0.0);
-    m_peakpoint[1] = QPointF(0.0, 0.0);
-    m_peakpoint[2] = QPointF(0.0, 0.0);
+#endif
 
-    m_show_points[0].clear();
-    m_show_points[1].clear();
-    m_show_points[2].clear();
+    for(int ch = 0; ch<CHNUM; ch++)
+    {
+        m_show_points[ch][0].clear();
+        m_show_points[ch][1].clear();
+        m_show_points[ch][2].clear();
+
+        m_waterfall_points[ch].clear();
+    }
+
 
     m_settings = st;
+    m_filePath.clear();
     this->initHistoryFile();
 }
 DataSource::~DataSource(){
     if(m_pciDev)
+    {
+        qDebug()<<"delete pcie driver";
         delete m_pciDev;
+    }
     if(m_pcieCard)
+    {
+        qDebug()<<"delete pcie card";
         delete m_pcieCard;
+    }
+
     this->clearHistoryFile();
 }
 void DataSource::changeAxis(QAbstractAxis *axis){
@@ -129,15 +131,8 @@ void DataSource::changeAxis(QAbstractAxis *axis){
 //        axis->setLinePen(pen);
     }
 }
-void DataSource::updateFreqDodminFromData(QAbstractSeries *series)
+void DataSource::updateFreqDodminFromData(void)
 {
-
-    if(!series){
-        qDebug()<<"series error!";
-        return;
-    }
-
-    //QXYSeries *xySeries = static_cast<QXYSeries *>(series);
 
     if(!m_pcieCard){
         //qDebug()<<"m_pcieCard error";
@@ -174,17 +169,17 @@ void DataSource::updateFreqDodminFromData(QAbstractSeries *series)
     QVector<QPointF> points;
     this->workAllPoint(fftData, points);
 
-    m_show_points[0].clear();
-    this->cutShowPoint(points, m_show_points[0]);
+    fftlock.lockForWrite();//文件读写锁
+    m_show_points[0][0].clear();
+    this->cutShowPoint(points, m_show_points[0][0]);
 
     //this->smooth(m_show_points[0]);
 
-    //更新瀑布图显示
-    if(m_start_wf && m_waterfall){
-        m_waterfall->updateDataRT(m_show_points[0]);
-    }
+    fftlock.unlock();
 
-    this->smartUpdateSeries(series);
+    emit updateFFTPoints(0, 0);
+
+    //this->smartUpdateSeries(series);
     //qDebug()<<"4444444:"<<QDateTime::currentDateTime();
     delete[] sampleData;
 }
@@ -201,7 +196,7 @@ void DataSource::updateFreqDodminFromFile(QAbstractSeries *series, QString fileN
 
     //qDebug()<<"series->objectName()"<<series->objectName();
 
-    QVector<QVector<double>> origData;
+
 
     QFile *file = this->getFile(series->objectName());
     qreal percent = filePercent.value(series->objectName());
@@ -212,11 +207,11 @@ void DataSource::updateFreqDodminFromFile(QAbstractSeries *series, QString fileN
         return;
     }
 
-    if(!m_spectrum.fftFromFile(file, m_fftCount, percent, origData))
+    QVector<double> fftData;
+
+    if(!m_spectrum.fftFromFile(file, m_fftCount, percent, fftData))
         return;
 
-
-    QVector<double> fftData = origData[0];
 
     QVector<QPointF> points;
     this->workAllPoint(fftData, points);
@@ -225,15 +220,17 @@ void DataSource::updateFreqDodminFromFile(QAbstractSeries *series, QString fileN
 
     //this->smooth(t_show_point);
 
-
+    int series_idx = 0;
     if(series->objectName() == "series1")
-        m_show_points[0] = t_show_point;
+        series_idx = 0;
     else if(series->objectName() == "series2")
-        m_show_points[1] = t_show_point;
+        series_idx = 1;
     else if(series->objectName() == "series3")
-        m_show_points[2] = t_show_point;
+        series_idx = 2;
 
-    //xySeries->replace(t_show_point);//由smartUpdateSeries刷新
+    m_show_points[0][series_idx] = t_show_point;
+
+    //emit updateFFTPoints(0, series_idx); //由SpectrumData类自行获取并刷新
 
     //qDebug()<<"--------------------updateFreqDodminFromFile--------------------";
     //qDebug()<<"Total Point="<<fftData.size();
@@ -246,39 +243,50 @@ void DataSource::setFFTParam(double centerFreq, double bandwidth, int resolution
     if(m_centerFreq != centerFreq)
     {
         m_centerFreq = centerFreq;
-        m_force_refresh = true;
     }
     if(m_bandwidth != bandwidth)
     {
         m_bandwidth = bandwidth;
-        m_force_refresh = true;
     }
     if(m_resolution != resolution)
     {
         m_resolution = resolution;
-        m_force_refresh = true;
     }
     m_fftCount   = 50 * 1000000.0 / m_resolution;
 
-    qDebug()<<"m_bandwidth:"<<m_bandwidth<<" m_resolution:"<<m_resolution<<" m_fftCount:"<<m_fftCount;
+    //qDebug()<<"setFFTParam m_bandwidth:"<<m_bandwidth<<" m_resolution:"<<m_resolution<<" m_fftCount:"<<m_fftCount;
 
 }
-int DataSource::updateWaterfallPlotFromFile(WaterfallPlot *waterfallPlot, QString fileName)
+
+int DataSource::updateWaterfallPlotFromFile(int ch, QString fileName)
 {
-    QVector<QVector<double>> origData;
-    int y_count = 0;
+    Q_UNUSED(fileName)
+
+    if(ch>CHNUM)
+        ch = 0;
+    //QVector<QVector<double>> &origData = m_waterfall_points[ch];
+    QVector<double> &origData = m_waterfall_points[ch];
+    bool readok = false;
 
     QFile *file = this->getFile("series1");
     if(file == nullptr)
         return 0;
-
+    wtflock.lockForWrite();
+    //qDebug()<<"update waterfall ch"<<ch<<"plot from file";
     if(m_spectrum.fftFromFile(file, m_fftCount, filePercent.value("series1"), origData))
     {
-        y_count = waterfallPlot->updateData(m_bandwidth, m_centerFreq, origData);
+        readok = true;
     }
+    wtflock.unlock();
+    if(readok)
+        emit updateWaterfallFile(ch, m_bandwidth, m_centerFreq);
+
     //qDebug()<<"updateWaterfallPlotFromFile  count line:"<<origData.count();
-    return y_count;
+
+    return 0;
 }
+
+/*
 void DataSource::openWaterfallRtCapture(WaterfallPlot *wf)
 {
     m_waterfall = wf;
@@ -292,17 +300,7 @@ void DataSource::closeWaterfallRtCapture(void)
     m_start_wf  = false;
     m_wf_fps = 0;
 }
-int DataSource::getWaterfallLineCount(QString fileName)
-{
-    QVector<QVector<double>> origData;
-    QFile *file = this->getFile("series1");
-    if(file == nullptr)
-        return 0;
-    m_spectrum.fftFromFile(file, m_fftCount, filePercent.value("series1"), origData);
-    return origData.count();
-}
-
-
+*/
 
 
 
@@ -448,12 +446,13 @@ void DataSource::setCaptureParam(int clkMode, double captureFreq, int triggerMod
 *******************************************/
 void DataSource::setPreConditionParam(int outMode, int chCount, double ddcFreq, int extractFactor, int fsbCoef)
 {
+    Q_UNUSED(outMode)
     if(!m_pcieCard)
         return;
     //EFsBType  type = FS_1_25B;
 
     DDCParam  ddcParam = m_pcieCard->getDDC();
-    //ddcParam.m_ddc_din_sel     = outMode;
+    //ddcParam.m_ddc_din_sel   = outMode;
     ddcParam.m_rcd_ch14_sel    = chCount;
     ddcParam.m_recvFreq        = ddcFreq;
     ddcParam.m_ddc_rate        = extractFactor;
@@ -475,7 +474,7 @@ void storeEndCallback(void *pData, FileStoreStatus status)
     dataSorece->doStoreEnd(status.m_writedSize);
 }
 void DataSource::doStoreEnd(quint64 writedLen){
-    m_pcieCard->stopStore();
+ //   m_pcieCard->stopStore();
     emit storeEnd(QString::number(writedLen));
 }
 void DataSource::setStorParam(int storeMedia, int nameMode, QString filePath){
@@ -529,10 +528,12 @@ bool DataSource::startStopStore(bool startFlag){
 
     if(startFlag){
         m_isStoring = m_pcieCard->startStore();
+        qDebug()<<"pcieCard startStore()";
         return m_isStoring;
     }
     else{
         m_isStoring = 0;
+        qDebug()<<"pcieCard stopStore()";
         m_pcieCard->stopStore();
     }
     return true;
@@ -564,7 +565,22 @@ int DataSource::getPointIndexByX(qreal x, QAbstractSeries *series)
     return idx;
 
 }
-
+QVector<QPointF> DataSource::getFFTPoints(int ch, int idx)
+{
+    fftlock.lockForRead();//文件读写锁
+    QVector<QPointF> temp;
+    temp = m_show_points[ch][idx];
+    fftlock.unlock();
+    return temp;
+}
+QVector<double> DataSource::getWaterfallPoints(int ch)
+{
+    wtflock.lockForRead();
+    QVector<double> temp;
+    temp = m_waterfall_points[ch];
+    wtflock.unlock();
+    return temp;
+}
 void DataSource::settingHandle(Settings *st)
 {
     m_settings = st;
@@ -653,6 +669,7 @@ bool DataSource::clearHistoryFile(void)
         }
         ++i;
     }
+    qDebug()<<"close history file if exist";
     return true;
 }
 
@@ -668,42 +685,11 @@ QFile *DataSource::getFile(QString objname)
 }
 
 
-QPointF DataSource::getPeakPoint0(void)
-{
-    return m_peakpoint[0];
-}
-QPointF DataSource::getPeakPoint1(void)
-{
-    return m_peakpoint[1];
-}
-QPointF DataSource::getPeakPoint2(void)
-{;
-    return m_peakpoint[2];
-}
-void DataSource::refreshPeakPoint(int idx)
-{
-    refresh_peak[idx] = true;
-}
-bool DataSource::updateCurMinMax(double min, double max)
-{
-    cur_axis_min = min;
-    cur_axis_max = max;
-
-    //qreal bandwidth = max - min;
-    //int cap_count   = bandwidth * 1000000 / m_resolution ;
-    //qDebug()<<"updateCurMinMax min:"<<min<<" max:"<<max;
-
-    return false;
-}
-void DataSource::setCurrentPeakX(int series_idx, qreal x)
-{
-    m_peak_x[series_idx] = x;
-}
-
 bool DataSource::startSample()
 {
     if(!m_pcieCard)
         return false;
+    qDebug()<<"pcie card start sample";
     m_pcieCard->startSample();
     return true;
 }
@@ -711,6 +697,7 @@ bool DataSource::stopSample()
 {
     if(!m_pcieCard)
         return false;
+    qDebug()<<"pcie card stop  sample";
     m_pcieCard->stopSample();
     return true;
 }
@@ -827,140 +814,9 @@ int  DataSource::getPointIndexByX(qreal x, QVector<QPointF> &show_points)
     }
     return idx;
 }
-void DataSource::setForceRefresh(void)
-{
-    m_force_refresh = true;
-}
-void DataSource::smartUpdateSeries(QAbstractSeries *series)
-{
-    static int    sidx = 0, eidx = 0;
-    static double smin = 0, smax = 0;
-
-    if(!series)
-        return;
-
-    if(!series->isVisible())
-        return;
-
-    int idx = 0;
-
-    if(series->objectName() == "series1")
-        idx = 0;
-    else if(series->objectName() == "series2")
-        idx = 1;
-    else if(series->objectName() == "series3")
-        idx = 2;
-
-    QVector<QPointF> &t_show_point = m_show_points[idx];
-
-    //qDebug()<<"t_show_point size:"<<t_show_point.size()<<cur_axis_min<<cur_axis_max;
-    QXYSeries *xySeries = static_cast<QXYSeries *>(series);
-
-    //获取到起始点和结束点
-    if( (smin != cur_axis_min) || (sidx == eidx) || m_force_refresh)
-    {
-        sidx = getPointIndexByX(cur_axis_min, t_show_point);
-        smin = cur_axis_min;
-    }
-    if( (smax != cur_axis_max) || (sidx == eidx) || m_force_refresh)
-    {
-        eidx = getPointIndexByX(cur_axis_max, t_show_point);
-        smax = cur_axis_max;
-    }
-
-
-    if(m_force_refresh)
-        m_force_refresh = false;
-
-    int total = eidx-sidx;
-    if(total<=0)
-        return;
-    //qDebug()<<"sidx:"<<sidx<<" eidx:"<<eidx<<" total:"<<total+1<< "idx:"<<idx<<"refresh_peak:"<<refresh_peak[idx];
-
-    QVector<QPointF> new_show_point;
-
-    new_show_point.clear();
-
-    //从容器中拿出需要显示的点
-    for(int i = 0; i<total; i++){
-        new_show_point.append(t_show_point.at(i+sidx));
-    }
-
-    //peak点处理
-    if(refresh_peak[idx])
-    {
-        QPointF max_point(0.0, -200);
-        QPointF point( 0.0, -200);
-        int i = 0;
-        foreach (point, new_show_point) {
-            if(point.y() > max_point.y())
-            {
-                max_point  = point;
-                m_peak_x[idx] = point.x();
-            }
-            i++;
-        }
-        m_peakpoint[idx] = max_point;
-        emit peakPointChanged(idx);
-        refresh_peak[idx] = false;
-    }else if(m_peak_x[idx] >= cur_axis_min && m_peak_x[idx] <= cur_axis_max){
-        int peak_idx = getPointIndexByX(m_peak_x[idx], new_show_point);
-        m_peakpoint[idx] = new_show_point.at(peak_idx);
-        emit peakPointChanged(idx);
-    }
-
-    xySeries->replace(new_show_point);
-    //qDebug()<<"m_peakpoint:"<<m_peakpoint[idx]<<"idx:"<<idx;
-
-}
 
 
 
 
-
-
-
-
-
-
-/*
- * WaveInfo
-*/
-void WaveInfo::reset()
-{
-    m_points.clear();
-    m_dx.clear();
-    m_dy.clear();
-}
-WaveInfo::WaveInfo()
-{
-
-}
-WaveInfo::WaveInfo(QXYSeries *xySeries, QVector<QPointF> points)
-{
-    m_xySeries = xySeries;
-    m_points = points;
-    m_dx.reserve(m_points.count());
-    m_dy.reserve(m_points.count());
-    foreach (QPointF point, m_points) {
-        m_dx.append(point.x());
-        m_dy.append(point.y());
-    }
-
-    QVector<qreal> dyShort = m_dy;
-    qSort(dyShort.begin(), dyShort.end());
-
-    m_xMin = m_dx.first();
-    m_xMax = m_dx.last();
-    m_yMin = dyShort.first();
-    m_yMax = dyShort.last();
-    m_peakPoint.setX(m_dx.at(m_dy.indexOf(m_yMax)));
-    m_peakPoint.setY(m_yMax);
-//    qDebug("WaveInfo: min: (%f, %f).    max(%f, %f", m_xMin, m_yMin, m_xMax, m_yMax);
-}
-WaveInfo::~WaveInfo()
-{
-    reset();
-}
 
 

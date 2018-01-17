@@ -48,7 +48,7 @@ struct DDCParam{
     int m_sig_cen_freq_sel;     //中频信号中心频率选择
     int m_rcd_ch14_sel;        // 通道模式；1:1通道；2:2通道；3：3通道；4:4通道
     int m_ddc_din_sel;      //ddc输入选择
-    double m_recvFreq;		// ddc接收载频,单位MHz,默认值为70
+	double m_recvFreq;		// ddc接收载频,单位MHz,默认值为70
     uint m_adc_dds_fin;     //dds频率控制字
     int m_ddc_rate;         //ddc抽取率	
     EFsBType m_ddc_coef_type;    //ddc系数类型

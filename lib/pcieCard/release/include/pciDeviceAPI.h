@@ -7,7 +7,7 @@ class PciDevice;
 
 class PCIECARD_API PciDeviceAPI{
 public:
-        PciDeviceAPI(const char *appName, uint vendorID = 0x1556, uint deviceID = 0x1100);
+	PciDeviceAPI(const char *appName, uint vendorID = 0x10B5, uint deviceID = 0x9656);
 	~PciDeviceAPI();
 
 	void* getCard(int cardID);

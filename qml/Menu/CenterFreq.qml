@@ -98,7 +98,7 @@ Flipable{
             messageBox.visible = true
         }
         if(parseFloat(val) !== Settings.centerFreq()){
-            Settings.centerFreq(Settings.Set, val)
+            Settings.centerFreq(Com.OpSet, val)
             analyzeMenu.reloadParams()
             analyzeMenu.updateParams()
         }

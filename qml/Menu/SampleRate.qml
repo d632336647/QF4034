@@ -92,7 +92,7 @@ Flipable{
     }
     function setParam(val)
     {
-        Settings.captureRate(Settings.Set, val)
+        Settings.captureRate(Com.OpSet, val)
         gatherMenu.updateParams()
     }
 }

@@ -59,7 +59,7 @@ Rectangle{
             onClick: {
                 var ch = Settings.paramsSetCh();
                 ch = ch?0:1;
-                Settings.paramsSetCh(Settings.Set, ch);
+                Settings.paramsSetCh(Com.OpSet, ch);
                 btn_centerfreq.state = "toFront"
                 btn_bandwidth.state  = "toFront"
                 btn_resolution.state = "toFront"
@@ -167,7 +167,8 @@ Rectangle{
     ]
     //！--过渡动画结束
     Component.onCompleted: {
-        updateParams()
+        setAnalyzeParam()
+        idBottomPannel.updateParams()
     }
     function reloadParams()
     {
@@ -176,7 +177,7 @@ Rectangle{
         btn_resolution.loadParam()
         btn_reference.loadParam()
     }
-    function updateParams()
+    function setAnalyzeParam()
     {
         var centerFreq =  Settings.centerFreq()
         var bandwidth  =  Settings.bandWidth()
@@ -185,8 +186,12 @@ Rectangle{
         console.log("centerFreq:"+centerFreq+" bandwidth:"+bandwidth+" resolution:"+resolution)
         console.log(" ")
         dataSource.setFFTParam(centerFreq, bandwidth, resolution)
-        idScopeView.changeAnalyzeMode()
+    }
+    function updateParams()
+    {
+        setAnalyzeParam();
         idBottomPannel.updateParams()
+        idScopeView.changeAnalyzeMode()
     }
 }
 

@@ -257,7 +257,7 @@ Item {
                 if(dataSource.addHistoryFile("series3",selectedFilename))
                 {
                     listView.currentItem.flag.color = Com.series_color3
-                    Settings.historyFile3(Settings.Set, selectedFilename);
+                    Settings.historyFile3(Com.OpSet, selectedFilename);
                 }
                 else
                 {
@@ -286,7 +286,7 @@ Item {
                 if(dataSource.addHistoryFile("series2",selectedFilename))
                 {
                     listView.currentItem.flag.color = Com.series_color2
-                    Settings.historyFile2(Settings.Set, selectedFilename);
+                    Settings.historyFile2(Com.OpSet, selectedFilename);
                 }
                 else
                 {
@@ -315,7 +315,7 @@ Item {
                 if(dataSource.addHistoryFile("series1",selectedFilename))
                 {
                     listView.currentItem.flag.color = Com.series_color1
-                    Settings.historyFile1(Settings.Set, selectedFilename);
+                    Settings.historyFile1(Com.OpSet, selectedFilename);
                 }
                 else
                 {
@@ -394,17 +394,17 @@ Item {
         switch(index)
         {
         case 0:
-            Settings.historyFile1(Settings.Set,"")
+            Settings.historyFile1(Com.OpSet,"")
             dataSource.delHistoryFile("series1")
             color = Com.series_color1
             break;
         case 1:
-            Settings.historyFile2(Settings.Set,"")
+            Settings.historyFile2(Com.OpSet,"")
             dataSource.delHistoryFile("series2")
             color = Com.series_color2
             break;
         case 2:
-            Settings.historyFile3(Settings.Set,"")
+            Settings.historyFile3(Com.OpSet,"")
             dataSource.delHistoryFile("series3")
             color = Com.series_color3
             break;
@@ -444,21 +444,21 @@ Item {
         {
             isExist = true;
             text = (idx!==0?"通道1已关闭":"通道1已更新")
-            Settings.historyFile1(Settings.Set,"")
+            Settings.historyFile1(Com.OpSet,"")
             dataSource.delHistoryFile("series1")
         }
         else if(Qt.colorEqual(cur_color, Com.series_color2))
         {
             isExist = true;
             text = (idx!==1?"通道2已关闭":"通道2已更新")
-            Settings.historyFile2(Settings.Set,"")
+            Settings.historyFile2(Com.OpSet,"")
             dataSource.delHistoryFile("series2")
         }
         else if(Qt.colorEqual(cur_color, Com.series_color3))
         {
             isExist = true;
             text = (idx!==2?"通道3已关闭":"通道3已更新")
-            Settings.historyFile3(Settings.Set,"")
+            Settings.historyFile3(Com.OpSet,"")
             dataSource.delHistoryFile("series3")
         }
 

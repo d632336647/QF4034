@@ -8,10 +8,11 @@
 
 #include "fileIO.h"
 #include "settings.h"
-#include "SliChart/waterfallplot.h"
+#include "SliChart/WaterfallPlot.h"
 #include "SliChart/ChartCtrl.h"
-#include "SliChart/datasource.h"
-#include "SliChart/capturethread.h"
+#include "SliChart/DataSource.h"
+#include "SliChart/CaptureThread.h"
+#include "SliChart/SpectrumData.h"
 QT_CHARTS_USE_NAMESPACE
 
 void clearLog(){
@@ -121,6 +122,9 @@ int main(int argc, char *argv[])
 
 
     QQuickView viewer;
+    Settings settings(&viewer);
+    settings.load();
+
     QObject::connect(viewer.engine(), &QQmlEngine::quit, &viewer, &QWindow::close);
     //QObject::connect(viewer.engine(), SIGNAL(quit()), qApp, SLOT(quit()));
 
@@ -129,8 +133,7 @@ int main(int argc, char *argv[])
 
     //qDebug()<<app.applicationDirPath()+"/QMLPlugin";
     viewer.engine()->addImportPath("D:/QMLPlugin");
-    Settings   settings(&viewer);
-    settings.load();
+
     DataSource dataSource(&viewer, &settings);
     ChartCtrl  chartCtrl(&viewer);
 
@@ -142,6 +145,8 @@ int main(int argc, char *argv[])
     viewer.rootContext()->setContextProperty("Settings", &settings);
     viewer.rootContext()->setContextProperty("captureThread", &captureThread);
     qmlRegisterType<WaterfallPlot>("WaterfallPlot", 1, 0, "WaterfallPlot");
+    qmlRegisterType<SpectrumData>("SpectrumData", 1, 0, "SpectrumData");
+
 
     //QObject::connect(viewer.engine(), SIGNAL(quit()), &captureThread, SLOT(exit()));
 

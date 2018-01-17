@@ -98,7 +98,7 @@ Flipable{
             messageBox.visible = true
         }
         if(parseInt(val) !== Settings.resolutionSize()){
-            Settings.resolutionSize(Settings.Set, val)
+            Settings.resolutionSize(Com.OpSet, val)
             analyzeMenu.reloadParams()
             analyzeMenu.updateParams()
         }

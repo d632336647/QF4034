@@ -5,7 +5,6 @@
         <file>qml/Inc.js</file>
         <file>qml/RightControlPanel.qml</file>
         <file>qml/BottomPanel.qml</file>
-        <file>qml/ScopeView.qml</file>
         <file>qml/UI/TextInputUnit.qml</file>
         <file>qml/UI/RightButton.qml</file>
         <file>qml/UI/BottomRect.qml</file>

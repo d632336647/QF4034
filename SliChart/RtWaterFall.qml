@@ -100,6 +100,7 @@ Rectangle {
             width: 58
             color: root.color
             //color: "red"
+            //visible: false
 
         }
 
@@ -148,12 +149,6 @@ Rectangle {
         }
 
     }//!-- ChartView end
-    WaterfallPlot{
-        id: waterfallPlot
-        anchors.fill: parent
-        referMin: 80
-        minHPixel: 10
-    }
     Timer{
         id:rtWfTimer
         interval: 1000;
@@ -196,7 +191,18 @@ Rectangle {
         }
     }
     //!--ctrl panel end
-
+    WaterfallPlot{
+        id: waterfallPlot
+        anchors.fill: parent
+        referMin: 80
+        minHPixel: 10
+        channelIdx: chIndex
+        source: dataSource
+        onLineCountChanged: {
+            //console.log("WaterfallPlot lineCount:",lineCount)
+            //idAxisX.max = lineCount
+        }
+    }
     // Add data dynamically to the series
     Component.onCompleted: {
 
@@ -235,6 +241,14 @@ Rectangle {
     function updateWaterfallPlotRef(min, max)
     {
         waterfallPlot.updateRefLebel(min, max)
+    }
+    function closeWTFRtData()
+    {
+        waterfallPlot.closeWaterfallRtCapture();
+    }
+    function openWTFRtData()
+    {
+        waterfallPlot.openWaterfallRtCapture()
     }
     function updateAxisX(axisX, centerFreq, bandwidth)
     {
@@ -310,9 +324,11 @@ Rectangle {
         minBandwidth =  (idAxisX.tickCount - 1) * resolution / 1.0;
         maxBandwidth = bandwidth * 1000000;
 
-        var max = dataSource.updateWaterfallPlotFromFile(waterfallPlot, file);
-        if(max > 0)
-            idAxisY.max = max;
+
+
+        dataSource.updateWaterfallPlotFromFile(root.chIndex, file);
+        idAxisY.max = waterfallPlot.lineCount;
+        //console.log("WaterfallPlot ch",root.chIndex,"updateFile lineCount:",idAxisY.max)
 
         bottomLeft.x = idAxisX.min;
         topRight.x   = idAxisX.max;
@@ -334,15 +350,16 @@ Rectangle {
         if(!visible)
             return;
 
-        dataSource.openWaterfallRtCapture(waterfallPlot)
-
+        //dataSource.openWaterfallRtCapture(waterfallPlot)//deprecate
+        waterfallPlot.openWaterfallRtCapture();
         updateAxisX(idAxisX, centerFreq, bandwidth);
         minBandwidth =  (idAxisX.tickCount - 1) * resolution / 1.0;
         maxBandwidth = bandwidth * 1000000;
 
+        //Rt mode = 50
         var max = 50
         if(max > 0)
-            idAxisY.max = max;
+            idAxisY.max = 50;
 
         bottomLeft.x = idAxisX.min;
         topRight.x   = idAxisX.max;
@@ -361,18 +378,23 @@ Rectangle {
     }
     function startRtTimer()//较为安全的定时器临界处理方法,勿直接使用stop/start
     {
-        console.log("waterfall startRtTimer")
-        rtWfTimer.callback = waterfallPlot.safeUpdate
-        rtWfTimer.start()
+        if(!rtWfTimer.running){
+            console.log("waterfall ch",chIndex,"start timer")
+            rtWfTimer.callback = waterfallPlot.safeUpdate
+            rtWfTimer.start()
+        }
     }
     function stopRtTimer()
     {
-        console.log("waterfall stopRtTimer")
-        rtWfTimer.callback = undefined
-        rtWfTimer.stop()
+        if(rtWfTimer.running){
+            console.log("waterfall ch",chIndex,"stop  timer")
+            rtWfTimer.callback = undefined
+            rtWfTimer.stop()
+        }
     }
     function updateParams()
     {
+        console.log("RtWaterFall ch",chIndex,"updateParams")
         centerFreq = Settings.centerFreq()
         bandwidth  = Settings.bandWidth()
         resolution = Settings.resolutionSize()
@@ -380,7 +402,6 @@ Rectangle {
         stopRtTimer()
         waterfallPlot.setFileMode()
         if(realTimeMode){
-            console.log("waterfall realTimeMode")
             waterfallPlot.setRtMode()
             updatData()
             startRtTimer()

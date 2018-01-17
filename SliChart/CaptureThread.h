@@ -9,9 +9,10 @@
 #include <QtCharts/QAbstractSeries>
 #include <QtCharts/QScatterSeries>
 #include <QtCharts/QXYSeries>
+#include <QMutex>
 #include "spectrum.h"
-#include "waterfallplot.h"
-#include "datasource.h"
+#include "WaterfallPlot.h"
+#include "DataSource.h"
 
 QT_BEGIN_NAMESPACE
 class QQuickView;
@@ -27,7 +28,6 @@ class CaptureThread : public QThread
 public:
     CaptureThread(DataSource *ds);
 
-    Q_INVOKABLE void setSeries(QAbstractSeries *s);
     Q_INVOKABLE void startCapture(void);
     Q_INVOKABLE void stopCapture(void);
     Q_INVOKABLE bool isRunning(void);
@@ -35,8 +35,8 @@ public slots:
     void exit(void);
 private:
     void run();
+    QMutex pause;
     bool run_state;
-    QAbstractSeries *series;
     DataSource *data_source;
     WaterfallPlot *waterfall;
 };

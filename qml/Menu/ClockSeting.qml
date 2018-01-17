@@ -159,7 +159,7 @@ Rectangle{
         else
             gatherMenu.setSampRateReadOnly(true)
 
-        Settings.clkMode(Settings.Set, val)
+        Settings.clkMode(Com.OpSet, val)
         gatherMenu.updateParams()
     }
 }

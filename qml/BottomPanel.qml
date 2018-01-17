@@ -60,7 +60,7 @@ Rectangle {
                     else
                         mode = 0;
                     showMode(mode)
-                    Settings.channelMode(Settings.Set, mode)
+                    Settings.channelMode(Com.OpSet, mode)
                     idScopeView.changeChannelMode(mode);
                 }
                 function showMode(mode)
@@ -77,7 +77,7 @@ Rectangle {
             StateRect{
                 id:idClkMode
                 textLabel:"时钟模式:"
-                textData:clkMode[Settings.clkMode()]
+                textData:clkMode[Settings.clkMode(2)]
             }
             StateRect{
                 id:idTriggerMode
@@ -113,7 +113,7 @@ Rectangle {
                 onClicked: {
                     var ch = Settings.paramsSetCh();
                     ch = ch?0:1;
-                    Settings.paramsSetCh(Settings.Set, ch)
+                    Settings.paramsSetCh(Com.OpSet, ch)
                     showName(ch)
                 }
                 function showName(ch)
@@ -144,7 +144,7 @@ Rectangle {
         idCaptureRate.textData = Settings.captureRate()+" Msps"
         idCaptureMode.textData = captureMode[Settings.captureMode()]
         idTriggerMode.textData = triggerMode[Settings.triggerMode()]
-        idClkMode.textData     = clkMode[Settings.clkMode()]
+        idClkMode.textData     = clkMode[Settings.clkMode(2)]
         idCenterFreq.textData  = Settings.centerFreq()+" MHz"
         idBandWidth.textData   = Settings.bandWidth()+" MHz"
         //idMarkRange.textData = Settings.markRange()+" dBm"

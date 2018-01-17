@@ -145,7 +145,7 @@ Rectangle{
     }
     function setParam(val)
     {
-        Settings.saveMode(Settings.Set, val)
+        Settings.saveMode(Com.OpSet, val)
         saveCfgMenu.updateParams()
     }
 }

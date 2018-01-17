@@ -36,12 +36,13 @@
 #include <QtCharts/QXYSeries>
 #include <QReadWriteLock>
 #include <QFile>
+#include <QMap>
 
 #include "settings.h"
 #include "spectrum.h"
-#include "waterfallplot.h"
 #include "pcieCardAPI.h"
 #include "pciDeviceAPI.h"
+#include "WaveInfo.h"
 
 QT_BEGIN_NAMESPACE
 class QQuickView;
@@ -51,33 +52,11 @@ QT_CHARTS_USE_NAMESPACE
 
 #define NATIVE_DEBUG 1
 
-class WaveInfo
-{
-public:    
-    WaveInfo();
-    WaveInfo(QXYSeries *xySeries, QVector<QPointF> points);
-    ~WaveInfo();
+#define CHNUM (2)
 
-    void reset();
-//    QVector<QPointF> &points();
-
-    QXYSeries *m_xySeries;
-    QVector<QPointF> m_points;
-    QPointF m_peakPoint;
-    QVector<qreal> m_dx;
-    QVector<qreal> m_dy;
-    qreal m_xMax;
-    qreal m_xMin;
-    qreal m_yMax;
-    qreal m_yMin;
-};
 class DataSource : public QObject
 {
     Q_OBJECT
-
-    Q_PROPERTY(QPointF peakPoint0 READ getPeakPoint0() NOTIFY peakPointChanged(0))
-    Q_PROPERTY(QPointF peakPoint1 READ getPeakPoint1() NOTIFY peakPointChanged(1))
-    Q_PROPERTY(QPointF peakPoint2 READ getPeakPoint2() NOTIFY peakPointChanged(2))
 
 public:
     explicit DataSource(QObject *parent = 0, Settings *st = nullptr);
@@ -86,22 +65,24 @@ public:
 
     void settingHandle(Settings *st);
 
+    QVector<QPointF> getFFTPoints(int ch, int idx);
+    QVector<double>  getWaterfallPoints(int ch);
 signals:
+    void updateFFTPoints(int ch, int idx);//更新频谱图,包含实时和文件，且同时更新实时瀑布图
+    void updateWaterfallFile(int ch, qreal bw, qreal cfreq);//更新文件瀑布图
+
     void storeEnd(QString writedLen);
-    void peakPointChanged(int idx);
-Q_SIGNALS:
 
 public slots:
     void changeAxis(QAbstractAxis *axis);
 
     //分析参数--fft
-    void updateFreqDodminFromData(QAbstractSeries *series);
+    void updateFreqDodminFromData(void);
     void updateFreqDodminFromFile(QAbstractSeries *series, QString fileName);
     void setFFTParam(double centerFreq, double bandwidth, int resolution);
-    int  getWaterfallLineCount(QString fileName);
-    void openWaterfallRtCapture(WaterfallPlot *wf);
-    void closeWaterfallRtCapture(void);
-    int  updateWaterfallPlotFromFile(WaterfallPlot *waterfallPlot, QString fileName);
+    //void openWaterfallRtCapture(WaterfallPlot *wf);
+    //void closeWaterfallRtCapture(void);
+    int  updateWaterfallPlotFromFile(int ch, QString fileName);
     void updateTimeDomainFromFile(QAbstractSeries *series1, QAbstractSeries *series2, QString fileName);
     QPointF getWaveInfoBottomLeft(QAbstractSeries *series);
     QPointF getWaveInfoTopRight(QAbstractSeries *series);
@@ -124,17 +105,6 @@ public slots:
     bool startSample();
     bool stopSample();
 
-    QPointF getPeakPoint0(void);
-    QPointF getPeakPoint1(void);
-    QPointF getPeakPoint2(void);
-    void    refreshPeakPoint(int idx);
-    bool    updateCurMinMax(double min, double max);
-    void    setCurrentPeakX(int series_idx, qreal x);
-
-
-    void    setForceRefresh(void);
-    //智能抽点显示
-    void    smartUpdateSeries(QAbstractSeries *series);
 
     //历史文件相关函数
     void    setFileOffset(QString objname, qreal percent);
@@ -146,20 +116,11 @@ public slots:
 
     void    clearFilter(void);
 private:
-    void cutShowPoint(QVector<QPointF> &source_points, QVector<QPointF> &show_points);
-    void workAllPoint(QVector<double> &fftData, QVector<QPointF> &points);
-    void freeVVector(QVector<QVector<double>> &vvector);
-    QFile *getFile(QString objname);
-    void smooth(QVector<QPointF> &dst_points);
-
-
-    //计算mark点及切点参数
-    QPointF maxPoint;
-    QPointF m_peakpoint[3];
-    qreal   m_peak_x[3];
-    bool    refresh_peak[3];
-    double  cur_axis_min;
-    double  cur_axis_max;
+    void    cutShowPoint(QVector<QPointF> &source_points, QVector<QPointF> &show_points);
+    void    workAllPoint(QVector<double> &fftData, QVector<QPointF> &points);
+    void    freeVVector(QVector<QVector<double>> &vvector);
+    QFile   *getFile(QString objname);
+    void    smooth(QVector<QPointF> &dst_points);
 
 
     //pcie device
@@ -176,19 +137,20 @@ private:
     int m_captureSize;  //存储文件大小或者时长
 
     //瀑布图采集的相关参数
-    bool m_start_wf;
-    WaterfallPlot *m_waterfall;
-    int m_wf_fps;
+    //bool m_start_wf;
+    //WaterfallPlot *m_waterfall;
+    //int  m_wf_fps;
 
 
     //分析参数--fft
     QVector<WaveInfo> m_waveInfo;
-    int m_fftCount;
+
+    int    m_fftCount;
     double m_centerFreq;//MHz
     double m_bandwidth;//MHz
-    int m_resolution;//Hz
+    int    m_resolution;//Hz
     Spectrum m_spectrum;
-    bool m_force_refresh;//强制刷新series,用以解决分析参数变更后serise没有立即刷新的问题
+
 
     //储存设置    
     int m_storeMedia; //0: 内部存储  1: 外部存储
@@ -196,20 +158,23 @@ private:
     QString m_filePath;
     bool m_isStoring;  //0: 停止.  1:正在采集
 
-    QReadWriteLock lock;//文件读写锁
+    QReadWriteLock fftlock;//频谱图 文件读写锁
+    QReadWriteLock wtflock;//瀑布图 文件读写锁
 
-    QVector<QPointF> m_show_points[3];//暂存数据，0=series1  1=series2  2=series3
+
+    QVector<QPointF> m_show_points[CHNUM][3];//暂存数据，0=series1  1=series2  2=series3
+    QVector<double>  m_waterfall_points[CHNUM];//瀑布图一行的数据
+
 
     //历史文件分析相关参数
     QMap<QString, QFile*>    fileMap;
     QMap<QString, qreal>     filePercent;//filePercent.value(series->objectName());
 
 
-    //参数变量
-    Settings *m_settings;
-
     //滑动滤波
     QVector<QVector<QPointF>> filterData;
+
+    Settings *m_settings;
 };
 
 #endif // DATASOURCE_H

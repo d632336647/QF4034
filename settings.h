@@ -14,31 +14,30 @@
 class Settings : public QObject
 {
     Q_OBJECT
+    Q_ENUMS(option)
 public:
     explicit Settings(QObject *parent = nullptr);
     ~Settings();
     enum option{
         Set = 0,
-        Get
+        Get = 1,
     };
-
-    Q_ENUMS(option)
 
     Q_INVOKABLE void save(void);
     Q_INVOKABLE void load(void);
 
-    Q_INVOKABLE int   clkMode(option op=Get, int val=0);
-    Q_INVOKABLE int   triggerMode(option op=Get, int val=0);
-    Q_INVOKABLE int   captureMode(option op=Get, int val=0);
-    Q_INVOKABLE int   captureSize(option op=Get, int val=0);
-    Q_INVOKABLE qreal captureRate(option op=Get, qreal val=0);
+    Q_INVOKABLE int   clkMode(option     op=Get, int   val=0, int ch=MAXCH);
+    Q_INVOKABLE int   triggerMode(option op=Get, int   val=0, int ch=MAXCH);
+    Q_INVOKABLE int   captureMode(option op=Get, int   val=0, int ch=MAXCH);
+    Q_INVOKABLE int   captureSize(option op=Get, int   val=0, int ch=MAXCH);
+    Q_INVOKABLE qreal captureRate(option op=Get, qreal val=0, int ch=MAXCH);
 
-    Q_INVOKABLE int   analyzeMode(option op=Get, int val=0);
-    Q_INVOKABLE qreal centerFreq(option op=Get, qreal val=0);
-    Q_INVOKABLE qreal bandWidth(option op=Get, qreal val=0);
-    Q_INVOKABLE int   resolutionSize(option op=Get, int val=0);
-    Q_INVOKABLE qreal reflevelMin(option op=Get, qreal val=0);
-    Q_INVOKABLE qreal reflevelMax(option op=Get, qreal val=0);
+    Q_INVOKABLE int   analyzeMode(option op=Get, int   val=0, int ch=MAXCH);
+    Q_INVOKABLE qreal centerFreq(option  op=Get, qreal val=0, int ch=MAXCH);
+    Q_INVOKABLE qreal bandWidth(option   op=Get, qreal val=0, int ch=MAXCH);
+    Q_INVOKABLE int   resolutionSize(option op=Get,int val=0, int ch=MAXCH);
+    Q_INVOKABLE qreal reflevelMin(option op=Get, qreal val=0, int ch=MAXCH);
+    Q_INVOKABLE qreal reflevelMax(option op=Get, qreal val=0, int ch=MAXCH);
 
 
     Q_INVOKABLE int   saveMode(option op=Get, int val=0);

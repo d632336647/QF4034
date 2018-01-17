@@ -1,4 +1,4 @@
-#include "waterfallplot.h"
+#include "WaterfallPlot.h"
 
 WaterfallPlot::WaterfallPlot(QQuickItem *parent)
     : QQuickPaintedItem(parent)
@@ -33,6 +33,9 @@ WaterfallPlot::WaterfallPlot(QQuickItem *parent)
     initRgbMap();
     m_rt_times = 50;
     m_rt_mode = false;
+
+    channel_idx = 0;
+    m_refresh = false;
 }
 WaterfallPlot::~WaterfallPlot(){
 
@@ -63,7 +66,22 @@ void WaterfallPlot::setReferMin(double val){
         updateCoefficent();
     }
 }
-
+int WaterfallPlot::getChannelIdx(void)
+{
+    return channel_idx;
+}
+void WaterfallPlot::setChannelIdx(int ch)
+{
+    channel_idx = ch;
+}
+int  WaterfallPlot::getlineCount(void)
+{
+    return line_count;
+}
+void WaterfallPlot::setlineCount(int count)
+{
+    line_count = count;
+}
 int WaterfallPlot::minHPixel(){
     return m_minHPixel;
 }
@@ -71,7 +89,16 @@ void WaterfallPlot::setMinHPixel(int count){
     if(count)
         m_minHPixel = count;
 }
-
+DataSource* WaterfallPlot::getSource(void)
+{
+    return data_source;
+}
+void WaterfallPlot::setSource(DataSource *ds)
+{
+    data_source = ds;
+    connect(data_source, SIGNAL(updateFFTPoints(int, int)), this, SLOT(refreshWaterfallData(int, int)) );
+    connect(data_source, SIGNAL(updateWaterfallFile(int, qreal, qreal)),  this, SLOT(refreshWaterfallFile(int, qreal, qreal)) );
+}
 
 /*
  * RGB    0,   0, 250
@@ -211,47 +238,64 @@ void WaterfallPlot::cutShowPoint(qreal bandwidth, qreal centerFreq, QVector<doub
     //qDebug()<<"reduce_cnt"<<reduce_cnt;
     //qDebug()<<" "<<show_points.at(0)<<" "<<show_points.last();
 }
-
-
-int WaterfallPlot::updateData(qreal bandwidth, qreal centerFreq, QVector<QVector<double>> &origData){
+void WaterfallPlot::refreshWaterfallData(int ch, int idx)
+{
+    if(ch == channel_idx){
+        QVector<QPointF> show_points;
+        //qDebug()<<"refreshWaterfallData: ch:"<<ch<<"idx:"<<idx;
+        show_points.clear();
+        show_points = data_source->getFFTPoints(ch, idx);
+        if(!show_points.isEmpty())
+            this->updateDataRT(show_points);
+    }
+}
+void WaterfallPlot::refreshWaterfallFile(int ch, qreal bw, qreal cfreq)
+{
+    if(ch == channel_idx){
+        //qDebug()<<"refreshWaterfallFile: ch:"<<ch<<"bw:"<<bw<<"cfreq:"<<cfreq;
+        QVector<double> show_points;
+        show_points.clear();
+        show_points = data_source->getWaterfallPoints(ch);
+        if(!show_points.isEmpty()){
+            line_count  = this->updateData(bw, cfreq, show_points);
+            emit lineCountChanged();
+        }
+    }
+}
+int WaterfallPlot::updateData(qreal bandwidth, qreal centerFreq, QVector<double> &dataLine){
     m_xCountOrig = 0;
     m_yCountOrig = 0;
     m_xCount = 0;
     m_yCount = 0;
     m_xStart = 0;
 
-    //image_lines.clear();
+    QVector<QRgb> colorLine;
+    colorLine.reserve(dataLine.count());
+    QVector<double> show_points;
+    this->cutShowPoint(bandwidth, centerFreq, dataLine, show_points);
+    foreach (double point, show_points) {
 
-    foreach (QVector<double> dataLine, origData) {
-
-        QVector<QRgb> colorLine;
-        colorLine.reserve(dataLine.count());
-        QVector<double> show_points;
-        this->cutShowPoint(bandwidth, centerFreq, dataLine, show_points);
-        foreach (double point, show_points) {
-
-            colorLine.append(getColor(point));
-        }
-        int img_w = colorLine.size();
-        QImage img(img_w, 1, QImage::Format_RGB888);
-        for(int x=0; x<img_w; x++)
+        colorLine.append(getColor(point));
+    }
+    int img_w = colorLine.size();
+    QImage img(img_w, 1, QImage::Format_RGB888);
+    for(int x=0; x<img_w; x++)
+    {
+        img.setPixel(x, 0, colorLine[x]);
+    }
+    if(!img.isNull())
+    {
+        if(image_lines.size() >= m_rt_times)
         {
-            img.setPixel(x, 0, colorLine[x]);
+            image_lines.removeLast();
         }
-        if(!img.isNull())
-        {
-            if(image_lines.size() >= m_rt_times)
-            {
-                image_lines.removeLast();
-            }
-            image_lines.insert(0, img);
+        image_lines.insert(0, img);
 
-            m_yCountOrig = image_lines.count();
-            m_yCount = m_yCountOrig;
-            if(m_yCount)
-                m_xCountOrig = colorLine.count();
-            m_xCount = m_xCountOrig;
-        }
+        m_yCountOrig = image_lines.count();
+        m_yCount = m_yCountOrig;
+        if(m_yCount)
+            m_xCountOrig = colorLine.count();
+        m_xCount = m_xCountOrig;
     }
 
     //qDebug()<<"WaterfallPlot  m_xStart:"<<m_xStart<<"m_xCount:"<<m_xCount<<"m_yCount:"<<m_yCount<<"size:"<<image_lines.size()<<"count:"<<image_lines.count();
@@ -260,8 +304,10 @@ int WaterfallPlot::updateData(qreal bandwidth, qreal centerFreq, QVector<QVector
 }
 
 
-void WaterfallPlot::updateDataRT(QVector<QPointF> &dataLine){
-    lock.lockForWrite();
+void WaterfallPlot::updateDataRT(QVector<QPointF> &dataLine)
+{
+    if(!m_refresh)
+        return;
 
     m_xCountOrig = 0;
     m_yCountOrig = 0;
@@ -296,8 +342,6 @@ void WaterfallPlot::updateDataRT(QVector<QPointF> &dataLine){
             m_xCountOrig = colorLine.count();
         m_xCount = m_xCountOrig;
     }
-
-    lock.unlock();
 }
 void WaterfallPlot::clearPixelColor(void)
 {
@@ -305,6 +349,8 @@ void WaterfallPlot::clearPixelColor(void)
     m_yCount = 0;
     image_lines.clear();
 }
+
+
 
 void WaterfallPlot::paint(QPainter *painter){
     if(!m_xCount || !m_yCount)
@@ -431,7 +477,15 @@ void WaterfallPlot::setAxisXData(float cur_min, float cur_max, float min, float 
     m_axisx_max = max;
     //qDebug()<<"cur_min:"<<cur_min<<"cur_max:"<<cur_max<<"min:"<<min<<"max:"<<max;
 }
-
+void WaterfallPlot::openWaterfallRtCapture(void)//clearPixelColor
+{
+    this->clearPixelColor();
+    m_refresh = true;
+}
+void WaterfallPlot::closeWaterfallRtCapture(void)
+{
+    m_refresh = false;
+}
 
 void WaterfallPlot::safeUpdate(void)
 {

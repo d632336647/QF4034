@@ -98,7 +98,7 @@ Flipable{
             messageBox.visible = true
         }
         if(parseFloat(val) !== Settings.bandWidth()){
-            Settings.bandWidth(Settings.Set, val)
+            Settings.bandWidth(Com.OpSet, val)
             analyzeMenu.reloadParams()
             analyzeMenu.updateParams()
         }

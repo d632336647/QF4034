@@ -165,7 +165,7 @@ Rectangle{
     }
     function setParam(val)
     {
-        Settings.analyzeMode(Settings.Set, val)
+        Settings.analyzeMode(Com.OpSet, val)
         analyzeMenu.updateParams()
         //Settings.save();
     }

@@ -85,7 +85,7 @@ Flipable{
     }
     function setParam(val)
     {
-        Settings.captureSize(Settings.Set, val)
+        Settings.captureSize(Com.OpSet, val)
         gatherMenu.updateParams()
 
     }

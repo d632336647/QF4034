@@ -72,7 +72,7 @@ Rectangle{
             fileName = s[s.length - 1]
             //console.log(fullPath);
             fileBtn.click();
-            Settings.filePath(Settings.Set, fullPath)
+            Settings.filePath(Com.OpSet, fullPath)
         }
         onRejected: {
             fullPath = ""

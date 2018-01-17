@@ -20,9 +20,9 @@ struct FileStoreStatus{
 };
 
 struct DAMStatus{
-	uint m_dmaBufferSize;		/* DMA每次传输大小 */
-	uint m_dmaNeedTransCount;	/* DMA需要的总次数 */
-	uint m_dmaTransedCount;		/* DMA实际传输次数 */
+	uint64 m_dmaBufferSize;		/* DMA每次传输大小 */
+	uint64 m_dmaNeedTransCount;	/* DMA需要的总次数 */
+	uint64 m_dmaTransedCount;		/* DMA实际传输次数 */
 	uint64 m_dmaTansTotalSize;	/* DMA实际传输总大小 */
 	double m_timePass;			/* DMA当前传输时间 */
 	double m_speed;				/* 速度MB/Sec. */
