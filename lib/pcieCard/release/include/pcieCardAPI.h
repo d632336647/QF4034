@@ -33,7 +33,7 @@ public:
 	
 	void startSample();
 	void stopSample();
-	int getSampleData(uchar *dataBuf, int dataLen);
+        int  getSampleData(uchar *dataBuf, int dataLen);
 
 	void getCardStatus(CardStatus& status);
 	void getStoreStatus(FileStoreStatus& status);

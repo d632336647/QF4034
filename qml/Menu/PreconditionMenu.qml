@@ -141,7 +141,7 @@ Rectangle{
     function updateParams()
     {
         var outmode = 0;
-        var chCount = 1;
+        var chCount = 2;
         var ddcfreq = 70.000;//MHz
         var extractfactor = 4;
         var fsbcoef  = 0;//1.25B

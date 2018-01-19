@@ -47,10 +47,9 @@ void CaptureThread::run()
     {
         pause.lock();
         if(run_state){
-            //data_source->updateFreqDodminFromData();
-            qDebug()<<"Capture running";
-            //usleep(200*1000);
-            sleep(1);
+            data_source->updateFreqDodminFromData();
+            //qDebug()<<"Capture running";
+            usleep(200*1000);
         }else
             usleep(1);
         pause.unlock();

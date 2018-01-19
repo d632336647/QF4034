@@ -92,6 +92,7 @@ DataSource::DataSource(QObject *parent, Settings *st)
 
 #endif
 
+
     for(int ch = 0; ch<CHNUM; ch++)
     {
         m_show_points[ch][0].clear();
@@ -139,17 +140,15 @@ void DataSource::updateFreqDodminFromData(void)
         return;
     }
 
-    int max_count = m_bandwidth*1000000/m_resolution * 8;
+    //1FFT点 = 1对IQ = 2个short类型 = 4 char类型，
+    //对于多通道， 还要 x通道数
 
-    //int max_count = 1700000 * 8;
+    qint64 fft_count = 10000 * 4 * 2;
 
-#if 0
-    int max_count = 0;
-    if(cur_axis_max - cur_axis_min < 1)
-        max_count = 50000000 / 30 * 8;
-    else
-        max_count = m_bandwidth*1000000/m_resolution * 8;
-#endif
+    qint64 max_count = m_bandwidth*1000000/m_resolution * 8;
+    max_count = max_count * CHNUM;
+
+    max_count = fft_count;
 
     //qDebug()<<"1111111:"<<QDateTime::currentDateTime();
     uchar *sampleData = new uchar[max_count];
@@ -159,28 +158,39 @@ void DataSource::updateFreqDodminFromData(void)
         qDebug()<<"getSampleData failed";
         return;
     }
-    //qDebug()<<"2222222:"<<QDateTime::currentDateTime();
-    QVector<double> fftData;
-    if(!m_spectrum.fftFromData((signed short *)sampleData, max_count/4, fftData)){
-        qDebug()<<"fftFromData failed";
-        return;
+
+
+    QVector<QVector<signed short>> orgdata;
+    this->separateData(CHNUM, sampleData, len,  orgdata);
+    for(int ch=0; ch<orgdata.size(); ch++)
+    {
+        QVector<signed short> vdata = orgdata.at(ch);
+        QVector<double> fftData;
+        if(vdata.size()>0){
+            if(!m_spectrum.fftFromData(vdata.data(), vdata.size()/2, fftData)){
+                qDebug()<<"fftFromData failed";
+                return;
+            }
+
+        //qDebug()<<"3333333:"<<QDateTime::currentDateTime();
+        QVector<QPointF> points;
+        this->workAllPoint(fftData, points);
+
+        fftlock.lockForWrite();//文件读写锁
+        m_show_points[ch][0].clear();
+        this->cutShowPoint(points, m_show_points[ch][0]);
+
+        //this->smooth(m_show_points[0]);
+
+        fftlock.unlock();
+
+        //qDebug()<<"emit updateFFTPoints ch:"<<ch<<"idx:"<<0;
+        emit updateFFTPoints(ch, 0);
+
+        //this->smartUpdateSeries(series);
+
+        }
     }
-    //qDebug()<<"3333333:"<<QDateTime::currentDateTime();
-    QVector<QPointF> points;
-    this->workAllPoint(fftData, points);
-
-    fftlock.lockForWrite();//文件读写锁
-    m_show_points[0][0].clear();
-    this->cutShowPoint(points, m_show_points[0][0]);
-
-    //this->smooth(m_show_points[0]);
-
-    fftlock.unlock();
-
-    emit updateFFTPoints(0, 0);
-
-    //this->smartUpdateSeries(series);
-    //qDebug()<<"4444444:"<<QDateTime::currentDateTime();
     delete[] sampleData;
 }
 void DataSource::updateFreqDodminFromFile(QAbstractSeries *series, QString fileName)
@@ -436,11 +446,11 @@ void DataSource::setCaptureParam(int clkMode, double captureFreq, int triggerMod
     //m_pcieCard->setDDC();
 }
 
-/******************************************var outMode = 0;
+/******************************************
  * PCIE 预处理参数设置， 必须在采集参数设置之后设置， CPCI无需设置
  * outMode  :输出模式            0=DDC模式(default)   1=ADC模式   2=测试模式
  * chCount  :通道个数设置         1=1通道    2=2通道  3=3通道  4=4通道
- * ddcFreq  :DDC载频             default = 70.000MHz
+ * ddcFreq  :DDC载频            default = 70.000MHz
  * extractFactor:抽取因子        见文档
  * fsbCoe   :Fs/B系数           0=1.25B(default)  1=2.5B
 *******************************************/
@@ -451,7 +461,7 @@ void DataSource::setPreConditionParam(int outMode, int chCount, double ddcFreq, 
         return;
     //EFsBType  type = FS_1_25B;
 
-    DDCParam  ddcParam = m_pcieCard->getDDC();
+    DDCParam  &ddcParam = m_pcieCard->getDDC();
     //ddcParam.m_ddc_din_sel   = outMode;
     ddcParam.m_rcd_ch14_sel    = chCount;
     ddcParam.m_recvFreq        = ddcFreq;
@@ -737,6 +747,38 @@ void DataSource::smooth(QVector<QPointF> &dst_points)
         dst_points.append( QPointF(x, y));
     }
 }
+void DataSource::separateData(int ch_count, uchar *source, qint64 size, QVector<QVector<signed short>> &sampdata)
+{
+    if(nullptr == source || size%2)
+        return;
+
+    signed short *pdata = (signed short *)source;
+    qint64 total = (size / 2);
+
+
+    //截取整数
+    total = (total/2)/ch_count;
+    total = total*ch_count*2;
+
+    if(total<ch_count)
+        return;
+
+    for(int ch_idx=0; ch_idx<ch_count; ch_idx++)
+    {
+        QVector<signed short> vdata;
+
+        for(qint64 idx=0; idx<total;)
+        {
+            int I = idx+ch_idx*ch_count;
+            int Q = I+1;
+            vdata.append(pdata[I]);
+            vdata.append(pdata[Q]);
+            idx = idx+ch_count*2;
+        }
+        sampdata.append(vdata);
+    }
+}
+
 void DataSource::cutShowPoint(QVector<QPointF> &source_points, QVector<QPointF> &show_points)
 {
     //根据用户配置的参数截取点数
@@ -761,8 +803,6 @@ void DataSource::cutShowPoint(QVector<QPointF> &source_points, QVector<QPointF> 
     //qDebug()<<"cut_count:"<<cut_count<<" show_start:"<<show_start<<" show_count:"<<show_count<<" capture_count:"<<capture_count;
 
 
-
-
     show_points.reserve(show_count);
     for (int i=0; i < show_count; i++) {
         show_points.append(source_points.at(show_start + i));
@@ -779,7 +819,6 @@ void DataSource::workAllPoint(QVector<double> &fftData, QVector<QPointF> &points
 
     points.reserve(capture_count);
     for (int i=0; i < capture_count; i++) {
-
         x = qreal(45.0) + qreal(50.0) * i / capture_count;//采集卡固定70M中心频率和50M带宽,因此Start = 70-50/2 = 45
         y = fftData[i];
         points.append(QPointF(x, y));

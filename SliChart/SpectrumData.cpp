@@ -33,6 +33,7 @@ int SpectrumData::getChannelIdx(void)
 void SpectrumData::setChannelIdx(int ch)
 {
     channel_idx = ch;
+    qDebug()<<"SpectrumData channel_idx:"<<channel_idx;
 }
 DataSource* SpectrumData::getSource(void)
 {

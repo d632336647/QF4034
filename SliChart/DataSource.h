@@ -116,6 +116,7 @@ public slots:
 
     void    clearFilter(void);
 private:
+    void    separateData(int ch_count, uchar *source, qint64 size, QVector<QVector<signed short>> &sampdata);
     void    cutShowPoint(QVector<QPointF> &source_points, QVector<QPointF> &show_points);
     void    workAllPoint(QVector<double> &fftData, QVector<QPointF> &points);
     void    freeVVector(QVector<QVector<double>> &vvector);
