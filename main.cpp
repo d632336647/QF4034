@@ -24,6 +24,7 @@ void clearLog(){
 }
 void outputMessage(QtMsgType type, const QMessageLogContext &context, const QString &msg)
 {
+    Q_UNUSED(context)
     static QMutex mutex;
     mutex.lock();
 

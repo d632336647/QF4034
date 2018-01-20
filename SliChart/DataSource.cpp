@@ -63,7 +63,7 @@ DataSource::DataSource(QObject *parent, Settings *st)
 
 
     m_pcieCard = NULL;
-#if 1
+
     m_pciDev = new PciDeviceAPI("spectrumAnalyzer", 0x1556, 0x1100);
     m_pciDev->scanCard();
     PcieCard *pcieObj = (PcieCard*)m_pciDev->getCard(1);
@@ -89,9 +89,6 @@ DataSource::DataSource(QObject *parent, Settings *st)
         qDebug() <<"Card Init Failed!";
         m_pcieCard = NULL;
     }
-
-#endif
-
 
     for(int ch = 0; ch<CHNUM; ch++)
     {
@@ -158,7 +155,6 @@ void DataSource::updateFreqDodminFromData(void)
         qDebug()<<"getSampleData failed";
         return;
     }
-
 
     QVector<QVector<signed short>> orgdata;
     this->separateData(CHNUM, sampleData, len,  orgdata);
@@ -468,6 +464,8 @@ void DataSource::setPreConditionParam(int outMode, int chCount, double ddcFreq, 
     ddcParam.m_ddc_rate        = extractFactor;
     ddcParam.m_ddc_coef_type   = (EFsBType)fsbCoef;
     m_pcieCard->setDDC();
+
+    m_settings->adjustMaxBandWidth();
 }
 
 

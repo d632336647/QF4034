@@ -20,7 +20,8 @@ Settings::Settings(QObject *parent) : QObject(parent)
     bandwidth[0] = 25.000;
     bandwidth[1] = 50.000;
 
-    initArray(resolution,   10000);  //分编率  单位Hz
+    initArray(resolution,   10000);  //分编率  单位Hz ，即将停止使用此参数，改为fft点数代替
+    initArray(fftpoints,    10000);  //fft点数
     initArray(reflevel_min, -120);   //参考电平最小值 -120
     initArray(reflevel_max, 10);     //参考电平最大值 10
 
@@ -32,6 +33,15 @@ Settings::Settings(QObject *parent) : QObject(parent)
     history2     = "";//历史文件路径2
     history3     = "";//历史文件路径3
 
+    //预处理参数
+    out_mode = 0;        //输出模式            0=DDC模式(default)   1=ADC模式   2=测试模式
+    ch_count = 2;        //通道个数设置         1=1通道    2=2通道  3=3通道  4=4通道
+    ddc_freq = 70;       //DDC载频            default = 70.000MHz ,目前只有70和140 两个值
+    extract_factor = 4;  //抽取因子           见文档
+    fsb_coef = 0;        //Fs/B系数           0=1.25B(default)  1=2.5B
+    base_bandwidth = 25.0;// 当前预处理参数下,内部计算实际的最大带宽值,如果要改变此参数,需要停止采集数据后再设置
+    user_bandwidth = 20.0;// 当前预处理参数下,允许用户设置的最大带宽,如果要改变此参数,需要停止采集数据后再设置
+    ad_sample = 100.0;   //AD采样率,目前只有100和200 两个值
 
     //暂时未用的参数
     mark_range      = -10;
@@ -56,6 +66,7 @@ Settings::~Settings()
 
 int Settings::clkMode(option op, int val, int ch)
 {
+    Q_UNUSED(ch)
     //此参数所有通道一致
     if(op == Settings::Set){
         clk_mode[SAME] = val;
@@ -67,6 +78,7 @@ int Settings::clkMode(option op, int val, int ch)
 }
 int Settings::triggerMode(option op, int val, int ch)
 {
+    Q_UNUSED(ch)
     //此参数所有通道一致
     if(op == Settings::Set){
         trigger_mode[SAME] = val;
@@ -78,6 +90,7 @@ int Settings::triggerMode(option op, int val, int ch)
 }
 int Settings::captureMode(option op, int val, int ch)
 {
+    Q_UNUSED(ch)
     //此参数所有通道一致
     if(op == Settings::Set){
         capture_mode[SAME] = val;
@@ -89,6 +102,7 @@ int Settings::captureMode(option op, int val, int ch)
 }
 int Settings::captureSize(option op, int val, int ch)
 {
+    Q_UNUSED(ch)
     //此参数所有通道一致
     if(op == Settings::Set){
         capture_size[SAME] = val;
@@ -115,6 +129,7 @@ qreal Settings::captureRate(option op, qreal val, int ch)
 
 int Settings::analyzeMode(option op,int val,  int ch)
 {
+    Q_UNUSED(ch)
     //此参数所有通道一致
     //qDebug()<<"analyzeMode op:"<<op<<"ch:"<<ch<<"val:"<<val;
     if(op == Settings::Set){
@@ -225,6 +240,20 @@ int Settings::resolutionSize(option op, int val, int ch)
     }
     return resolution[ch];
 }
+int Settings::fftPoints(option op, int val, int ch)
+{
+    Q_UNUSED(ch)
+    //此参数所有通道一致
+    if(op == Settings::Set){
+        if( val > fftpoints[SAME] )
+            return fftpoints[SAME];
+        fftpoints[SAME] = val;
+        _settings->beginGroup(keyString("analyze", SAME));
+        _settings->setValue("fftpoints", fftpoints[SAME]);
+        _settings->endGroup();
+    }
+    return fftpoints[SAME];
+}
 qreal Settings::reflevelMin(option op, qreal val, int ch)
 {
     //qDebug()<<"reflevelMin op:"<<((op == Settings::Set)?"set":"get")<<"val:"<<val<<"ch:"<<ch;
@@ -257,6 +286,70 @@ qreal Settings::reflevelMax(option op, qreal val, int ch)
 }
 
 
+int Settings::outMode(option op, int val)
+{
+    if(op == Settings::Set){
+        out_mode = val;
+        _settings->setValue("pre/out_mode", out_mode);
+    }
+    return out_mode;
+}
+int Settings::chCount(option op, int val)
+{
+    if(op == Settings::Set){
+        ch_count = val;
+        _settings->setValue("pre/ch_count", ch_count);
+    }
+    return ch_count;
+}
+qreal Settings::ddcFreq(option op, qreal val)
+{
+    if(op == Settings::Set){
+        ddc_freq = val;
+        _settings->setValue("pre/ddc_freq", ddc_freq);
+    }
+    return ddc_freq;
+}
+int Settings::extractFactor(option op, int val)
+{
+    if(op == Settings::Set){
+        extract_factor = val;
+        _settings->setValue("pre/extract_factor", extract_factor);
+    }
+    return extract_factor;
+}
+int Settings::fsbCoef(option op, int val)
+{
+    if(op == Settings::Set){
+        fsb_coef = val;
+        _settings->setValue("pre/fsb_coef", fsb_coef);
+    }
+    return fsb_coef;
+}
+qreal Settings::baseBandwidth(option op, qreal val)
+{
+    if(op == Settings::Set){
+        base_bandwidth = val;
+        _settings->setValue("pre/base_bandwidth", base_bandwidth);
+    }
+    return base_bandwidth;
+}
+qreal Settings::userBandwidth(option op, qreal val)
+{
+    if(op == Settings::Set){
+        user_bandwidth = val;
+        _settings->setValue("pre/user_bandwidth", user_bandwidth);
+    }
+    return user_bandwidth;
+}
+qreal Settings::adSample(option op, qreal val)
+{
+    if(op == Settings::Set){
+        ad_sample = val;
+        _settings->setValue("pre/ad_sample", ad_sample);
+    }
+    return ad_sample;
+}
 
 
 int Settings::saveMode(option op, int val)
@@ -386,6 +479,29 @@ void Settings::initArray(qreal array[], qreal val)
 }
 
 
+qreal Settings::adjustMaxBandWidth(void)
+{
+    //DDC Freq=70   Fs/B=1.25  AD Sample = 100M
+    if(ddc_freq == 70 && fsb_coef==0 && ad_sample == 100)
+    {
+        base_bandwidth = ad_sample/extract_factor;
+        if(2 == extract_factor)
+            user_bandwidth = 36;
+        else
+            user_bandwidth = base_bandwidth * 0.8;
+    }
+    if(ddc_freq == 140 && fsb_coef==0 && ad_sample == 200)
+    {
+        base_bandwidth = ad_sample/extract_factor;
+        if(2 == extract_factor)
+            user_bandwidth = 72;
+        else
+            user_bandwidth = base_bandwidth * 0.8;
+    }
+    return user_bandwidth;
+}
+
+
 
 void Settings::save(void)
 {
@@ -409,6 +525,16 @@ void Settings::save(void)
         _settings->setValue("reflevel_max", reflevel_max[ch]);
         _settings->endGroup();
     }
+
+    //预处理参数
+    _settings->setValue("pre/out_mode",        out_mode);
+    _settings->setValue("pre/ch_count",        ch_count);
+    _settings->setValue("pre/ddc_freq",        ddc_freq);
+    _settings->setValue("pre/extract_factor",  extract_factor);
+    _settings->setValue("pre/fsb_coef",        fsb_coef);
+    _settings->setValue("pre/base_bandwidth",  base_bandwidth);
+    _settings->setValue("pre/user_bandwidth",  user_bandwidth);
+    _settings->setValue("pre/ad_sample",       ad_sample);
 
     _settings->setValue("store/save_mode",      save_mode);
     _settings->setValue("store/name_mode",      name_mode);
@@ -471,6 +597,25 @@ void Settings::load(void)
         if(ok)reflevel_max[ch] = tempf;
         _settings->endGroup();
     }
+
+
+    //-----------------------------------------------------------
+    tempi = _settings->value("pre/out_mode").toInt(&ok);
+    if(ok)out_mode = tempi;
+    tempi = _settings->value("pre/ch_count").toInt(&ok);
+    if(ok)ch_count = tempi;
+    tempf = _settings->value("pre/ddc_freq").toReal(&ok);
+    if(ok)ddc_freq = tempf;
+    tempi = _settings->value("pre/extract_factor").toInt(&ok);
+    if(ok)extract_factor = tempi;
+    tempi = _settings->value("pre/fsb_coef").toInt(&ok);
+    if(ok)fsb_coef = tempi;
+    tempf = _settings->value("pre/base_bandwidth").toReal(&ok);
+    if(ok)base_bandwidth = tempf;
+    tempf = _settings->value("pre/user_bandwidth").toReal(&ok);
+    if(ok)user_bandwidth = tempf;
+    tempf = _settings->value("pre/ad_sample").toReal(&ok);
+    if(ok)ad_sample = tempf;
 
 
     //-----------------------------------------------------------

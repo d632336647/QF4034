@@ -148,6 +148,9 @@ Rectangle{
         console.log("---------------------------PreCondition updateParams------------------------------")
         console.log("outmode:"+outmode+" chCount:"+chCount+" ddcfreq:"+ddcfreq+" extractfactor:"+extractfactor+" fsbcoef:"+fsbcoef)
         console.log(" ")
+        Settings.ddcFreq(Com.OpSet, ddcfreq)
+        Settings.extractFactor(Com.OpSet, extractfactor)
+        Settings.fsbCoef(Com.OpSet, fsbcoef)
         dataSource.setPreConditionParam(outmode, chCount, ddcfreq, extractfactor, fsbcoef);
 
     }
