@@ -23,8 +23,15 @@ Rectangle {
     property int  zoomStep: 1
     property string  zoomXY: "x"
     property bool openGL: true
-    property bool fullMode: true    //全尺寸显示
+    property bool fullMode: true    //全高显示
+    property bool fullWide: false   //全宽显示
     property bool realTimeMode: false   //实时刷新显示
+    property point centerPoint: Qt.point( 0, 0 )
+    property string scrollTypeStr: ""
+    property var  theScopeViewEle: undefined
+    property var  noCheckbuttonEleArray:[] //存储非checkbutton元素
+    property var  uiCheckButtonArray:[];//UiCheckButton按钮数组
+    property int  uiSliderIndex:-1 //第一个UiSliderIndex出现的索引号
     UiCornerLine{
         anchors.top: parent.top
         anchors.topMargin: 4
@@ -71,9 +78,9 @@ Rectangle {
 
         ValueAxis {
             id: idAxisX;
-            min: -12.5;
-            max: 12.5;
-            tickCount: Settings.channelMode() ? 11 : 6;
+            min: 45;
+            max: 85;
+            tickCount: fullWide ? 11 : 6;
             gridVisible: false
         }
         ValueAxis {
@@ -109,45 +116,6 @@ Rectangle {
             axisX: idAxisX
             axisY: idAxisY
         }
-        MouseArea{
-            property var mouseXLast
-            property var mouseYLast
-            property string scrollType_axisX: "axisX"
-            property string scrollType_axisY: "axisY"
-            property string scrollType_axisMain: "axisMain"
-            property string scrollType_null: "null"
-            property string scrollType
-
-            anchors.fill: parent
-            hoverEnabled: true
-            enabled: true;//hoverEnable
-            acceptedButtons: Qt.LeftButton
-            onPressed: {
-            }
-            onPositionChanged: {
-                var dataPoint = idChartView.mapToValue(Qt.point(mouseX, mouseY));
-                if(dataPoint.x > idAxisX.min && dataPoint.x < idAxisX.max && dataPoint.y < idAxisY.min)
-                    scrollType = scrollType_axisX;
-                else if(dataPoint.x < idAxisX.min && dataPoint.y > idAxisY.min && dataPoint.y < idAxisY.max)
-                    scrollType = scrollType_axisY;
-                else if(dataPoint.x > idAxisX.min && dataPoint.x < idAxisX.max && dataPoint.y > idAxisY.min && dataPoint.y < idAxisY.max)
-                    scrollType = scrollType_axisMain;
-                else
-                    scrollType = scrollType_null;
-                mouseXLast = mouseX;
-                mouseYLast = mouseY;
-            }
-            onWheel: {
-                if(scrollType === scrollType_axisMain && realTimeMode === false)//实时模式由频谱图同步缩放
-                {
-                    if(wheel.angleDelta.y > 0)
-                        zoomHorizontal(mouseX, mouseY, 0.5);
-                    else
-                        zoomHorizontal(mouseX, mouseY, 2);
-                }
-            }
-        }
-
     }//!-- ChartView end
     Timer{
         id:rtWfTimer
@@ -173,7 +141,7 @@ Rectangle {
         mode:"button"
         checked: true
         tips:"复位显示瀑布图"
-        disabled: realTimeMode
+        disabled: true
         onClicked:
         {
             idAxisX.min = xAxisMin
@@ -181,13 +149,8 @@ Rectangle {
             idAxisY.min = yAxisMin
             idAxisY.max = yAxisMax
 
-            bottomLeft.x = idAxisX.min;
-            topRight.x = idAxisX.max;
-            bottomLeft.y = idAxisY.min
-            topRight.y = idAxisY.max;
-
             checked = true
-            waterfallPlot.zoomReset()
+
         }
     }
     //!--ctrl panel end
@@ -195,7 +158,6 @@ Rectangle {
         id: waterfallPlot
         anchors.fill: parent
         referMin: 80
-        minHPixel: 10
         channelIdx: chIndex
         source: dataSource
         onLineCountChanged: {
@@ -208,13 +170,14 @@ Rectangle {
 
     }
 
-    property point bottomLeft
-    property point topRight
-    property var maxBandwidth
-    property var minBandwidth
-    property var curBandwidth
-    property var curRatio
-    property point curDataPoint
+    Keys.enabled: true
+    Keys.forwardTo: [root]
+    Keys.onPressed:{
+
+    }
+
+
+
     function setAxisXPrecision()
     {
         if(resolution>=100000){
@@ -258,86 +221,35 @@ Rectangle {
     }
     function updateAxisXRtShow(cur_min, cur_max, min, max)
     {
+        //文件模式也使用同步放大缩小
+        idAxisX.min = cur_min
+        idAxisX.max = cur_max
+        waterfallPlot.setAxisXData(cur_min, cur_max, min, max)
 
-        if(realTimeMode){
-            idAxisX.min = cur_min
-            idAxisX.max = cur_max
-            waterfallPlot.setAxisXData(cur_min, cur_max, min, max)
-        }
-    }
-    function updateCurData(mouseX, mouseY, scale)
-    {
-        var xyPoint = Qt.point(mouseX, mouseY);
-        curDataPoint = idChartView.mapToValue(xyPoint);
-
-        var band = idAxisX.max - idAxisX.min;
-        curRatio = (curDataPoint.x - idAxisX.min) / band;
-        curBandwidth = band * scale;
-    }
-    function zoomAxis(scale)
-    {
-        var band=parseInt((idAxisX.max - idAxisX.min) * 1000000);
-        if(minBandwidth >= band)
-        {
-            if(minBandwidth > band)
-                idAxisX.max = idAxisX.min + minBandwidth / 1000000.0;
-            if(scale < 1)
-                return;
-        }
-
-        if(idAxisX.min >= bottomLeft.x)
-            idAxisX.min = curDataPoint.x - curBandwidth * curRatio;
-        if(idAxisX.max <= topRight.x)
-            idAxisX.max = idAxisX.min + curBandwidth;
-        if(idAxisX.min < bottomLeft.x || idAxisX.max > topRight.x)
-        {
-            idAxisX.min = bottomLeft.x;
-            idAxisX.max = topRight.x;
-        }
-        updateWaterfallPlotMargin();
-    }
-    function zoomHorizontal(mouseX, mouseY, scale){
-        updateCurData(mouseX, mouseY, scale);
-        zoomAxis(scale);
-        var min=(idAxisX.min - bottomLeft.x) * 1000000.0 / maxBandwidth;
-        var max=(idAxisX.max - bottomLeft.x) * 1000000.0 / maxBandwidth;
-        var cur=(curDataPoint.x - bottomLeft.x) * 1000000.0 / maxBandwidth;
-//        console.log(idAxisX.max, idAxisX.min, idAxisX.max - idAxisX.min, minBandwidth)
-        waterfallPlot.zoomHorizontal(min, max, cur);
     }
     function updateWaterfallPlotMargin()
     {
-        var xyPoint_min = idChartView.mapToPosition(Qt.point(idAxisX.min, idAxisY.min));
-        var xyPoint_max = idChartView.mapToPosition(Qt.point(idAxisX.max, idAxisY.max));
 
-        waterfallPlot.anchors.topMargin = xyPoint_max.y;
-        waterfallPlot.anchors.rightMargin = root.width - xyPoint_max.x;
-        waterfallPlot.anchors.bottomMargin = root.height - xyPoint_min.y;
-        waterfallPlot.anchors.leftMargin = xyPoint_min.x;
+        //var xyPoint_min = idChartView.mapToPosition(Qt.point(idAxisX.min, idAxisY.min));
+        //var xyPoint_max = idChartView.mapToPosition(Qt.point(idAxisX.max, idAxisY.max));
+
+        waterfallPlot.anchors.topMargin = 36
+        waterfallPlot.anchors.rightMargin = 48
+        waterfallPlot.anchors.bottomMargin = 50
+        waterfallPlot.anchors.leftMargin = 74
     }
     function updateFile(file)
     {
         if(!visible)
             return;
 
-        updateAxisX(idAxisX, centerFreq, bandwidth);
-        minBandwidth =  (idAxisX.tickCount - 1) * resolution / 1.0;
-        maxBandwidth = bandwidth * 1000000;
-
-
-
         dataSource.updateWaterfallPlotFromFile(root.chIndex, file);
         idAxisY.max = waterfallPlot.lineCount;
         //console.log("WaterfallPlot ch",root.chIndex,"updateFile lineCount:",idAxisY.max)
 
-        bottomLeft.x = idAxisX.min;
-        topRight.x   = idAxisX.max;
-        bottomLeft.y = idAxisY.min
-        topRight.y   = idAxisY.max;
-
         xAxisMin = idAxisX.min;
         xAxisMax = idAxisX.max;
-        yAxisMin = idAxisY.min
+        yAxisMin = idAxisY.min;
         yAxisMax = idAxisY.max;
 
         updateWaterfallPlotMargin();
@@ -352,19 +264,11 @@ Rectangle {
 
         //dataSource.openWaterfallRtCapture(waterfallPlot)//deprecate
         waterfallPlot.openWaterfallRtCapture();
-        updateAxisX(idAxisX, centerFreq, bandwidth);
-        minBandwidth =  (idAxisX.tickCount - 1) * resolution / 1.0;
-        maxBandwidth = bandwidth * 1000000;
 
         //Rt mode = 50
         var max = 50
         if(max > 0)
             idAxisY.max = 50;
-
-        bottomLeft.x = idAxisX.min;
-        topRight.x   = idAxisX.max;
-        bottomLeft.y = idAxisY.min
-        topRight.y   = idAxisY.max;
 
         xAxisMin = idAxisX.min;
         xAxisMax = idAxisX.max;
@@ -392,15 +296,29 @@ Rectangle {
             rtWfTimer.stop()
         }
     }
+	    //设置操作焦点是X轴
+    function setSpanXScale()
+    {
+        zoomXY = "x";
+    }
+
+    //设置操作焦点是Y轴
+    function setSpanYScale()
+    {
+        zoomXY = "y";
+    }
     function updateParams()
     {
         console.log("RtWaterFall ch",chIndex,"updateParams")
-        centerFreq = Settings.centerFreq()
-        bandwidth  = Settings.bandWidth()
-        resolution = Settings.resolutionSize()
+        centerFreq = Settings.centerFreq(Com.OpGet, 0, chIndex)
+        bandwidth  = Settings.bandWidth(Com.OpGet, 0, chIndex)
+        var fftpoints = Settings.fftPoints(Com.OpGet, 0, chIndex);
+        resolution = (bandwidth * 1000000)/fftpoints //Settings.resolutionSize()
         setAxisXPrecision()
         stopRtTimer()
+        updateAxisX(idAxisX, centerFreq, bandwidth);
         waterfallPlot.setFileMode()
+
         if(realTimeMode){
             waterfallPlot.setRtMode()
             updatData()
@@ -410,5 +328,4 @@ Rectangle {
                 updateFile(Settings.historyFile1())
         }
     }
-
 }

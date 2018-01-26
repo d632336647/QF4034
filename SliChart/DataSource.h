@@ -69,19 +69,18 @@ public:
     QVector<double>  getWaterfallPoints(int ch);
 signals:
     void updateFFTPoints(int ch, int idx);//更新频谱图,包含实时和文件，且同时更新实时瀑布图
-    void updateWaterfallFile(int ch, qreal bw, qreal cfreq);//更新文件瀑布图
+    void updateWaterfallFile(int ch);//更新文件瀑布图
 
     void storeEnd(QString writedLen);
-
+    void forceUpdateSeries(int ch);
 public slots:
     void changeAxis(QAbstractAxis *axis);
+    void forceUpdateAllSeries(void);
 
     //分析参数--fft
     void updateFreqDodminFromData(void);
     void updateFreqDodminFromFile(QAbstractSeries *series, QString fileName);
-    void setFFTParam(double centerFreq, double bandwidth, int resolution);
-    //void openWaterfallRtCapture(WaterfallPlot *wf);
-    //void closeWaterfallRtCapture(void);
+    void setFFTParam(int ch, double centerFreq, double bandwidth, int fftpoints);
     int  updateWaterfallPlotFromFile(int ch, QString fileName);
     void updateTimeDomainFromFile(QAbstractSeries *series1, QAbstractSeries *series2, QString fileName);
     QPointF getWaveInfoBottomLeft(QAbstractSeries *series);
@@ -91,7 +90,7 @@ public slots:
     void setCaptureParam(int clkMode, double captureRate, int triggerMode, int captureMode, int captureSize);
 
     //预处理参数,必须在采集参数设置后设置预处理参数(PCIE)  CPCI无此设置
-    void setPreConditionParam(int outMode, int chCount, double ddcFreq, int extractFactor, int fsbCoef);
+    bool setPreConditionParam(int outMode, int chCount, double ddcFreq, int extractFactor, int fsbCoef);
 
     //存储参数
     void setStorParam(int saveMode, int nameMode, QString filePath);
@@ -115,14 +114,16 @@ public slots:
     bool    clearHistoryFile(void);
 
     void    clearFilter(void);
+    void    clearPCIE(void);
 private:
     void    separateData(int ch_count, uchar *source, qint64 size, QVector<QVector<signed short>> &sampdata);
-    void    cutShowPoint(QVector<QPointF> &source_points, QVector<QPointF> &show_points);
+    void    cutShowPoint(int ch, QVector<QPointF> &source_points, QVector<QPointF> &show_points);
+    void    cutShowPoint(int ch, QVector<double>  &source_points, QVector<double>  &show_points);
     void    workAllPoint(QVector<double> &fftData, QVector<QPointF> &points);
     void    freeVVector(QVector<QVector<double>> &vvector);
     QFile   *getFile(QString objname);
     void    smooth(QVector<QPointF> &dst_points);
-
+    QString createFileName(void);
 
     //pcie device
     PciDeviceAPI *m_pciDev;
@@ -145,11 +146,9 @@ private:
 
     //分析参数--fft
     QVector<WaveInfo> m_waveInfo;
-
-    int    m_fftCount;
-    double m_centerFreq;//MHz
-    double m_bandwidth;//MHz
-    int    m_resolution;//Hz
+    qreal m_centerFreq[CHNUM];//MHz
+    qreal m_bandwidth[CHNUM];//MHz
+    int    m_fftpoints;//
     Spectrum m_spectrum;
 
 

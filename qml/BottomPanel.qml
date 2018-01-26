@@ -5,6 +5,7 @@ import "UI"
 import "../SliChart"
 
 Rectangle {
+    id:root
     implicitWidth: 500
     implicitHeight: 70
     anchors.rightMargin: 4
@@ -16,6 +17,12 @@ Rectangle {
     property var clkMode:["外时钟","内时钟","外参考"]
     property var saveMode:["本地存储","光纤存储"]
     property var workMode:["本地模式","远程模式"]
+    property var stateRectArray :[]//底边按钮数组
+    property var popBoxchildArray:[]; //弹出框子元素存储数组
+
+    property var modeSwitch:undefined;//模式切换
+    property var paramsUpdate:undefined;//参数更新
+    property var menuBtn:undefined;//菜单显示
     Rectangle {
         anchors.fill: parent;
         color: Com.BottomBGColor;
@@ -51,6 +58,7 @@ Rectangle {
                 textData:Settings.markRange()
             }
             StateRect{
+                objectName: "modeSwitch"  //模式切换
                 id:idChannel1
                 btnName:showMode(Settings.channelMode())
                 onClicked: {
@@ -108,6 +116,7 @@ Rectangle {
                 }
             }
             StateRect{
+                objectName: "paramUpdate"
                 id:idChannel2
                 btnName:showName(Settings.paramsSetCh())
                 onClicked: {
@@ -128,6 +137,7 @@ Rectangle {
         }
         StateRect{
             id:showMenu
+            objectName: "menuBtn"
             width: 36
             height: 64
             anchors.right: parent.right
@@ -167,5 +177,67 @@ Rectangle {
             idSaveMode.textData = saveMode[Settings.saveMode()]
         else
             idSaveMode.textData = "--------"
+    }
+
+
+    //遍历BottomPannel元素
+    function getStateRectOfFileList(popObj)
+    {
+        var atomlist=popObj.children;
+        for ( var i in atomlist)
+        {
+
+            var tempstr=atomlist[i].toString();
+            var eachChild=atomlist[i];
+            var index=tempstr.indexOf("_");
+
+
+            var StateRectindex=tempstr.indexOf("StateRect");
+
+            var QQuickRectangleindex=tempstr.indexOf("Rectangle");
+
+            var QQuickGridindex=tempstr.indexOf("QQuickGrid");
+            if((QQuickRectangleindex!==-1)||(QQuickGridindex!==-1))
+            {
+                globalConsoleInfo("!!!!!递归调用getItemOfPopBox");
+                getStateRectOfFileList(atomlist[i]);
+            }
+            if(StateRectindex!==-1)
+            {
+                stateRectArray.norepeatpush(atomlist[i]);
+            }
+
+
+        }
+
+
+        return popBoxchildArray;
+    }
+
+
+    Component.onCompleted:
+    {
+        globalConsoleInfo("☆☆☆☆BottomPanel.qml加载完毕☆☆☆☆");
+        getStateRectOfFileList(root);
+        for(var tt=0;tt<stateRectArray.length;tt++)
+        {
+
+            if(stateRectArray[tt].objectName==="paramUpdate")
+            {
+                paramsUpdate=stateRectArray[tt];//参数更新
+                globalConsoleInfo("======参数更新按钮已添加=======paramsUpdate=="+paramsUpdate);
+            }
+            else if(stateRectArray[tt].objectName==="modeSwitch")
+            {
+                modeSwitch=stateRectArray[tt];//模式切换
+                globalConsoleInfo("======模式切换按钮已添加=======modeSwitch=="+modeSwitch);
+            }
+            else if(stateRectArray[tt].objectName==="menuBtn")
+            {
+                menuBtn=stateRectArray[tt];//菜单显示
+                globalConsoleInfo("======菜单显示按钮已添加=======menuBtn=="+menuBtn);
+            }
+        }
+
     }
 }

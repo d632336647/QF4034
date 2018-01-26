@@ -36,6 +36,7 @@ void CaptureThread::exit(void)
     this->stopCapture();
     qDebug()<<"exit  capture thread";
     requestInterruption();
+    sleep(1);//maybe ?
     this->quit();
     this->wait();
 }

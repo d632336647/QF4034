@@ -18,6 +18,11 @@ Item {
     property alias visible1: handle1.visible
     property alias visible2: handle2.visible
     property alias visible3: handle3.visible
+    //»¬¿éµÄ¶ÔÓ¦Öµ
+    property var exScopeViewEle:undefined
+    property real handle1Value:0
+    property real handle2Value:0
+    property real handle3Value:0
     Rectangle {
         anchors.fill: parent
 
@@ -36,6 +41,7 @@ Item {
     Rectangle {
         id:handle3
         width: 12;
+        objectName: "triangleEle"
         x: 0
         y: 0
         height: parent.height
@@ -79,11 +85,76 @@ Item {
             if(dragArea3.pressed)
                 root.percent3 = (x+width/2)/root.width;
         }
+
+
+        Keys.enabled: true
+        Keys.forwardTo: [handle3]
+        Keys.onPressed:{
+
+            //globalConsoleInfo("#####handle3 收到按键消息#####"+event.key);
+            switch(event.key)
+            {
+            case Qt.Key_Left:
+                if(handle3Value<=0)
+                {
+                    handle3Value=0;
+                    break;
+                }
+                handle3Value-=0.1;
+                setX(2,handle3Value);
+                root.percent3 = (handle3.x+handle3.width/2)/root.width;
+                event.accepted=true;
+                break;
+            case Qt.Key_PageUp:
+                if(handle3Value<=0)
+                {
+                    handle3Value=0;
+                    break;
+                }
+                handle3Value-=0.1;
+                setX(2,handle3Value);
+                root.percent3 = (handle3.x+handle3.width/2)/root.width;
+                event.accepted=true;
+                break;
+            case Qt.Key_Right:
+                handle3Value+=0.1;
+                if(handle3Value>1)
+                {
+                    handle3Value=1;
+                }
+                setX(2,handle3Value);
+                root.percent3 = (handle3.x+handle3.width/2)/root.width;
+                event.accepted=true;
+                break;
+            case Qt.Key_PageDown://Ë³Ê±Õë
+                handle3Value+=0.1;
+                if(handle3Value>1)
+                {
+                    handle3Value=1;
+                }
+                setX(2,handle3Value);
+                root.percent3 = (handle3.x+handle3.width/2)/root.width;
+                event.accepted=true;
+                break;
+            case Qt.Key_Escape:
+                if(exScopeViewEle)
+                {
+                    exScopeViewEle.focus=true;//½¹µã»¹¸øScopeView
+                }
+                event.accepted=true;
+                break;
+            default:
+                break;
+            }
+
+            event.accepted=true;//×èÖ¹ÊÂ¼þ¼ÌÐø´«µÝ
+        }
     }
 
     Rectangle {
         id:handle2
         width: 12;
+        objectName: "triangleEle"
         x: 0
         y: 0
         height: parent.height
@@ -127,11 +198,75 @@ Item {
             if(dragArea2.pressed)
                 root.percent2 = (x+width/2)/root.width;
         }
+
+        Keys.enabled: true
+        Keys.forwardTo: [handle2]
+        Keys.onPressed:{
+
+            //globalConsoleInfo("#####handle2 收到按键消息#####"+event.key);
+            switch(event.key)
+            {
+            case Qt.Key_Left:
+                if(handle2Value<=0)
+                {
+                    handle2Value=0;
+                    break;
+                }
+                handle2Value-=0.1;
+                setX(1,handle2Value);
+                root.percent2 = (handle2.x+handle2.width/2)/root.width;
+                event.accepted=true;
+                break;
+            case Qt.Key_PageUp://滚轮逆时针
+                if(handle2Value<=0)
+                {
+                    handle2Value=0;
+                    break;
+                }
+                handle2Value-=0.1;
+                setX(1,handle2Value);
+                root.percent2 = (handle2.x+handle2.width/2)/root.width;
+                event.accepted=true;
+                break;
+            case Qt.Key_Right:
+                handle2Value+=0.1;
+                if(handle2Value>1)
+                {
+                    handle2Value=1;
+                }
+                setX(1,handle2Value);
+                root.percent2 = (handle2.x+handle2.width/2)/root.width;
+                event.accepted=true;
+                break;
+            case Qt.Key_PageDown://Ë³Ê±Õë
+                handle2Value+=0.1;
+                if(handle2Value>1)
+                {
+                    handle2Value=1;
+                }
+                setX(1,handle2Value);
+                root.percent2 = (handle2.x+handle2.width/2)/root.width;
+                event.accepted=true;
+                break;
+            case Qt.Key_Escape:
+                if(exScopeViewEle)
+                {
+                    exScopeViewEle.focus=true;//½¹µã»¹¸øScopeView
+                }
+                event.accepted=true;
+                break;
+            default:
+                break;
+            }
+
+            event.accepted=true;//×èÖ¹ÊÂ¼þ¼ÌÐø´«µÝ
+        }
     }
 
     Rectangle {
         id:handle1
         width: 12;
+        objectName: "triangleEle"
         x: 0
         y: 0
         height: parent.height
@@ -176,6 +311,69 @@ Item {
                 root.percent1 = (x+width/2)/root.width;
         }
 
+        Keys.enabled: true
+        Keys.forwardTo: [handle1]
+        Keys.onPressed:{
+
+            //globalConsoleInfo("#####handle1 收到按键消息#####"+event.key);
+            switch(event.key)
+            {
+            case Qt.Key_Left:
+                if(handle1Value<=0)
+                {
+                    handle1Value=0;
+                    break;
+                }
+                handle1Value-=0.1;
+                setX(0,handle1Value);
+                root.percent1 = (handle1.x+handle1.width/2)/root.width;
+                event.accepted=true;
+                break;
+            case Qt.Key_PageUp://ÄæÊ±Õë
+                if(handle1Value<=0)
+                {
+                    handle1Value=0;
+                    break;
+                }
+                handle1Value-=0.1;
+                setX(0,handle1Value);
+                root.percent1 = (handle1.x+handle1.width/2)/root.width;
+                event.accepted=true;
+                break;
+            case Qt.Key_Right:
+                handle1Value+=0.1;
+                if(handle1Value>1)
+                {
+                    handle1Value=1;
+                }
+                setX(0,handle1Value);
+                root.percent1 = (handle1.x+handle1.width/2)/root.width;
+                event.accepted=true;
+                break;
+            case Qt.Key_PageDown://Ë³Ê±Õë
+                handle1Value+=0.1;
+                if(handle1Value>1)
+                {
+                    handle1Value=1;
+                }
+                setX(0,handle1Value);
+                root.percent1 = (handle1.x+handle1.width/2)/root.width;
+                event.accepted=true;
+                break;
+            case Qt.Key_Escape:
+                if(exScopeViewEle)
+                {
+                    exScopeViewEle.focus=true;//½¹µã»¹¸øScopeView
+                }
+                event.accepted=true;
+                break;
+            default:
+                break;
+            }
+
+            event.accepted=true;//×èÖ¹ÊÂ¼þ¼ÌÐø´«µÝ
+        }
+
     }
     Text {
         id: name
@@ -210,16 +408,24 @@ Item {
         {
         case 0:
             handle1.x  = root.width * percent - handle1.width/2;
-            //console.log(handle1.x, percent)
-            //handle1.percent = percent
+            if(handle1.x<0)
+            {
+                handle1.x=0;
+            }
             break;
         case 1:
             handle2.x  = root.width * percent - handle2.width/2;
-            //handle2.percent = percent
+            if(handle2.x<0)
+            {
+                handle2.x=0;
+            }
             break;
         case 2:
             handle3.x  = root.width * percent - handle3.width/2;
-            //handle3.percent = percent
+            if(handle3.x<0)
+            {
+                handle3.x=0;
+            }
             break;
         default:
             break;

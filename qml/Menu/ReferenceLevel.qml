@@ -13,13 +13,16 @@ Flipable{
     signal  showComplete
     property int angle : 0  //翻转角度
     property bool flipped : false //用来标志是否翻转
-
+    property var parentPointer: undefined
+    property alias inputFocus:numberEdit.inputFocus
+    objectName: "参考电平翻转控件";
     Rectangle{
         color: Com.BGColor_main
     }
 
     front: RightButton {
         id: btn_centerfreq;
+        objectName: "参考电平翻转控件正面";
         anchors.fill: parent
         textLabel: "通道"+(Settings.paramsSetCh()+1)+" 参考电平";
         onClick: {
@@ -29,27 +32,32 @@ Flipable{
         }
     }
     back:LineEdit {
-            id: numberEdit;
-            anchors.fill: parent
-            unit: "dBm"
-            rangeMode: true
-            min:"-120"
-            max:"10"
-            prefix: btn_centerfreq.textLabel
-            okBtn: true
-            onAccepted: {
-                root.flipped = false
-                root.state = "toFront"
-            }
-            onOkBtnClicked: {
-                root.flipped = false
-                root.state = "toFront"
-                setParam(numberEdit.min, numberEdit.max)
-            }
-            onAreaClicked: {
-                root.flipped = false
-                root.state = "toFront"
-            }
+        id: numberEdit;
+        objectName: "参考电平翻转控件背面";
+        anchors.fill: parent
+        unit: "dBm"
+        rangeMode: true
+        min:"-120"
+        max:"10"
+        prefix: btn_centerfreq.textLabel
+        okBtn: true
+        onAccepted: {
+            root.flipped = false;
+            root.state = "toFront";
+            globalConsoleInfo("★★ReferenceLevel.qml响应onAccepted,查看root.parentPointer---"+root.parentPointer);
+            root.parentPointer.focus=true;//侧边栏获得焦点
+        }
+        onOkBtnClicked: {
+            root.flipped = false
+            root.state = "toFront"
+            globalConsoleInfo("★★ReferenceLevel.qml响应onOkBtnClicked,查看root.parentPointer---"+root.parentPointer);
+            root.parentPointer.focus=true;//侧边栏获得焦点
+            setParam(numberEdit.min, numberEdit.max)
+        }
+        onAreaClicked: {
+            root.flipped = false
+            root.state = "toFront"
+        }
     }  //指定正面
 
     transform:Rotation{ //指定原点

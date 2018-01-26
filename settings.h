@@ -68,7 +68,7 @@ public:
     QString keyString(QString group, int ch=-1);
     void    initArray(int   array[], int   val);
     void    initArray(qreal array[], qreal val);
-    qreal   adjustMaxBandWidth(void);
+    bool    adjustMaxBandWidth(void);
 signals:
 
 public slots:
@@ -96,12 +96,12 @@ private:
     QString history2;
     QString history3;
 
-    //é¢„å¤„ç†å‚æ•°
-    int out_mode;
-    int ch_count;
+    //Ô¤´¦Àí²ÎÊı
+    int   out_mode;
+    int   ch_count;
     qreal ddc_freq;
-    int extract_factor;
-    int fsb_coef;
+    int   extract_factor;
+    int   fsb_coef;
     qreal base_bandwidth;
     qreal user_bandwidth;
     qreal ad_sample;
@@ -112,8 +112,6 @@ private:
 
     int     channel_mode;
     int     current_ch;
-
-
 
     QSettings  *_settings;
     QQuickView *_view;

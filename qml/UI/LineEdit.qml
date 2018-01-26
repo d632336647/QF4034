@@ -3,6 +3,7 @@ import "../Inc.js" as Com
 
 Rectangle {
     id: root
+    property alias editfocus: input.focus //
     property alias text: input.text //
     property alias hint: hint.text //
     property alias prefix: prefix.text //
@@ -12,6 +13,8 @@ Rectangle {
     property alias min: minval.text
     property alias max: maxval.text
     property alias inputFocus: input.focus
+    property alias rangeMinFocus: minval.focus
+    property alias rangeMaxFocus: maxval.focus
     property int  fontSize: 18 //定义字体大小
     property bool showHint:false
     property bool hovered:false
@@ -93,6 +96,7 @@ Rectangle {
 
 
         TextInput {
+            objectName:"theUserinput"
             id: input
             visible: !rangeMode
             enabled: !rangeMode
@@ -109,10 +113,11 @@ Rectangle {
             selectionColor: "white"
             selectedTextColor: "black"
             color: "white"
+
+            validator:RegExpValidator{regExp: /[+-]?\d+[\.]?\d+$/}
+            //inputMask: "####.##"
             activeFocusOnPress: true
             onAccepted: root.accepted()  //链接到信号
-            validator: RegExpValidator { regExp: /[+-]?\d+(\.\d+)?$/ }
-            //validator:  DoubleValidator { bottom: -1000.0; top:1000 }
             Rectangle{
                 anchors.bottom: parent.bottom
                 width: parent.width
@@ -133,6 +138,7 @@ Rectangle {
                 id:minval
                 text: "-100"
                 color: "white"
+                validator:RegExpValidator{regExp: /[+-]?\d+[\.]?\d+$/}
                 font.pixelSize: fontSize
                 anchors.top: parent.top
                 anchors.left: parent.left
@@ -148,6 +154,26 @@ Rectangle {
                     width: parent.width
                     height: 1
                     color: "white"
+                }
+                Keys.enabled: true
+                Keys.forwardTo: [minval]
+                Keys.onPressed:{
+                    switch(event.key)
+                    {
+                    case Qt.Key_Alt:
+                        globalConsoleInfo("-----------------------------");
+                        globalConsoleInfo("                 ");
+                        globalConsoleInfo("minval.cursorPosition=="+cursorPosition+"===text"+minval.text);
+
+                        maxval.focus=true;
+                        break;
+                    case Qt.Key_Enter:
+                        root.okBtnClicked();
+                        break;
+                    default:
+                        globalConsoleInfo(minval+"收到未注册消息#####"+event.key);
+                        break;
+                    }
                 }
             }
             Text {
@@ -167,6 +193,7 @@ Rectangle {
                 id:maxval
                 text: "10"
                 color: "white"
+                validator:RegExpValidator{regExp: /[+-]?\d+[\.]?\d+$/}
                 font.pixelSize: fontSize
                 anchors.top: parent.top
                 anchors.left: mid.right
@@ -182,6 +209,26 @@ Rectangle {
                     width: parent.width
                     height: 1
                     color: "white"
+                }
+                Keys.enabled: true
+                Keys.forwardTo: [maxval]
+                Keys.onPressed:{
+                    switch(event.key)
+                    {
+                    case Qt.Key_Alt:
+                        globalConsoleInfo("-----------------------------");
+                        globalConsoleInfo("                 ");
+                        globalConsoleInfo("maxval.cursorPosition=="+cursorPosition+"===text"+maxval.text);
+
+                        minval.focus=true;
+                        break;
+                    case Qt.Key_Enter:
+                         root.okBtnClicked();
+                        break;
+                    default:
+                        globalConsoleInfo(maxval+"收到未注册消息#####"+event.key);
+                        break;
+                    }
                 }
             }
         }

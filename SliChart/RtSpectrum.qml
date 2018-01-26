@@ -28,11 +28,16 @@ Rectangle {
     property bool  fullWide: false   //全宽显示,横向
     property int   yTicks:  fullMode ? 21 : 11
     property bool  realTimeMode: false   //实时刷新显示
+    property var  theScopeViewEle: undefined
+    property bool  altPress:true
     property color seriesColor1: Com.series_color1
     property color seriesColor2: Com.series_color2
     property color seriesColor3: Com.series_color3
 
-
+    property point centerPoint: Qt.point( 0, 0 )
+    property var  noCheckbuttonEleArray:[] //存储非checkbutton元素
+    property var  uiCheckButtonArray:[];//UiCheckButton按钮数组
+    property int  uiSliderIndex:-1 //第一个UiSliderIndex出现的索引号
     visible: false
 
     UiCornerLine{
@@ -238,6 +243,7 @@ Rectangle {
                 }
             }
             onWheel: {
+                //var resolution = (bandwidth * 1000000)/fftpoints
                 var minStep = resolution/10000
                 if(axisX.max - axisX.min > 3)
                     zoomXStep = 1
@@ -303,6 +309,41 @@ Rectangle {
                 }
             }
         }//!--function wheelZoomXY END
+
+        //按键控制放大缩小
+        function wheelZoomXY_ByBtn( enable, point,isZoomIn, XY)//flag表示放大还是缩小的布尔值
+        {
+            if(!enable)
+                return
+            var axis, axisMin, axisMax
+            if(XY === "x"){
+                axis = axisX
+                axisMin = xAxisMin
+                axisMax = xAxisMax
+            }else{
+                axis = axisY
+                axisMin = yAxisMin
+                axisMax = yAxisMax
+            }
+            if( isZoomIn) {
+                if( axis.max - axis.min <= 1 ) {
+                    return
+                }
+                view.zoom_In( point , XY)
+            } else {
+                view.zoom_Out( point , XY)
+                if( axis.min <= axisMin ) {
+                    axis.min = axisMin
+                }
+                if( axis.max >= axisMax ) {
+                    axis.max = axisMax
+                }
+            }
+
+            markSlider.setMarkRange();
+            updateCharts();
+
+        }//!--function wheelZoomXY_ByBtn END
 
         function zoom_In( hoveredPoint , XY) {
             var axis, axisMin, axisMax, hoveredXY
@@ -416,8 +457,8 @@ Rectangle {
         {
             axisX.min = xAxisMin
             axisX.max = xAxisMax
-            axisY.min = yAxisMin = Settings.reflevelMin()
-            axisY.max = yAxisMax = Settings.reflevelMax()
+            axisY.min = yAxisMin = Settings.reflevelMin(Com.OpGet, 0, chIndex)
+            axisY.max = yAxisMax = Settings.reflevelMax(Com.OpGet, 0, chIndex)
             markSlider.setMarkRange()
             updateCharts()
             checked = true
@@ -526,13 +567,14 @@ Rectangle {
         max:axisX.max
         visible: series1.visible && !realTimeMode
         handleColor: Com.series_color1
+        exScopeViewEle:root.theScopeViewEle
         onValueChanged: {
             var percent = value.toFixed(3);
             dataSource.setFileOffset("series1", percent)
             dataSource.updateFreqDodminFromFile(series1, Settings.historyFile1())
             fftData.refreshSeriesPoints(root.chIndex, 0);
 
-            if(Settings.analyzeMode() === 3)
+            if(Settings.analyzeMode() === 3)//刷新瀑布图
                 waterfallView.updateFile(Settings.historyFile1())
 
             //rtPeak1.updatePeak()//数据更新,peak点会emit信号自动刷新
@@ -547,6 +589,7 @@ Rectangle {
         anchors.top: fileSlider1.bottom
         anchors.left: fileSlider1.left
         width: fileSlider1.width
+        exScopeViewEle:root.theScopeViewEle
         min:axisX.min
         max:axisX.max
         visible: series2.visible && !realTimeMode
@@ -560,6 +603,7 @@ Rectangle {
     }
     UiMultSlider {
         id: fileSlider3
+        exScopeViewEle:root.theScopeViewEle
         anchors.top: fileSlider2.bottom
         anchors.left: fileSlider2.left
         width: fileSlider2.width
@@ -585,6 +629,7 @@ Rectangle {
         min:axisX.min
         max:axisX.max
         visible: false
+        exScopeViewEle:root.theScopeViewEle
         /**********************************************************
         参数说明     功能 重新标定滑动条的长度和范围
         ***********************************************************/
@@ -695,6 +740,112 @@ Rectangle {
             }
         }
     }
+
+
+
+
+    Keys.enabled: true
+    Keys.forwardTo: [root]
+    Keys.onPressed:{
+
+
+        var rateY_btn = (yAxisMax-yAxisMin)/(axisY.max - axisY.min);
+        var currentRangeX_btn = axisX.max - axisX.min;
+        var rateX_btn = bandwidth/currentRangeX_btn;
+        var theaxisMinX = xAxisMin;
+        var theaxisMaxX = xAxisMax;
+
+        var theaxisMinY = yAxisMin;
+        var theaxisMaxY = yAxisMax;
+        var themidX=theaxisMinX+(theaxisMaxX-theaxisMinX)/2;
+        var themidY=theaxisMinY+(theaxisMaxY-theaxisMinY)/2;
+        centerPoint=Qt.point( themidX, themidY );
+
+        switch(event.key)
+        {
+        case Qt.Key_Up:
+            view.scrollDown(rateY_btn);
+            markSlider.setMarkRange()
+            updateCharts()
+            globalConsoleInfo("========RtSpectrum.qml收到↑");
+            break;
+        case Qt.Key_Down:
+            view.scrollUp(rateY_btn);
+            markSlider.setMarkRange();
+            updateCharts();
+            globalConsoleInfo("========RtSpectrum.qml收到↓");
+            break;
+        case Qt.Key_Left:
+
+            if((axisX.max < xAxisMax)&&(axisX.min > xAxisMin))
+            {
+                view.scrollLeft(rateX_btn*0.3)
+            }
+
+            markSlider.setMarkRange();
+            updateCharts();
+            globalConsoleInfo("========RtSpectrum.qml收到←");
+            break;
+        case Qt.Key_Right:
+
+            if(axisX.min<0)//防止出现负数
+            {
+                axisX.min=0;
+            }
+            if((axisX.max <= xAxisMax)&&(axisX.min >= xAxisMin))
+            {
+                view.scrollRight(rateX_btn*0.3);
+            }
+            markSlider.setMarkRange();
+            updateCharts();
+
+            globalConsoleInfo("========RtSpectrum.qml收到→");
+            break;
+        case Qt.Key_Alt://切换X轴Y轴
+            if(root.altPress)
+            {
+                zoomXY = "x"
+            }
+            else
+            {
+                zoomXY = "y"
+            }
+            root.altPress=!root.altPress;
+            globalConsoleInfo("========RtSpectrum.qml收到Key_Alt");
+            break;
+        case Qt.Key_Enter://放大
+            view.wheelZoomXY_ByBtn(true, centerPoint, true,  zoomXY)
+            globalConsoleInfo("========RtSpectrum.qml收到Key_Enter");
+            break;
+        case Qt.Key_PageDown://放大
+            view.wheelZoomXY_ByBtn(true, centerPoint, true,  zoomXY)
+            globalConsoleInfo("========RtSpectrum.qml收到滚轮放大");
+            break;
+        case Qt.Key_Space://缩小
+            view.wheelZoomXY_ByBtn(true, centerPoint, false,  zoomXY)
+            globalConsoleInfo("========RtSpectrum.qml收到Key_Space");
+            break;
+        case Qt.Key_PageUp://缩小
+            view.wheelZoomXY_ByBtn(true, centerPoint, false,  zoomXY)
+            globalConsoleInfo("========RtSpectrum.qml收到滚轮缩小");
+            break;
+        case Qt.Key_Escape://焦点切换到 scopeView
+
+            if(theScopeViewEle)
+            {
+
+                theScopeViewEle.focus=true;//焦点重置为ScopeView
+                globalConsoleInfo("========RtSpectrum.qml收到Key_Escape,焦点交给了:"+theScopeViewEle);
+            }
+
+            break;
+        default:
+            globalConsoleInfo("========RtSpectrum.qml收到按键消息#####"+event.key);
+            break;
+        }
+        event.accepted=true;//阻止事件继续传递
+    }
+
 
     /**********************************************************
     参数说明     功能 刷新曲线的顶点
@@ -861,6 +1012,10 @@ Rectangle {
 
         //axisY.min = Settings.reflevelMin()
         //axisY.max = Settings.reflevelMax()
+	
+	        //读取相应slider和checkButton控件
+        getAllsliders();
+        getAllcheckButtons();
     }
 
     function updateCharts()
@@ -886,7 +1041,6 @@ Rectangle {
     }
     function setAxisXPrecision()
     {
-
         if(resolution>=100000){
             axisX.labelFormat = "%.2f"
             xPrecision = 1;
@@ -909,14 +1063,29 @@ Rectangle {
         }
 
     }
+
+    //设置操作焦点是X轴
+    function setSpanXScale()
+    {
+        zoomXY = "x"
+    }
+
+    //设置操作焦点是Y轴
+    function setSpanYScale()
+    {
+        zoomXY = "y"
+    }
     function updateParams()
     {
 
         captureThread.stopCapture()
         //dataSource.clearFilter(); //not use
-        centerFreq = Settings.centerFreq()
-        bandwidth  = Settings.bandWidth()
-        resolution = Settings.resolutionSize()
+
+        centerFreq = Settings.centerFreq(Com.OpGet, 0, chIndex)
+        bandwidth  = Settings.bandWidth(Com.OpGet, 0, chIndex)
+        var fftpoints = Settings.fftPoints(Com.OpGet, 0, chIndex)
+
+        resolution = (bandwidth * 1000000)/fftpoints
         setAxisXPrecision()
 
         axisX.min = xAxisMin = centerFreq - bandwidth/2
@@ -965,5 +1134,117 @@ Rectangle {
         }
         updateCharts()
         updatePeakShow()
+        //更新slider和checkButton
+        getAllsliders();
+        getAllcheckButtons();
+    }
+
+    //获取所有非checkButton元素
+    function getAllsliders()
+    {
+
+        noCheckbuttonEleArray.splice(0,noCheckbuttonEleArray.length);
+        noCheckbuttonEleArray=[];
+        noCheckbuttonEleArray.norepeatpush(view);//第一个就是图谱
+        var UiMultSliderObj=Com.getNamedELementOfComponentArray(root,"UiMultSlider");
+        if(Com.isArray(UiMultSliderObj))
+        {
+            for(var jj=0;jj<UiMultSliderObj.length;jj++)//添加UiMultSliderObj
+            {
+
+                if(UiMultSliderObj[jj].visible)
+                {
+                    noCheckbuttonEleArray.norepeatpush(UiMultSliderObj[jj]);
+                    globalConsoleInfo("!!!RtSpectrum.qml数组 添加multiSlider--"+jj);
+                }
+            }
+        }
+        else if(UiMultSliderObj!==undefined)
+        {
+
+            if(UiMultSliderObj.visible)
+            {
+                noCheckbuttonEleArray.norepeatpush(UiMultSliderObj);
+                globalConsoleInfo("####RtSpectrum.qml 直接添加multiSlider--");
+            }
+        }
+
+        uiSliderIndex=noCheckbuttonEleArray.length;//获得UiSlider索引号
+        var UiSliderObj=Com.getNamedELementOfComponentArray(root,"UiSlider");//添加UiSlider
+
+
+        if(Com.isArray(UiSliderObj))
+        {
+            for(var kk=0;kk<UiSliderObj.length;kk++)
+            {
+
+
+
+                for(var uu=0;uu<UiSliderObj[kk].children.length;uu++)
+                {
+
+                    if(UiSliderObj[kk].children[uu].objectName==="triangleEle")
+                    {
+
+                        if(UiSliderObj[kk].children[uu].visible)//只添加可视的三角滑块
+                        {
+                            noCheckbuttonEleArray.norepeatpush(UiSliderObj[kk].children[uu]);
+                        }
+
+                    }
+                }
+
+
+                globalConsoleInfo("-----RtSpectrum.qml 添加三角滑块 triangleEle "+kk);
+            }
+        }
+        else if(UiSliderObj!==undefined)
+        {
+
+
+
+            for(var nn=0;nn<UiSliderObj.children.length;nn++)
+            {
+
+                if(UiSliderObj.children[nn].objectName==="triangleEle")
+                {
+
+                    if(UiSliderObj.children[nn].visible)
+                    {
+                        noCheckbuttonEleArray.norepeatpush(UiSliderObj.children[nn]);
+                    }
+
+                }
+                globalConsoleInfo("======RtSpectrum.qml 添加triangleEle "+nn);
+            }
+
+
+
+        }
+
+
+
+    }
+
+
+
+    //获取所有checkButton元素
+    function getAllcheckButtons()
+    {
+        //先清空
+        uiCheckButtonArray.splice(0,uiCheckButtonArray.length);
+        uiCheckButtonArray=[];
+        for(var kk=0;kk<root.children.length;kk++)
+        {
+
+            var UiCheckButton_Str=root.children[kk].toString();
+            if(UiCheckButton_Str.indexOf("UiCheckButton")!==-1)
+            {
+                uiCheckButtonArray.norepeatpush(root.children[kk]);//UiCheckButton_QMLTYPE_15元素添加
+            }
+        }
+
+
+
     }
 }

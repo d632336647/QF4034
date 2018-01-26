@@ -99,4 +99,12 @@ Item {
             duration: 300
         }
     }
+
+
+    function checkboxClick()
+    {
+
+        checked = !checked
+        root.clicked()
+    }
 }

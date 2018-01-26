@@ -21,11 +21,18 @@ Rectangle {
     property int  zoomStep: 100
     property string  zoomXY: "x"
     property bool  openGL: true
+    property bool  altPress:true
     property bool  fullMode: true    //全尺寸显示
     property bool  realTimeMode: false   //实时刷新显示
     property color seriesColor1: Com.series_color1
     property color seriesColor2: Com.series_color2
     property color seriesColor3: Com.series_color3
+    property point centerPoint: Qt.point( 0, 0 )
+    property var  rightControlPannel:undefined
+    property var  theScopeViewEle: undefined
+    property var  noCheckbuttonEleArray:[] //存储非checkbutton元素
+    property var  uiCheckButtonArray:[];//UiCheckButton按钮数组
+    property int  uiSliderIndex:-1 //第一个UiSliderIndex出现的索引号
     visible: false
     UiCornerLine{
         anchors.top: parent.top
@@ -229,6 +236,45 @@ Rectangle {
             }
         }//!--function wheelZoomXY END
 
+
+
+        //按键控制放大缩小
+        function wheelZoomXY_ByBtn( enable, point,isZoomIn, XY)//flag表示放大还是缩小的布尔值
+        {
+            if(!enable)
+                return
+            var axis, axisMin, axisMax
+            if(XY === "x"){
+                axis = idaxisX
+                axisMin = xAxisMin
+                axisMax = xAxisMax
+            }else{
+                axis = idaxisY
+                axisMin = yAxisMin
+                axisMax = yAxisMax
+            }
+            if( isZoomIn) {
+                if( axis.max - axis.min <= 1 ) {
+                    return
+                }
+                view.zoom_In( point , XY)
+            } else {
+                view.zoom_Out( point , XY)
+                if( axis.min <= axisMin ) {
+                    axis.min = axisMin
+                }
+                if( axis.max >= axisMax ) {
+                    axis.max = axisMax
+                }
+            }
+
+
+
+
+        }//!--function wheelZoomXY END
+
+
+
         function zoom_In( hoveredPoint , XY) {
             var axis, axisMin, axisMax, hoveredXY
             if(XY === "x"){
@@ -376,6 +422,7 @@ Rectangle {
 
     UiMultSlider {
         id: fileSlider
+        exScopeViewEle:root.theScopeViewEle
         anchors.top: parent.top
         anchors.topMargin: 32
         anchors.left: parent.left
@@ -387,9 +434,10 @@ Rectangle {
         handleColor: Com.series_color1
         onValueChanged: {
             var percent = value.toFixed(3);
-            dataSource.setFileOffset("series1", percent)
+            dataSource.setFileOffset("series1", percent);
             //dataSource.updateFreqDodminFromFile(series1, Settings.historyFile1())
-            dataSource.updateTimeDomainFromFile(series1, series2, Settings.historyFile1())
+            dataSource.updateTimeDomainFromFile(series1, series2, Settings.historyFile1());
+
         }
         onHandleReleased:
         {
@@ -421,8 +469,11 @@ Rectangle {
 
         series1.visible = true
         series2.visible = true
-        dataSource.updateTimeDomainFromFile(series1, series2, Settings.historyFile1())
+        dataSource.updateTimeDomainFromFile(series1, series2, Settings.historyFile1());
 
+        //读取相应slider和checkButton控件
+        getAllsliders();
+        getAllcheckButtons();
     }
     onVisibleChanged: {
 
@@ -432,7 +483,105 @@ Rectangle {
     {
         fileSlider.setMarkRange()
     }
+    Keys.enabled: true
+    Keys.forwardTo: [root]
+    Keys.onPressed:{
 
+
+        var rateY_btn = (yAxisMax-yAxisMin)/(idaxisY.max - idaxisY.min);
+        var currentRangeX_btn = idaxisX.max - idaxisX.min;
+        var rateX_btn = bandwidth/currentRangeX_btn;
+        var theaxisMinX = xAxisMin;
+        var theaxisMaxX = xAxisMax;
+
+        var theaxisMinY = yAxisMin;
+        var theaxisMaxY = yAxisMax;
+        var themidX=theaxisMinX+(theaxisMaxX-theaxisMinX)/2;
+        var themidY=theaxisMinY+(theaxisMaxY-theaxisMinY)/2;
+        centerPoint=Qt.point( themidX, themidY );
+
+        switch(event.key)
+        {
+        case Qt.Key_Up:
+            view.scrollDown(rateY_btn);
+            fileSlider.setMarkRange()
+
+            //globalConsoleInfo("#####TiDomainWave.qml收到↑");
+            break;
+        case Qt.Key_Down:
+            view.scrollUp(rateY_btn);
+            fileSlider.setMarkRange()
+
+            //globalConsoleInfo("#####TiDomainWave.qml收到↓");
+            break;
+        case Qt.Key_Left:
+            globalConsoleInfo("#####TiDomainWave.qml收到Qt.Key_Left");
+            if((idaxisX.max < xAxisMax)&&(idaxisX.min > xAxisMin))
+            {
+                view.scrollLeft(rateX_btn*0.3)
+            }
+
+            fileSlider.setMarkRange()
+
+            //globalConsoleInfo("#####TiDomainWave.qml收到←");
+            break;
+        case Qt.Key_Right:
+            globalConsoleInfo("#####TiDomainWave.qml收到Qt.Key_Right");
+            if(idaxisX.min<0)//防止出现负数
+            {
+                idaxisX.min=0;
+            }
+            if((idaxisX.max <= xAxisMax)&&(idaxisX.min >= xAxisMin))
+            {
+                view.scrollRight(rateX_btn*0.3);
+            }
+
+            fileSlider.setMarkRange()
+
+            //globalConsoleInfo("#####TiDomainWave.qml收到→");
+            break;
+        case Qt.Key_Alt://切换X轴Y轴
+            if(root.altPress)
+            {
+                zoomXY = "x"
+            }
+            else
+            {
+                zoomXY = "y"
+            }
+            root.altPress=!root.altPress;
+            globalConsoleInfo("#####TiDomainWave.qml收到Key_Alt");
+            break;
+        case Qt.Key_Enter://放大
+            view.wheelZoomXY_ByBtn(true, centerPoint, true,  zoomXY)
+            globalConsoleInfo("#####TiDomainWave.qml收到Key_Enter");
+            break;
+        case Qt.Key_PageDown://放大
+            view.wheelZoomXY_ByBtn(true, centerPoint, true,  zoomXY)
+            globalConsoleInfo("#####TiDomainWave.qml收到Key_Enter");
+            break;
+        case Qt.Key_Space://缩小
+            view.wheelZoomXY_ByBtn(true, centerPoint, false,  zoomXY)
+            globalConsoleInfo("#####TiDomainWave.qml收到Key_Space");
+            break;
+        case Qt.Key_PageUp://缩小
+            view.wheelZoomXY_ByBtn(true, centerPoint, false,  zoomXY)
+            globalConsoleInfo("#####TiDomainWave.qml收到Key_Space");
+            break;
+        case Qt.Key_Escape://焦点切换到 scopeView
+            if(theScopeViewEle)
+            {
+                theScopeViewEle.focus=true;//焦点重置为ScopeView
+                globalConsoleInfo("#####TiDomainWave.qml收到Key_Escape,焦点交给了:"+theScopeViewEle);
+            }
+
+            break;
+        default:
+            globalConsoleInfo("#####TiDomainWave.qml收到按键消息#####"+event.key);
+            break;
+        }
+        event.accepted=true;//阻止事件继续传递
+    }
     function updateParams()
     {
 
@@ -445,6 +594,126 @@ Rectangle {
         fileSlider.setMarkRange()
         fileSlider.value = dataSource.getFileOffset(0)
         dataSource.updateTimeDomainFromFile(series1, series2, Settings.historyFile1())
+
+        //更新slider和checkButton
+        getAllsliders();
+        getAllcheckButtons();
+    }
+    //设置操作焦点是X轴
+    function setSpanXScale()
+    {
+        zoomXY = "x";
+    }
+
+    //设置操作焦点是Y轴
+    function setSpanYScale()
+    {
+        zoomXY = "y";
+    }
+    //获取所有非checkButton元素
+    function getAllsliders()
+    {
+
+        noCheckbuttonEleArray.splice(0,noCheckbuttonEleArray.length);
+        noCheckbuttonEleArray=[];
+
+        noCheckbuttonEleArray.norepeatpush(view);//第一个就是图谱
+        var UiMultSliderObj=Com.getNamedELementOfComponentArray(root,"UiMultSlider");
+
+        if(Com.isArray(UiMultSliderObj))
+        {
+            for(var jj=0;jj<UiMultSliderObj.length;jj++)//添加UiMultSliderObj
+            {
+                
+                if(UiMultSliderObj[jj].visible)
+                {
+                noCheckbuttonEleArray.norepeatpush(UiMultSliderObj[jj]);
+                }
+            }
+        }
+        else if(UiMultSliderObj!==undefined)
+        {
+            
+            if(UiMultSliderObj.visible)
+            {
+            noCheckbuttonEleArray.norepeatpush(UiMultSliderObj);
+            }
+        }
+
+        uiSliderIndex=noCheckbuttonEleArray.length;//获得UiSlider索引号
+        var UiSliderObj=Com.getNamedELementOfComponentArray(root,"UiSlider");//添加UiSlider
+
+
+        if(Com.isArray(UiSliderObj))
+        {
+            for(var kk=0;kk<UiSliderObj.length;kk++)
+            {
+
+
+
+                for(var uu=0;uu<UiSliderObj[kk].children.length;uu++)
+                {
+                    //globalConsoleInfo("########slider元素#######"+uu+"====="+UiSliderObj[kk].children[uu]);
+                    if(UiSliderObj[kk].children[uu].objectName==="triangleEle")
+                    {
+
+                        if(UiSliderObj[kk].children[uu].visible)
+                        {
+                        noCheckbuttonEleArray.norepeatpush(UiSliderObj[kk].children[uu]);
+                        }
+
+                    }
+                }
+
+
+                globalConsoleInfo("-----TiDomainWave.qml 添加三角滑块 triangleEle "+kk);
+            }
+        }
+        else if(UiSliderObj!==undefined)
+        {
+
+            for(var nn=0;nn<UiSliderObj.children.length;nn++)
+            {
+
+                if(UiSliderObj.children[nn].objectName==="triangleEle")
+                {
+
+                    if(UiSliderObj.children[nn].visible)
+                    {
+                    noCheckbuttonEleArray.norepeatpush(UiSliderObj.children[nn]);
+                    }
+
+                }
+                globalConsoleInfo("======TiDomainWave.qml 添加triangleEle "+nn);
+            }
+
+
+
+        }
+
+
+
+    }
+
+
+
+    //获取所有checkButton元素
+    function getAllcheckButtons()
+    {
+        //先清空
+        uiCheckButtonArray.splice(0,uiCheckButtonArray.length);
+        uiCheckButtonArray=[];
+        for(var kk=0;kk<root.children.length;kk++)
+        {
+
+            var UiCheckButton_Str=root.children[kk].toString();
+            if(UiCheckButton_Str.indexOf("UiCheckButton")!==-1)
+            {
+                uiCheckButtonArray.norepeatpush(root.children[kk]);//UiCheckButton_QMLTYPE_15元素添加
+            }
+        }
+
+
 
     }
 }

@@ -2,7 +2,6 @@
 
 SpectrumData::SpectrumData(QObject *parent) : QObject(parent)
 {
-
     sidx = 0;
     eidx = 0;
     smin = 0;
@@ -33,7 +32,7 @@ int SpectrumData::getChannelIdx(void)
 void SpectrumData::setChannelIdx(int ch)
 {
     channel_idx = ch;
-    qDebug()<<"SpectrumData channel_idx:"<<channel_idx;
+    //qDebug()<<"SpectrumData channel_idx:"<<channel_idx;
 }
 DataSource* SpectrumData::getSource(void)
 {
@@ -43,6 +42,7 @@ void SpectrumData::setSource(DataSource *ds)
 {
     data_source = ds;
     connect(data_source, SIGNAL(updateFFTPoints(int, int)), this, SLOT(refreshSeriesPoints(int, int)) );
+    connect(data_source, SIGNAL(forceUpdateSeries(int)),    this, SLOT(setForceRefresh(int)) );
 }
 
 QPointF SpectrumData::getPeakPoint0(void)
@@ -111,6 +111,10 @@ void SpectrumData::setCurrentPeakX(int ch, int series_idx, qreal x)
 void SpectrumData::setForceRefresh(int ch)
 {
     if(ch == channel_idx){
+        sidx = 0;
+        eidx = 0;
+        smin = 0;
+        smax = 0;
         m_force_refresh = true;
     }
 }
@@ -227,7 +231,7 @@ int SpectrumData::getPointIndexByX(qreal x, QAbstractSeries *series)
 
 }
 
-int  SpectrumData::getPointIndexByX(qreal x, QVector<QPointF> &show_points)
+int SpectrumData::getPointIndexByX(qreal x, QVector<QPointF> &show_points)
 {
     int idx = 0, i;
     double div = 1;

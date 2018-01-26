@@ -27,6 +27,7 @@ Flipable{
         onClick: {
             root.flipped = true
             root.state = "toBack"
+            root.focus=true;
             loadParam()
         }
     }
@@ -40,16 +41,19 @@ Flipable{
         onAccepted: {
             root.flipped = false
             root.state = "toFront"
-            setParam()
+            root.focus=true;
+            setParam();
         }
         onOkBtnClicked: {
             root.flipped = false
             root.state = "toFront"
+            root.focus=true;
             setParam()
         }
         onAreaClicked: {
             root.flipped = false
             root.state = "toFront"
+            root.focus=true;
         }
     }  //指定正面
     transform:Rotation{ //指定原点

@@ -16,6 +16,25 @@ Rectangle{
     property int selectBorderSize: 2
     property bool readOnly: false;
     signal click();
+    signal getxxFocus();
+
+
+    onGetxxFocus:
+    {
+
+
+        globalConsoleInfo(rightBtn+"»ñµÃ½¹µã")
+        if(rightBtn.focus)
+        {
+            clearSelectBorder()
+            selected(true)
+        }
+        else
+        {
+            clearSelectBorder()
+        }
+
+    }
 
     Text{
         id: btnLabel;

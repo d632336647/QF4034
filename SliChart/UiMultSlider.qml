@@ -15,6 +15,7 @@ Item {
     property real  range: max - min
     property color handleColor:   Com.series_color1
     property real  sliderOpacity: 0.5
+    property var exScopeViewEle:undefined
     signal handleReleased
     Slider{
         id:slider
@@ -61,7 +62,8 @@ Item {
         onPressedChanged: {
             if(!pressed)
             {
-                root.handleReleased()
+                globalConsoleInfo("uiMultSlider.qml²é¿´slider.value=="+slider.value);
+                root.handleReleased();
             }
         }
     }
@@ -84,5 +86,61 @@ Item {
         property: "sliderOpacity";
         to: 0.5
         duration: 300
+    }
+    Keys.enabled: true
+    Keys.forwardTo: [slider]
+    Keys.onPressed:{
+        switch(event.key)
+        {
+
+        case Qt.Key_Left:
+            globalConsoleInfo("UiMultSlider.qmlÊÕµ½Qt.Key_LeftÏûÏ¢");
+            if(slider.value<=0)
+            {
+                slider.value=0;
+            }
+            slider.value-=0.05;
+
+            break;
+        case Qt.Key_PageUp://ËõÐ¡
+            globalConsoleInfo("UiMultSlider.qmlÊÕµ½¹öÂÖÄæÊ±ÕëÏûÏ¢");
+            if(slider.value<=0)
+            {
+                slider.value=0;
+            }
+            slider.value-=0.05;
+
+            break;
+        case Qt.Key_Right:
+            globalConsoleInfo("UiMultSlider.qmlÊÕµ½Qt.Key_RightÏûÏ¢");
+            if(slider.value>=1)
+            {
+                slider.value=1;
+            }
+            slider.value+=0.05;
+
+            break;
+        case Qt.Key_PageDown://·Å´ó
+            globalConsoleInfo("UiMultSlider.qmlÊÕµ½¹öÂÖË³Ê±ÕëÏûÏ¢");
+            if(slider.value>=1)
+            {
+                slider.value=1;
+            }
+            slider.value+=0.05;
+
+            break;
+        case Qt.Key_Escape://½¹µãÇÐ»»µ½ scopeView¶ø²»ÊÇTiDomainWave
+            globalConsoleInfo("#####²é¿´UiMultSlider.parent.parent===="+root.parent.parent);
+            //            root.parent.parent.focus=true;
+            if(exScopeViewEle)
+            {
+                exScopeViewEle.focus=true;
+            }
+            break;
+        default:
+            globalConsoleInfo("#####UiMultSlider.qmlÊÕµ½°´¼üÏûÏ¢#####"+event.key);
+            break;
+        }
+        event.accepted=true;//×èÖ¹ÊÂ¼þ¼ÌÐø´«µÝ
     }
 }

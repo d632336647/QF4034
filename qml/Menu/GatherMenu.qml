@@ -30,9 +30,9 @@ Rectangle{
             icon:"\uf112"
             width: parent.itemWidth
             onClick: {
-                root.state = "HIDE"
-                root.focus = false
-                idRightPannel.focus = true
+                root.state = "HIDE";
+                root.focus = false;
+                idRightPannel.focus = true;
             }
         }
         RightButton {
@@ -47,6 +47,7 @@ Rectangle{
         SampleRate{
             id:btn_samplerate
             width: parent.itemWidth
+            parentPointer: root
         }
 
         RightButton {
@@ -88,8 +89,10 @@ Rectangle{
             icon: "\uf090";
             width: parent.itemWidth
             onClick: {
-                root.state = "HIDE"
-                idRightPannel.focus = true
+                root.state = "HIDE";
+                root.parent.state="HIDE";
+                root.focus = false;
+                idRightPannel.focus = true;
             }
         }
 
@@ -97,6 +100,7 @@ Rectangle{
 
     ClockSeting{
         id:clockSeting
+        objectName: "theclocksettingobj"
         anchors.top: parent.top
         anchors.bottom: parent.bottom
     }
@@ -115,51 +119,203 @@ Rectangle{
     Keys.enabled: true
     Keys.forwardTo: [root]
     Keys.onPressed:{
+        var curFocusindex=0;//当前获得焦点的子元素索引
+        globalConsoleInfo("#####GatherMenu.qml收到按键消息#####"+event.key);
         switch(event.key)
         {
-        case Qt.Key_0:
-            btn_exit.click()
+        case Qt.Key_Escape:
+            //btn_exit.click()
+            Com.clickchild(0,false);
             break;
+        case Qt.Key_Exclam://功能键1
+            Com.clickchild(1,false);
+            break;
+        case Qt.Key_At://功能键2
+            Com.clickchild(2,false);
+            break;
+        case Qt.Key_NumberSign://功能键3
+            Com.clickchild(3,false);
+            break;
+        case Qt.Key_Dollar://功能键4
+            Com.clickchild(4,false);
+            break;
+        case Qt.Key_Percent://功能键5
+            Com.clickchild(5,false);
+            break;
+        case Qt.Key_AsciiCircum://功能键6
+            Com.clickchild(6,false);
+            break;
+        case Qt.Key_Space://功能键 return
+            Com.clickchild(7,false);
+            break;
+
         case Qt.Key_Up:
-            keyup();
+            curFocusindex=Com.getFocusIndex(Com.childArray);
+            Com.setPrevFocus(Com.childArray,curFocusindex);
+            break;
+        case Qt.Key_PageUp://逆时针
+            globalConsoleInfo("#####GatherMenu.qml收到滚轮逆时针按键消息#####");
+            idScopeView.focusPageOfrightControl=root;
+            idScopeView.focus=true;
+            event.accepted=true;
             break;
         case Qt.Key_Down:
-            keydowm();
+            curFocusindex=Com.getFocusIndex(Com.childArray);
+            Com.setNextFocus(Com.childArray,curFocusindex);
+            break;
+        case Qt.Key_PageDown://顺时针
+            globalConsoleInfo("#####GatherMenu.qml收到滚轮顺时针按键消息#####");
+            root.focus=true;
+            root.state="SHOW";
+            event.accepted=true;
+            break;
+        case Qt.Key_Left:
+            globalConsoleInfo("#####GatherMenu.qml收到Qt.Key_Left按键消息#####");
+            idScopeView.focusPageOfrightControl=root;
+            idScopeView.focus=true;
+            event.accepted=true;
+            break;
+        case Qt.Key_Right:
+            globalConsoleInfo("#####GatherMenu.qml收到Qt.Key_Right按键消息#####");
+            root.focus=true;
+            root.state="SHOW";
+            event.accepted=true;
             break;
         case Qt.Key_Enter:
-            keyenter()
-            //event.accepted = true;
+
+            //            if(curFocusindex===-1)
+            //            {
+            //            curFocusindex=Com.getFocusIndex(Com.childArray);
+            //            }
+            //            Com.clickchild(curFocusindex,true);
+            //            //event.accepted=true;//阻止事件继续传递
+            //            globalConsoleInfo("确认按钮触发★→");
+            break;
+        case Qt.Key_F1:
+            globalConsoleInfo("-----------------------------");
+            globalConsoleInfo("                 ");
+            globalConsoleInfo(root+"!!!!!!收到F1!!!!!");
+            Com.jumptoTargetPage(root,gatherMenu,"ClockSeting");
+            globalConsoleInfo("----响应 时钟模式 完毕----");
+            globalConsoleInfo("                 ");
+            globalConsoleInfo("------------------ ----------- ");
+            event.accepted=true;
+            break;
+        case Qt.Key_F2:
+            globalConsoleInfo("-----------------------------");
+            globalConsoleInfo("                 ");
+            globalConsoleInfo(root+"!!!!!!收到F2!!!!!");
+            Com.jumptoTargetPage(root,gatherMenu,"TriggerMode");
+            globalConsoleInfo("----响应 触发模式 完毕----");
+            globalConsoleInfo("                 ");
+            globalConsoleInfo("------------------ ----------- ");
+            event.accepted=true;
+            break;
+        case Qt.Key_F3:
+            globalConsoleInfo("-----------------------------");
+            globalConsoleInfo("                 ");
+            globalConsoleInfo(root+"!!!!!!收到F3!!!!!");
+            Com.jumptoTargetPage(root,gatherMenu,"GatherMode");
+            globalConsoleInfo("----响应 采集模式 完毕----");
+            globalConsoleInfo("                 ");
+            globalConsoleInfo("------------------ ----------- ");
+            event.accepted=true;
+            break;
+        case Qt.Key_F4:
+            globalConsoleInfo("-----------------------------");
+            globalConsoleInfo("                 ");
+            globalConsoleInfo(root+"!!!!!!收到F4!!!!!");
+
+            ////////////////////////
+            Com.clearTopPage(root);
+
+            gatherMenu.focus=true;
+            gatherMenu.state="SHOW";
+            //////////////////////
+            globalConsoleInfo("----响应 采集设置 完毕----");
+            globalConsoleInfo("                 ");
+            globalConsoleInfo("------------------ ----------- ");
+            event.accepted=true;
+            break;
+        case Qt.Key_F5:
+            globalConsoleInfo("-----------------------------");
+            globalConsoleInfo("                 ");
+            globalConsoleInfo(root+"!!!!!!收到F5!!!!!");
+            globalConsoleInfo("                 ");
+            globalConsoleInfo("------------------ ----------- ");
+            ////////////////////////
+            Com.clearTopPage(root);
+            analyzeMode.focus=true;
+            analyzeMode.state="SHOW";
+            //////////////////////
+            globalConsoleInfo("----响应  分析模式  完毕----");
+            event.accepted=true;
+            break;
+        case Qt.Key_F6:
+            globalConsoleInfo("-----------------------------");
+            globalConsoleInfo("                 ");
+            globalConsoleInfo(root+"!!!!!!收到F6!!!!!");
+            Com.jumptoTargetPage(root,saveCfgMenu,"NameMode");
+            globalConsoleInfo("----响应  命名模式   完毕----");
+            globalConsoleInfo("                 ");
+            globalConsoleInfo("------------------ ----------- ");
+            event.accepted=true;
+            break;
+        case Qt.Key_F7:
+            globalConsoleInfo("-----------------------------");
+            globalConsoleInfo("                 ");
+            globalConsoleInfo(root+"!!!!!!收到F7!!!!!");
+            Com.jumptoTargetPage(root,saveCfgMenu,"SaveMode");
+            globalConsoleInfo("----响应  保存模式  完毕----");
+            globalConsoleInfo("                 ");
+            globalConsoleInfo("------------------ ----------- ");
+            event.accepted=true;
+            break;
+
+        default:
             break;
         }
+
+        event.accepted=true;//阻止事件继续传递
     }
     function keyup()
     {
-        console.log("key up")
+        globalConsoleInfo("key up")
     }
     function keydowm()
     {
-        console.log("key down")
+        globalConsoleInfo("key down")
     }
     function keyenter()
     {
-        console.log("key enter")
+        globalConsoleInfo("key enter")
     }
 
 
     //过渡动画
     states: [
-         State {
-             name: "SHOW"
-             PropertyChanges { target: root; x: root.parent.width-200}
-             onCompleted:{
-             }
-         },
-         State {
-             name: "HIDE"
-             PropertyChanges { target: root; x: root.parent.width}
-             onCompleted: {
-             }
-         }
+        State {
+            name: "SHOW"
+            PropertyChanges { target: root; x: root.parent.width-200}
+            onCompleted:{
+                root.focus = true;
+                globalConsoleInfo("                                    ");
+                globalConsoleInfo("                                    ");
+                globalConsoleInfo("☆☆☆☆GatherMenu.qml获得焦点☆☆☆☆");
+                globalConsoleInfo("                                    ");
+                globalConsoleInfo("                                    ");
+                //传递获得焦点的页面元素
+                idScopeView.focusPageOfrightControl=root;
+                Com.childArray=Com.resetAndgetItemOfControlPannel(root);
+                Com.GlobalTotalchildArray=Com.resetGlobalItemOfElement(root);
+            }
+        },
+        State {
+            name: "HIDE"
+            PropertyChanges { target: root; x: root.parent.width}
+            onCompleted: {
+            }
+        }
     ]
 
     transitions: [

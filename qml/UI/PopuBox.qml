@@ -12,6 +12,12 @@ Item {
     property string savePath:  Settings.filePath() //"D:/Store/"
     property string selectedFilename: ""
     property var    parentObject: undefined
+    property var popBoxchildArray:[]; //弹出框子元素存储数组
+    property var filelistchildArray:[]; //弹出对话框的所有子元素
+    property var stateRectArray:[]; //弹出对话框下面的按钮
+    property int nowFocusIndex:-1; //获得焦点的按钮索引
+    property var everyElementInStateRect:undefined; //StateRect类型的元素
+    property int mouseAreaElementIndex:0; //QQuickMouseArea元素索引
     //文件选择框
     ContentBox{
         id:box
@@ -20,6 +26,7 @@ Item {
         bgColor: "#000000"
         //遍历文件夹模块
         Item {
+            objectName: "fileChoose"
             anchors.top: parent.top
             anchors.topMargin: 30
             anchors.left: parent.left
@@ -44,6 +51,7 @@ Item {
                 id: fileDelegate
                 Rectangle{
                     id:wrapper
+                    objectName:"popUpfileDelegate"
                     width: parent.width
                     height: 18
                     color: wrapper.ListView.isCurrentItem ? "#404244" : "#000000"
@@ -198,7 +206,11 @@ Item {
             btnName: "关闭"
             onClicked:
             {
-                parentObject.visible = false
+                root.visible = false
+                analyzeMode.focus=true
+                root.focus=false;
+                globalConsoleInfo("查看StateRect里的root=="+root);
+                parentObject.visible = false;
             }
         }
         StateRect{
@@ -473,6 +485,179 @@ Item {
         else
             noteBox.visible = false
         return isExist
+    }
+
+
+    //遍历弹出框的元素
+    function getItemOfPopBox(popObj)
+    {
+        var atomlist=popObj.children;
+
+
+
+        for ( var i in atomlist)
+        {
+
+
+            var tempstr=atomlist[i].toString();
+            var eachChild=atomlist[i];
+            var index=tempstr.indexOf("_");
+            var ContentBoxindex=tempstr.indexOf("ContentBox");
+
+            var StateRectindex=tempstr.indexOf("StateRect");
+
+            var QQuickItemindex=tempstr.indexOf("QQuickItem");
+
+
+            if(StateRectindex!==-1)
+            {
+                popBoxchildArray.norepeatpush(atomlist[i]);
+            }
+
+            if(eachChild.objectName==="fileChoose")
+            {
+                popBoxchildArray.norepeatpush(eachChild);
+            }
+            if(ContentBoxindex!==-1)//子控件为ContentBoxindex
+            {
+
+                getItemOfPopBox(atomlist[i]);//递归
+            }
+
+
+        }
+
+
+        return popBoxchildArray;
+    }
+
+    //文件列表框
+    function getFileListBoxElement(popObj)
+    {
+        var rightListAarry= getItemOfPopBox(popObj);
+        for(var idt=0;idt<rightListAarry.length;idt++)
+        {
+
+            var theelement=rightListAarry[idt];
+            var tempNamestr=theelement.toString();
+            globalConsoleInfo("◆◆◆◆rightListAarry"+idt+"===="+tempNamestr);
+            if(theelement.objectName==="fileChoose")
+            {
+                globalConsoleInfo("★★★★找到文件列表框");
+                return theelement;
+            }
+
+        }
+        globalConsoleInfo("××××未到文件列表框");
+        return popObj;
+
+    }
+
+    //文件列表框和下面的按钮
+    function getAllAtomChildrenOfPopBox(popObj)
+    {
+        var rightListAarry= getItemOfPopBox(popObj);
+        for(var idt=0;idt<rightListAarry.length;idt++)
+        {
+            var theelement=rightListAarry[i];
+            var tempNamestr=theelement.toString();
+            var theStateRectindex=tempNamestr.indexOf("StateRect");
+            if(theStateRectindex!==-1)
+            {
+                filelistchildArray.norepeatpush(rightListAarry[i]);
+            }
+            if(theelement.objectName==="fileChoose")
+            {
+                filelistchildArray.norepeatpush(theelement);
+            }
+
+        }
+        return filelistchildArray;
+    }
+
+    //下面的按钮
+    function getStateRectOfFileList(popObj)
+    {
+        var rightListAarry= getItemOfPopBox(popObj);
+        for(var idt=0;idt<rightListAarry.length;idt++)
+        {
+            var theelement=rightListAarry[idt];
+            var tempNamestr=theelement.toString();
+            var theStateRectindex=tempNamestr.indexOf("StateRect");
+            if(theStateRectindex!==-1)
+            {
+                stateRectArray.norepeatpush(rightListAarry[idt]);
+            }
+
+
+        }
+        return stateRectArray;
+    }
+    Keys.enabled: true
+    Keys.forwardTo: root
+    Keys.onPressed:
+    {
+        switch(event.key)
+        {
+        case Qt.Key_Escape:
+
+            root.visible = false
+
+            root.focus=false;
+            analyzeMode.analyzeChildren[analyzeMode.currentBorderSel].focus=true;
+
+            //analyzeMode.focus=true;
+            break;
+        case Qt.Key_Left:
+            globalConsoleInfo("PopuBox.qml收到Qt.Key_Left消息");
+            nowFocusIndex--;
+            if(nowFocusIndex<0)
+            {
+                nowFocusIndex=stateRectArray.length-1;
+            }
+            stateRectArray[nowFocusIndex].focus=true;
+
+            for(var pp=0;pp<stateRectArray[nowFocusIndex].children.length;pp++ )
+            {
+                //globalConsoleInfo(pp+"      ==="+stateRectArray[nowFocusIndex].children[pp]);
+                everyElementInStateRect=stateRectArray[nowFocusIndex].children[pp];
+                if(everyElementInStateRect.toString().indexOf("MouseArea")!=="-1")
+                    mouseAreaElementIndex= pp;
+            }
+            everyElementInStateRect=stateRectArray[nowFocusIndex].children[mouseAreaElementIndex];
+            everyElementInStateRect.entered();
+            everyElementInStateRect.exited();
+            globalConsoleInfo("←"+stateRectArray[nowFocusIndex].btnName);
+            break;
+        case Qt.Key_Right:
+            globalConsoleInfo("PopuBox.qml收到Qt.Key_Right消息");
+            nowFocusIndex++;
+
+            if(nowFocusIndex>stateRectArray.length-1)
+            {
+                nowFocusIndex=0;
+            }
+            stateRectArray[nowFocusIndex].focus=true;
+            for(var qq=0;qq<stateRectArray[nowFocusIndex].children.length;qq++ )
+            {
+                //globalConsoleInfo(pp+"      ==="+stateRectArray[nowFocusIndex].children[pp]);
+                everyElementInStateRect=stateRectArray[nowFocusIndex].children[qq];
+                if(everyElementInStateRect.toString().indexOf("MouseArea")!=="-1")
+                    mouseAreaElementIndex= qq;
+            }
+            everyElementInStateRect=stateRectArray[nowFocusIndex].children[mouseAreaElementIndex];
+            everyElementInStateRect.entered();
+            everyElementInStateRect.exited();
+
+            globalConsoleInfo("→"+stateRectArray[nowFocusIndex].btnName);
+            break;
+        default:
+            globalConsoleInfo("popBox.qml收到按键消息"+event.key);
+            break;
+
+
+        }
+
     }
 
 }

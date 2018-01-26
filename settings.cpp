@@ -12,16 +12,16 @@ Settings::Settings(QObject *parent) : QObject(parent)
     //分析参数
     initArray(analyze_mode, 0);      //分析模式   0=实时频谱  1=实时瀑图  2=历史频谱对比  3=历史瀑布  4=历史时域
 
-    //initArray(center_freq,  70.000); //中心频率  单位MHz
-    center_freq[0] = 70.000;
-    center_freq[1] = 14.000;
+    initArray(center_freq,  70.000); //中心频率  单位MHz
+    //center_freq[0] = 70.000;
+    //center_freq[1] = 70.000;
 
-    //initArray(bandwidth,    25.000); //观测带宽  单位MHz
-    bandwidth[0] = 25.000;
-    bandwidth[1] = 50.000;
+    initArray(bandwidth,    12.000); //观测带宽  单位MHz
+    //bandwidth[0] = 12.000;
+    //bandwidth[1] = 12.000;
 
     initArray(resolution,   10000);  //分编率  单位Hz ，即将停止使用此参数，改为fft点数代替
-    initArray(fftpoints,    10000);  //fft点数
+    initArray(fftpoints,    12000);  //fft点数
     initArray(reflevel_min, -120);   //参考电平最小值 -120
     initArray(reflevel_max, 10);     //参考电平最大值 10
 
@@ -114,15 +114,15 @@ int Settings::captureSize(option op, int val, int ch)
 }
 qreal Settings::captureRate(option op, qreal val, int ch)
 {
-    if(ch>=MAXCH)
-        ch = current_ch;
+    Q_UNUSED(ch)
+    //此参数所有通道一致
     if(op == Settings::Set){
-        capture_rate[ch] = val;
-        _settings->beginGroup(keyString("capture", ch));
-        _settings->setValue("capture_rate", capture_rate[ch]);
+        capture_rate[SAME] = val;
+        _settings->beginGroup(keyString("capture", SAME));
+        _settings->setValue("capture_rate", capture_rate[SAME]);
         _settings->endGroup();
     }
-    return capture_rate[ch];
+    return capture_rate[SAME];
 }
 
 
@@ -146,23 +146,23 @@ qreal Settings::centerFreq(option op, qreal val, int ch)
         ch = current_ch;
     if(op == Settings::Set){
         //参数校正
-        if(0 == ch){
-            if(val>84.5)
-                val = 84.5;
-            if(val<55.5)
-                val = 55.5;
-            qreal right = 85 - val;
-            qreal left  = val - 55;
-            qreal maxbw = (right>left ? left :right)*2;
+        qreal max = (ddc_freq + user_bandwidth/2);
+        qreal min = (ddc_freq - user_bandwidth/2);
 
-            if( bandwidth[ch] > maxbw )
-            {
-                this->bandWidth(Settings::Set, maxbw);
-            }
-        }
-        else{
+        qreal offset = user_bandwidth*0.1;
 
-        }
+        if(val > (max - offset) )
+            val = max - offset;
+        if(val < (min + offset) )
+            val = min + offset;
+
+        qreal right = max - val;
+        qreal left  = val - min;
+
+        qreal maxbw = (right>left ? left :right)*2;
+
+        this->bandWidth(Settings::Set, maxbw);
+
         center_freq[ch] = val;
         _settings->beginGroup(keyString("analyze", ch));
         _settings->setValue("center_freq", center_freq[ch]);
@@ -175,39 +175,13 @@ qreal Settings::bandWidth(option op, qreal val, int ch)
     if(ch>=MAXCH)
         ch = current_ch;
     if(op == Settings::Set){
-        //参数校正
-        if(0 == current_ch){
-            qreal right = 85 - center_freq[ch];
-            qreal left  = center_freq[ch] - 55;
-            qreal maxbw = (right>left ? left :right)*2;
-            if( val > maxbw )
-                val = maxbw;
-
-            if( val > 30 )
-                val = 30;
-
-            int min_res = val * 10;
-            if( val > 3 )
-                min_res = val * 40;
-            if( val > 10 )
-                min_res = val * 80;
-            if( val > 15 )
-                min_res = val * 100;
-
-            //只限定实时模式
-            //if( analyze_mode < 2)
-            {
-                if(resolution[ch] != min_res)
-                    resolutionSize(Settings::Set, min_res);
-            }
-        }
-        else{
-
-        }
+        if(val > user_bandwidth)
+            val = user_bandwidth;
         bandwidth[ch] = val;
         _settings->beginGroup(keyString("analyze", ch));
         _settings->setValue("bandwidth", bandwidth[ch]);
         _settings->endGroup();
+
     }
     return bandwidth[ch];
 }
@@ -245,8 +219,6 @@ int Settings::fftPoints(option op, int val, int ch)
     Q_UNUSED(ch)
     //此参数所有通道一致
     if(op == Settings::Set){
-        if( val > fftpoints[SAME] )
-            return fftpoints[SAME];
         fftpoints[SAME] = val;
         _settings->beginGroup(keyString("analyze", SAME));
         _settings->setValue("fftpoints", fftpoints[SAME]);
@@ -306,6 +278,7 @@ qreal Settings::ddcFreq(option op, qreal val)
 {
     if(op == Settings::Set){
         ddc_freq = val;
+        this->centerFreq(Settings::Set, val);
         _settings->setValue("pre/ddc_freq", ddc_freq);
     }
     return ddc_freq;
@@ -454,6 +427,7 @@ QQuickItem *Settings::findQuickItem(QString objctName)
     return nullptr;
 }
 
+
 QString Settings::keyString(QString group, int ch)
 {
     QString key;
@@ -479,8 +453,9 @@ void Settings::initArray(qreal array[], qreal val)
 }
 
 
-qreal Settings::adjustMaxBandWidth(void)
+bool Settings::adjustMaxBandWidth(void)
 {
+    bool rtn = false;
     //DDC Freq=70   Fs/B=1.25  AD Sample = 100M
     if(ddc_freq == 70 && fsb_coef==0 && ad_sample == 100)
     {
@@ -498,10 +473,16 @@ qreal Settings::adjustMaxBandWidth(void)
         else
             user_bandwidth = base_bandwidth * 0.8;
     }
-    return user_bandwidth;
+
+    for(int ch=0; ch<MAXCH; ch++){
+        if(user_bandwidth != bandwidth[ch])
+        {
+            bandwidth[ch] = user_bandwidth;
+            rtn = true;
+        }
+    }
+    return rtn;
 }
-
-
 
 void Settings::save(void)
 {
@@ -616,9 +597,6 @@ void Settings::load(void)
     if(ok)user_bandwidth = tempf;
     tempf = _settings->value("pre/ad_sample").toReal(&ok);
     if(ok)ad_sample = tempf;
-
-
-    //-----------------------------------------------------------
     tempi = _settings->value("store/save_mode").toInt(&ok);
     if(ok)save_mode = tempi;
 

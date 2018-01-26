@@ -13,23 +13,27 @@ Flipable{
     signal  showComplete
     property int angle : 0  //翻转角度
     property bool  flipped :  false //用来标志是否翻转
+    property var parentPointer: undefined
+    objectName: "中心频率翻转控件"
     property alias inputFocus:numberEdit.inputFocus
     Rectangle{
         color: Com.BGColor_main
     }
 
     front: RightButton {
+        objectName: "中心频率翻转控件正面";
         id: btn_centerfreq;
         anchors.fill: parent
         textLabel: "通道"+(Settings.paramsSetCh()+1)+" 中心频率";
         onClick: {
-            root.flipped = true
-            root.state = "toBack"
+            root.flipped = true;
+            root.state = "toBack";
             loadParam()
         }
     }
     back: LineEdit {
         id: numberEdit;
+        objectName: "中心频率翻转控件背面";
         anchors.fill: parent
         unit: "MHz"
         text: "60"
@@ -38,6 +42,8 @@ Flipable{
         onAccepted: {
             root.flipped = false
             root.state = "toFront"
+            globalConsoleInfo("★★CenterFreq.qml响应onAccepted,查看root.parentPointer---"+root.parentPointer);
+            root.parentPointer.focus=true;//侧边栏获得焦点
             setParam(numberEdit.text)
             analyzeMenu.focus = true
 
@@ -45,6 +51,8 @@ Flipable{
         onOkBtnClicked: {
             root.flipped = false
             root.state = "toFront"
+            globalConsoleInfo("★★CenterFreq.qml响应onOkBtnClicked,查看root.parentPointer----"+root.parentPointer);
+            root.parentPointer.focus=true;//侧边栏获得焦点
             setParam(numberEdit.text)
         }
         onAreaClicked: {
@@ -102,7 +110,6 @@ Flipable{
             analyzeMenu.reloadParams()
             analyzeMenu.updateParams()
         }
-
     }
 
 }

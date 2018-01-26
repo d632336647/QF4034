@@ -264,25 +264,191 @@ Rectangle{
             }
         }
     }
-    function sendKeyCode(code)
+    
+    Keys.enabled: true
+    Keys.forwardTo: [root]
+    Keys.onPressed:{
+
+        switch(event.key)
+        {
+        case Qt.Key_Left:
+            globalConsoleInfo("#####Mainbox.qml收到Qt.Key_Left按键消息#####");
+            idScopeView.focus=true;
+            idScopeView.focusPageOfrightControl=idRightPannel;
+            break;
+        case Qt.Key_PageUp://逆时针
+            globalConsoleInfo("#####Mainbox.qml收到滚轮逆时针按键消息#####");
+            idScopeView.focus=true;
+            idScopeView.focusPageOfrightControl=idRightPannel;
+            break;
+        case Qt.Key_Right:
+            globalConsoleInfo("#####Mainbox.qml收到Key_Right按键消息#####");
+            idRightPannel.focus=true;
+            idRightPannel.state="SHOW";
+            event.accepted=true;
+            break;
+        case Qt.Key_PageDown://顺时针
+            globalConsoleInfo("#####Mainbox.qml收到滚轮顺时针按键消息#####");
+            idRightPannel.focus=true;
+            idRightPannel.state="SHOW";
+            event.accepted=true;
+            break;
+        default:
+            globalConsoleInfo("#####Mainbox.qml收到未注册消息#####"+event.key);
+            break;
+        }
+
+
+    }
+function sendKeyCode(code)
     {
-        console.log(code)
-        if(code === "017f")
-            virKey.sendVitualKey(Qt.Key_0)
-        else if(code === "01bf")
-            virKey.sendVitualKey(Qt.Key_1)
-        else if(code === "01df")
-            virKey.sendVitualKey(Qt.Key_2)
-        else if(code === "01ef")
-            virKey.sendVitualKey(Qt.Key_3)
-        else if(code === "01fb")
-            virKey.sendVitualKey(Qt.Key_4)
-        else if(code === "01fd")
-            virKey.sendVitualKey(Qt.Key_5)
-        else if(code === "01fe")
-            virKey.sendVitualKey(Qt.Key_6)
-        //else if(code === "01bf")
-        //    virKey.sendVitualKey(Qt.Key_7)
+        //globalConsoleInfo("转发单片机收到的按键码"+code);
+
+        //左侧边按钮
+        if(code === Com.controlPannel["C_ESCAPE"])  //ESC
+            virKey.sendVitualKey(Qt.Key_Escape)
+        else if(code === Com.controlPannel["C_FN1"]) //主键盘 1+shift
+            virKey.sendVitualKey(Qt.Key_Exclam)
+        else if(code === Com.controlPannel["C_FN2"])  //主键盘2+shift
+            virKey.sendVitualKey(Qt.Key_At)
+        else if(code === Com.controlPannel["C_FN3"])  //主键盘3+shift
+            virKey.sendVitualKey(Qt.Key_NumberSign)
+        else if(code === Com.controlPannel["C_FN4"])  //主键盘4+shift
+            virKey.sendVitualKey(Qt.Key_Dollar)
+        else if(code === Com.controlPannel["C_FN5"])  //主键盘5+shift
+            virKey.sendVitualKey(Qt.Key_Percent)
+        else if(code === Com.controlPannel["C_FN6"])  //主键盘6+shift
+            virKey.sendVitualKey(Qt.Key_AsciiCircum)
+        else if(code === Com.controlPannel["C_RETURN"]) //映射 Return
+            virKey.sendVitualKey(Qt.Key_Space)
+        //方向区
+        else if(code === Com.controlPannel["C_UP_ARROW"])//↑
+            virKey.sendVitualKey(Qt.Key_Up)
+        else if(code === Com.controlPannel["C_DOWN_ARROW"])//↓
+            virKey.sendVitualKey(Qt.Key_Down)
+        else if(code === Com.controlPannel["C_LEFT_ARROW"])//←
+            virKey.sendVitualKey(Qt.Key_Left)
+        else if(code === Com.controlPannel["C_WRIGHT_ARROW"])//→
+            virKey.sendVitualKey(Qt.Key_Right)
+        else if(code === Com.controlPannel["C_POS_ENTER"])//→
+            virKey.sendVitualKey(Qt.Key_Enter) //Enter
+        //参数区
+        else if(code === Com.controlPannel["C_DIGIT_ZERO"])
+        {
+            virKey.sendVitualKey(Qt.Key_0,"0");
+            globalConsoleInfo("mainbox.qml发送的键值:"+code);
+        }
+        else if(code === Com.controlPannel["C_DIGIT_ONE"])
+        {
+            virKey.sendVitualKey(Qt.Key_1,"1");
+            globalConsoleInfo("mainbox.qml发送的键值:"+code);
+        }
+        else if(code === Com.controlPannel["C_DIGIT_TWO"])
+        {
+            virKey.sendVitualKey(Qt.Key_2,"2");
+            globalConsoleInfo("mainbox.qml发送的键值:"+code);
+        }
+        else if(code === Com.controlPannel["C_DIGIT_THREE"])
+            virKey.sendVitualKey(Qt.Key_3,"3");
+        else if(code === Com.controlPannel["C_DIGIT_FOUR"])
+            virKey.sendVitualKey(Qt.Key_4,"4");
+        else if(code === Com.controlPannel["C_DIGIT_FIVE"])
+            virKey.sendVitualKey(Qt.Key_5,"5");
+        else if(code === Com.controlPannel["C_DIGIT_SIX"])
+            virKey.sendVitualKey(Qt.Key_6,"6");
+        else if(code === Com.controlPannel["C_DIGIT_SEVEN"])
+            virKey.sendVitualKey(Qt.Key_7,"7");
+        else if(code === Com.controlPannel["C_DIGIT_EIGHT"])
+            virKey.sendVitualKey(Qt.Key_8,"8");
+        else if(code === Com.controlPannel["C_DIGIT_NINE"])
+            virKey.sendVitualKey(Qt.Key_9,"9");
+        else if(code === Com.controlPannel["C_DIGIT_POINT"])
+            virKey.sendVitualKey(Qt.Key_Period,".");
+        else if(code === Com.controlPannel["C_DIGIT_PLUS_MINUS"])//小键盘-
+            virKey.sendVitualKey(Qt.Key_Minus)
+        else if(code === Com.controlPannel["C_BK_SP"])//backspace
+            virKey.sendVitualKey(Qt.Key_Backspace)
+        else if(code === Com.controlPannel["C_ENTER"])//Enter
+            virKey.sendVitualKey(Qt.Key_Enter)
+        //控制区域
+        else if(code === Com.controlPannel["C_FREQUENCY_CHANNEL"])//FREQUENCY
+            virKey.sendVitualKey(Qt.Key_F1)
+        else if(code === Com.controlPannel["C_MEASURE"])//MEASURE
+            virKey.sendVitualKey(Qt.Key_F2)
+        else if(code === Com.controlPannel["C_DET_DEMOD"])//DET_DEMOD
+            virKey.sendVitualKey(Qt.Key_F3)
+        else if(code === Com.controlPannel["C_AUTO_COUPLE"])//AUTO_COUPLE
+            virKey.sendVitualKey(Qt.Key_F4)
+        else if(code === Com.controlPannel["C_SPAN_X_SCALE"])//SPAN_X_SCALE
+            virKey.sendVitualKey(Qt.Key_F5)
+        else if(code === Com.controlPannel["C_TRACE_VIEW"])//TRACE_VIEW
+            virKey.sendVitualKey(Qt.Key_F6)
+        else if(code === Com.controlPannel["C_BW_AVG"])//BW_AVG
+            virKey.sendVitualKey(Qt.Key_F7)
+        else if(code === Com.controlPannel["C_TRIG"])//TRIG
+            virKey.sendVitualKey(Qt.Key_F8)
+        else if(code === Com.controlPannel["C_AMPLITUDE_Y_SCALE"])//AMPLITUDE_Y_SCALE
+            virKey.sendVitualKey(Qt.Key_F9)
+        else if(code === Com.controlPannel["C_DISPLAY"])//DISPLAY
+            virKey.sendVitualKey(Qt.Key_F10)
+        else if(code === Com.controlPannel["C_SINGLE"])//SINGLE
+            virKey.sendVitualKey(Qt.Key_F11)
+        else if(code === Com.controlPannel["C_SWEEP"])//SWEEP
+            virKey.sendVitualKey(Qt.Key_F12)
+        //系统区域
+        else if(code === Com.controlPannel["C_SYSTEM"])//SYSTEM
+            virKey.sendVitualKey(Qt.Key_F13)
+        else if(code === Com.controlPannel["C_PRESET"])//PRESET
+            virKey.sendVitualKey(Qt.Key_F14)
+        else if(code === Com.controlPannel["C_MARKER"])//MARKER
+            virKey.sendVitualKey(Qt.Key_F15)
+        else if(code === Com.controlPannel["C_PEAK_SEARCH"])//PEAK_SEARCH
+            virKey.sendVitualKey(Qt.Key_F16)
+        else if(code === Com.controlPannel["C_MARKER_FCTN"])//MARKER_FCTN
+            virKey.sendVitualKey(Qt.Key_F17)
+        else if(code === Com.controlPannel["C_MAKER_ARROW"])//MAKER_ARROW
+            virKey.sendVitualKey(Qt.Key_F18)
+        else if(code === Com.controlPannel["C_SOURCE"])//C_SOURCE
+            virKey.sendVitualKey(Qt.Key_F19)
+
+        //滚轮操作
+        else if(code === Com.controlPannel["C_WHEEL_CLOCKWISE"])//C_WHEEL_CLOCKWISE
+            virKey.sendVitualKey(Qt.Key_PageDown)
+        else if(code === Com.controlPannel["C_WHEEL_ANTICLOCKWISE"])//C_WHEEL_ANTICLOCKWISE
+            virKey.sendVitualKey(Qt.Key_PageUp)
+    }
+    
+    function getSubItem()
+    {
+        var list=root.children;
+        globalConsoleInfo("count:"+list.length);
+        for ( var i in list) {
+            globalConsoleInfo("list[ " +i + " ] id = " + list[i].attr("id"));
+            globalConsoleInfo("list[ " +i + " ] type = " + list[i].type);
+
+        }
+
+    }
+
+    //全局打印函数
+    function globalConsoleInfo(infostr)
+    {
+        var debugInfoFlag=false;
+        if(debugInfoFlag)
+            console.info(infostr);
+
+    }
+
+    Component.onCompleted: {
+        globalConsoleInfo("                                    ");
+        globalConsoleInfo("                                    ");
+        globalConsoleInfo("☆☆☆☆mainbox.qml加载完毕☆☆☆☆");
+        globalConsoleInfo("                                    ");
+        globalConsoleInfo("                                    ");
+        //传递获得焦点的页面元素
+        idScopeView.focusPageOfrightControl=idRightPannel;
+
+        Com.GlobalTotalchildArray=Com.resetGlobalItemOfElement(root);
 
     }
 }

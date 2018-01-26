@@ -51,7 +51,6 @@ Q_DECLARE_METATYPE(QAbstractAxis *)
 DataSource::DataSource(QObject *parent, Settings *st)
     : QObject(parent)
     , m_spectrum()
-    , m_fftCount(1024)
     , m_storeMedia(0)
     , m_nameMode(0)
     , m_captureSize(0)
@@ -63,7 +62,7 @@ DataSource::DataSource(QObject *parent, Settings *st)
 
 
     m_pcieCard = NULL;
-
+#if 1
     m_pciDev = new PciDeviceAPI("spectrumAnalyzer", 0x1556, 0x1100);
     m_pciDev->scanCard();
     PcieCard *pcieObj = (PcieCard*)m_pciDev->getCard(1);
@@ -90,6 +89,10 @@ DataSource::DataSource(QObject *parent, Settings *st)
         m_pcieCard = NULL;
     }
 
+#endif
+
+    m_settings = st;
+
     for(int ch = 0; ch<CHNUM; ch++)
     {
         m_show_points[ch][0].clear();
@@ -97,25 +100,34 @@ DataSource::DataSource(QObject *parent, Settings *st)
         m_show_points[ch][2].clear();
 
         m_waterfall_points[ch].clear();
+
+        m_centerFreq[ch] = m_settings->centerFreq(Settings::Get, 0, ch);
+        m_bandwidth[ch] = m_settings->bandWidth(Settings::Get, 0, ch);
+
     }
+    m_fftpoints = m_settings->fftPoints();
 
 
-    m_settings = st;
     m_filePath.clear();
+
+
     this->initHistoryFile();
 }
 DataSource::~DataSource(){
+#if 0
     if(m_pciDev)
     {
         qDebug()<<"delete pcie driver";
         delete m_pciDev;
+        m_pciDev = NULL;
     }
     if(m_pcieCard)
     {
         qDebug()<<"delete pcie card";
         delete m_pcieCard;
+        m_pcieCard = NULL;
     }
-
+#endif
     this->clearHistoryFile();
 }
 void DataSource::changeAxis(QAbstractAxis *axis){
@@ -129,6 +141,13 @@ void DataSource::changeAxis(QAbstractAxis *axis){
 //        axis->setLinePen(pen);
     }
 }
+void DataSource::forceUpdateAllSeries(void)
+{
+    for(int ch=0; ch<CHNUM; ch++)
+    {
+        emit forceUpdateSeries(ch);
+    }
+}
 void DataSource::updateFreqDodminFromData(void)
 {
 
@@ -140,12 +159,10 @@ void DataSource::updateFreqDodminFromData(void)
     //1FFT点 = 1对IQ = 2个short类型 = 4 char类型，
     //对于多通道， 还要 x通道数
 
-    qint64 fft_count = 10000 * 4 * 2;
+    qint64 max_count = m_settings->fftPoints() * 4 * CHNUM;
 
-    qint64 max_count = m_bandwidth*1000000/m_resolution * 8;
-    max_count = max_count * CHNUM;
-
-    max_count = fft_count;
+    //qint64 max_count = m_bandwidth*1000000/m_resolution * 8;
+    //max_count = max_count * CHNUM;
 
     //qDebug()<<"1111111:"<<QDateTime::currentDateTime();
     uchar *sampleData = new uchar[max_count];
@@ -155,6 +172,7 @@ void DataSource::updateFreqDodminFromData(void)
         qDebug()<<"getSampleData failed";
         return;
     }
+
 
     QVector<QVector<signed short>> orgdata;
     this->separateData(CHNUM, sampleData, len,  orgdata);
@@ -174,7 +192,7 @@ void DataSource::updateFreqDodminFromData(void)
 
         fftlock.lockForWrite();//文件读写锁
         m_show_points[ch][0].clear();
-        this->cutShowPoint(points, m_show_points[ch][0]);
+        this->cutShowPoint(ch, points, m_show_points[ch][0]);
 
         //this->smooth(m_show_points[0]);
 
@@ -215,13 +233,13 @@ void DataSource::updateFreqDodminFromFile(QAbstractSeries *series, QString fileN
 
     QVector<double> fftData;
 
-    if(!m_spectrum.fftFromFile(file, m_fftCount, percent, fftData))
+    if(!m_spectrum.fftFromFile(file, m_fftpoints, percent, fftData))
         return;
 
 
     QVector<QPointF> points;
     this->workAllPoint(fftData, points);
-    this->cutShowPoint(points, t_show_point);
+    this->cutShowPoint(0, points, t_show_point);
 
 
     //this->smooth(t_show_point);
@@ -236,6 +254,13 @@ void DataSource::updateFreqDodminFromFile(QAbstractSeries *series, QString fileN
 
     m_show_points[0][series_idx] = t_show_point;
 
+    //更新瀑布图使用的数据
+    wtflock.lockForWrite();
+    m_waterfall_points[0].clear();
+    for(int i=0; i<t_show_point.size(); i++)
+        m_waterfall_points[0].append(t_show_point.at(i).y());
+    wtflock.unlock();
+
     //emit updateFFTPoints(0, series_idx); //由SpectrumData类自行获取并刷新
 
     //qDebug()<<"--------------------updateFreqDodminFromFile--------------------";
@@ -244,69 +269,33 @@ void DataSource::updateFreqDodminFromFile(QAbstractSeries *series, QString fileN
     //qDebug()<<"----------------------------------------------------------------";
 
 }
-void DataSource::setFFTParam(double centerFreq, double bandwidth, int resolution)
+void DataSource::setFFTParam(int ch, double centerFreq, double bandwidth, int fftpoints)
 {
-    if(m_centerFreq != centerFreq)
+    if(m_centerFreq[ch] != centerFreq)
     {
-        m_centerFreq = centerFreq;
+        m_centerFreq[ch] = centerFreq;
     }
-    if(m_bandwidth != bandwidth)
+    if(m_bandwidth[ch] != bandwidth)
     {
-        m_bandwidth = bandwidth;
+        m_bandwidth[ch] = bandwidth;
     }
-    if(m_resolution != resolution)
+    if(m_fftpoints != fftpoints)
     {
-        m_resolution = resolution;
+        m_fftpoints = fftpoints;
     }
-    m_fftCount   = 50 * 1000000.0 / m_resolution;
-
-    //qDebug()<<"setFFTParam m_bandwidth:"<<m_bandwidth<<" m_resolution:"<<m_resolution<<" m_fftCount:"<<m_fftCount;
+    //qDebug()<<"setFFTParam ch:"<<ch<<"m_centerFreq:"<<m_centerFreq[ch]<<"m_bandwidth:"<<m_bandwidth[ch]<<"m_fftpoints:"<<m_fftpoints;
 
 }
 
 int DataSource::updateWaterfallPlotFromFile(int ch, QString fileName)
 {
+    //不能单独使用此函数,需要配合先调用updateFreqDodminFromFile
     Q_UNUSED(fileName)
-
     if(ch>CHNUM)
         ch = 0;
-    //QVector<QVector<double>> &origData = m_waterfall_points[ch];
-    QVector<double> &origData = m_waterfall_points[ch];
-    bool readok = false;
-
-    QFile *file = this->getFile("series1");
-    if(file == nullptr)
-        return 0;
-    wtflock.lockForWrite();
-    //qDebug()<<"update waterfall ch"<<ch<<"plot from file";
-    if(m_spectrum.fftFromFile(file, m_fftCount, filePercent.value("series1"), origData))
-    {
-        readok = true;
-    }
-    wtflock.unlock();
-    if(readok)
-        emit updateWaterfallFile(ch, m_bandwidth, m_centerFreq);
-
-    //qDebug()<<"updateWaterfallPlotFromFile  count line:"<<origData.count();
-
+    emit updateWaterfallFile(ch);
     return 0;
 }
-
-/*
-void DataSource::openWaterfallRtCapture(WaterfallPlot *wf)
-{
-    m_waterfall = wf;
-    m_start_wf  = true;
-    m_wf_fps = 0;
-    m_waterfall->clearPixelColor();
-}
-void DataSource::closeWaterfallRtCapture(void)
-{
-    m_waterfall = nullptr;
-    m_start_wf  = false;
-    m_wf_fps = 0;
-}
-*/
 
 
 
@@ -431,9 +420,9 @@ void DataSource::setCaptureParam(int clkMode, double captureFreq, int triggerMod
     m_captureMode = captureMode;
     m_captureSize = captureSize;
     ClockTrigger clockTrigger;
-    clockTrigger.m_clockType = (EnumClock)m_clkMode;
+    clockTrigger.m_clockType   = (EnumClock)m_clkMode;
     clockTrigger.m_triggerType = (EnumTrigger)m_triggerMode;
-    clockTrigger.m_adc_fs_set = m_captureFreq;
+    clockTrigger.m_adc_fs_set  = m_captureFreq;
 
     //StoreParam &storeParam = m_pcieCard->getStoreParam();
     //storeParam.m_recordSource = DDCDataSource;
@@ -449,12 +438,28 @@ void DataSource::setCaptureParam(int clkMode, double captureFreq, int triggerMod
  * ddcFreq  :DDC载频            default = 70.000MHz
  * extractFactor:抽取因子        见文档
  * fsbCoe   :Fs/B系数           0=1.25B(default)  1=2.5B
+ * return   :标记带宽是否更新
 *******************************************/
-void DataSource::setPreConditionParam(int outMode, int chCount, double ddcFreq, int extractFactor, int fsbCoef)
+bool DataSource::setPreConditionParam(int outMode, int chCount, double ddcFreq, int extractFactor, int fsbCoef)
 {
     Q_UNUSED(outMode)
+
+    bool rtn = false;
+    if(m_settings->adjustMaxBandWidth())
+    {
+        for(int ch=0; ch<CHNUM; ch++)
+        {
+            m_settings->centerFreq(Settings::Set, ddcFreq, ch);
+            m_centerFreq[ch] = ddcFreq;
+            m_bandwidth[ch]  = m_settings->bandWidth(Settings::Get, 0, ch);
+
+        }
+        m_fftpoints = m_settings->fftPoints();
+        rtn = true;
+    }
+
     if(!m_pcieCard)
-        return;
+        return rtn;
     //EFsBType  type = FS_1_25B;
 
     DDCParam  &ddcParam = m_pcieCard->getDDC();
@@ -465,7 +470,7 @@ void DataSource::setPreConditionParam(int outMode, int chCount, double ddcFreq, 
     ddcParam.m_ddc_coef_type   = (EFsBType)fsbCoef;
     m_pcieCard->setDDC();
 
-    m_settings->adjustMaxBandWidth();
+    return rtn;
 }
 
 
@@ -499,6 +504,7 @@ void DataSource::setStorParam(int storeMedia, int nameMode, QString filePath){
     //m_filePath = storeParam.m_filePath;
     storeParam.m_storeSize = m_captureSize;
     storeParam.m_isStream = false;
+    storeParam.m_channelSplite = true;
 	storeParam.m_streamParam = NULL;
     storeParam.m_streamCallback = NULL;//storeParam.m_isStream ? AQN_StreamReader : NULL;
     storeParam.m_stoppedParam = this;
@@ -524,10 +530,19 @@ bool DataSource::startStopStore(bool startFlag){
         if(newFileName){//如果是自动命令，不判断文件是否存在，每次都重新创建新文件
             QDateTime curDateTime = QDateTime::currentDateTime();
             QString s_curDateTime = curDateTime.toString("yyyyMMdd_hhmmss");
+
+
+            QString prefix = this->createFileName();
+
+             //DDC70M_Fs100M4R_IntTrg_IntClk_20180122144910_1ch
             if(m_settings->filePath().isEmpty())
-                m_filePath = "D:/Store/DDC_Short_Fs_" + s_curDateTime + ".dat";
+            {
+                m_filePath = "D:/Store/" + prefix + s_curDateTime + ".dat";
+            }
             else
-                m_filePath = m_settings->filePath()+ "/DDC_Short_Fs_" + s_curDateTime + ".dat";
+            {
+                m_filePath = m_settings->filePath()+ "/" + prefix + s_curDateTime + ".dat";
+            }
             setStorParam(m_storeMedia, m_nameMode, m_filePath);
         }
     }
@@ -664,8 +679,8 @@ void DataSource::initHistoryFile(void)
         if (false == this->addHistoryFile("series3", m_settings->historyFile3()) )
             m_settings->historyFile3(Settings::Set, "");
     }
-
 }
+
 bool DataSource::clearHistoryFile(void)
 {
     QMap<QString, QFile*>::iterator i = fileMap.begin();
@@ -680,7 +695,6 @@ bool DataSource::clearHistoryFile(void)
     qDebug()<<"close history file if exist";
     return true;
 }
-
 
 QFile *DataSource::getFile(QString objname)
 {
@@ -718,6 +732,48 @@ void DataSource::clearFilter(void)
     }
     filterData.clear();
 }
+void DataSource::clearPCIE(void)
+{
+    if(m_pciDev)
+    {
+        qDebug()<<"delete pcie driver";
+        delete m_pciDev;
+        m_pciDev = NULL;
+    }
+    if(m_pcieCard)
+    {
+        qDebug()<<"delete pcie card";
+        delete m_pcieCard;
+        m_pcieCard = NULL;
+    }
+}
+QString DataSource::createFileName(void)
+{
+    //DDC70M_Fs100M4R_IntTrg_IntClk_20180122144910_1ch
+    QString prefix;
+    prefix.sprintf("DDC%.0fM_Fs%.0fM%dR_",  m_settings->ddcFreq(), m_settings->captureRate(), m_settings->extractFactor());
+
+    QString trigMode;//触发模式  0=外部触发   1=内部触发
+    QString clkMode;//0=外时钟     1=内时钟    2=外参考
+    if(0 == m_settings->triggerMode())
+        trigMode = "ExtTrg_";
+    else
+        trigMode = "IntTrg_";
+    switch(m_settings->clkMode())
+    {
+    case 0: clkMode = "ExtClk_";
+            break;
+    case 1: clkMode = "IntClk_";
+        break;
+    case 2: clkMode = "ExtRef_";
+        break;
+    default:
+        break;
+    }
+    prefix = prefix+trigMode+clkMode;
+    return prefix;
+}
+
 void DataSource::smooth(QVector<QPointF> &dst_points)
 {
     //QVector<QPointF>  data = filterData.
@@ -777,26 +833,65 @@ void DataSource::separateData(int ch_count, uchar *source, qint64 size, QVector<
     }
 }
 
-void DataSource::cutShowPoint(QVector<QPointF> &source_points, QVector<QPointF> &show_points)
+void DataSource::cutShowPoint(int ch, QVector<QPointF> &source_points, QVector<QPointF> &show_points)
 {
     //根据用户配置的参数截取点数
-    if(m_bandwidth > 50)
-        m_bandwidth = 30;
+    if(ch>CHNUM)
+        ch = 0;
+    qreal base_bandwidht = m_settings->baseBandwidth();
+    qreal user_bandwidht = m_settings->userBandwidth();
+    if(m_bandwidth[ch] > user_bandwidht)
+        m_bandwidth[ch] = user_bandwidht;
     int   capture_count = source_points.size();
-    int   cut_count     = (50 - m_bandwidth) * capture_count / 50 ;
+    int   cut_count     = (base_bandwidht - m_bandwidth[ch]) * capture_count / base_bandwidht ;
     int   show_count    = capture_count - cut_count;
-    qreal offsetMHz     = 70 - m_centerFreq;
-    if(fabs(offsetMHz) >= 25){
+    qreal offsetMHz     = 70 - m_centerFreq[ch];
+    if(fabs(offsetMHz) >= (base_bandwidht/2) ){
         offsetMHz = 0;
         //qDebug()<<"updateFreqDodminFromFile param error 001! ";
     }
-    qreal startMHz = 25 - offsetMHz - qreal(m_bandwidth)/2;
+    qreal startMHz = (base_bandwidht/2) - offsetMHz - m_bandwidth[ch]/2;
     if(startMHz <= 0){
         startMHz = 0;
         //qDebug()<<"updateFreqDodminFromFile param error 002! ";
     }
     //qDebug()<<"startMHz:"<<startMHz<<" offsetMHz:"<<offsetMHz;
-    int show_start = capture_count * startMHz / 50;
+    int show_start = capture_count * startMHz / base_bandwidht;
+
+    //qDebug()<<"cut_count:"<<cut_count<<" show_start:"<<show_start<<" show_count:"<<show_count<<" capture_count:"<<capture_count;
+
+
+    show_points.reserve(show_count);
+    for (int i=0; i < show_count; i++) {
+        show_points.append(source_points.at(show_start + i));
+    }
+
+    //qDebug()<<" "<<show_points.at(0)<<" "<<show_points.last();
+}
+void DataSource::cutShowPoint(int ch, QVector<double> &source_points, QVector<double> &show_points)
+{
+    //根据用户配置的参数截取点数
+    if(ch>CHNUM)
+        ch = 0;
+    qreal base_bandwidht = m_settings->baseBandwidth();
+    qreal user_bandwidht = m_settings->userBandwidth();
+    if(m_bandwidth[ch] > user_bandwidht)
+        m_bandwidth[ch] = user_bandwidht;
+    int   capture_count = source_points.size();
+    int   cut_count     = (base_bandwidht - m_bandwidth[ch]) * capture_count / base_bandwidht ;
+    int   show_count    = capture_count - cut_count;
+    qreal offsetMHz     = 70 - m_centerFreq[ch];
+    if(fabs(offsetMHz) >= (base_bandwidht/2) ){
+        offsetMHz = 0;
+        //qDebug()<<"updateFreqDodminFromFile param error 001! ";
+    }
+    qreal startMHz = (base_bandwidht/2) - offsetMHz - m_bandwidth[ch]/2;
+    if(startMHz <= 0){
+        startMHz = 0;
+        //qDebug()<<"updateFreqDodminFromFile param error 002! ";
+    }
+    //qDebug()<<"startMHz:"<<startMHz<<" offsetMHz:"<<offsetMHz;
+    int show_start = capture_count * startMHz / base_bandwidht;
 
     //qDebug()<<"cut_count:"<<cut_count<<" show_start:"<<show_start<<" show_count:"<<show_count<<" capture_count:"<<capture_count;
 
@@ -809,15 +904,18 @@ void DataSource::cutShowPoint(QVector<QPointF> &source_points, QVector<QPointF> 
     //qDebug()<<" "<<show_points.at(0)<<" "<<show_points.last();
 }
 
+
 void DataSource::workAllPoint(QVector<double> &fftData, QVector<QPointF> &points)
 {
     int capture_count = fftData.count();
 
     qreal x(0), y(0.0);
 
+    qreal base_bandwidth = m_settings->baseBandwidth();
+    qreal start =  70-base_bandwidth/2;
     points.reserve(capture_count);
     for (int i=0; i < capture_count; i++) {
-        x = qreal(45.0) + qreal(50.0) * i / capture_count;//采集卡固定70M中心频率和50M带宽,因此Start = 70-50/2 = 45
+        x = start + base_bandwidth * i / capture_count;//采集卡固定70M中心频率和50M带宽,因此Start = 70-50/2 = 45
         y = fftData[i];
         points.append(QPointF(x, y));
     }

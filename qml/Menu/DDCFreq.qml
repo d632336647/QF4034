@@ -8,50 +8,50 @@ import "../UI"
 
 Flipable{
     id:root;
-    objectName: "采样率翻转控件"
     width: 200
     height: 91
     signal  showComplete
     property int angle : 0  //翻转角度
-    property bool flipped : false //用来标志是否翻转
+    property bool  flipped :  false //用来标志是否翻转
     property var parentPointer: undefined
-    property alias text:btnsamplerate.textLabel
-    property alias unit:numberEdit.unit
-    property alias readOnly:btnsamplerate.readOnly
+    objectName: "DDC频率翻转控件"
+    property alias inputFocus:numberEdit.inputFocus
     Rectangle{
         color: Com.BGColor_main
     }
 
     front: RightButton {
-        objectName: "采样率翻转控件正面";
-        id: btnsamplerate;
+        objectName: "DDC频率翻转控件正面";
+        id: ddcfreq;
         anchors.fill: parent
-        textLabel: "采样率";
+        textLabel: "DDC频率";
         onClick: {
-            root.flipped = true
-            root.state = "toBack"
+            root.flipped = true;
+            root.state = "toBack";
             loadParam()
         }
     }
     back: LineEdit {
-        objectName: "采样率翻转控件背面";
         id: numberEdit;
+        objectName: "DDC频率翻转控件背面";
         anchors.fill: parent
         unit: "MHz"
-        text: "100"
+        text: "60"
+        prefix: ddcfreq.textLabel
         okBtn: true
-        prefix: btnsamplerate.textLabel
         onAccepted: {
             root.flipped = false
             root.state = "toFront"
-            globalConsoleInfo("★★SampleRate.qml响应onAccepted,查看root.parentPointer---"+root.parentPointer)
+            globalConsoleInfo("★★CenterFreq.qml响应onAccepted,查看root.parentPointer---"+root.parentPointer);
             root.parentPointer.focus=true;//侧边栏获得焦点
-            setParam(numberEdit.text);
+            setParam(numberEdit.text)
+            analyzeMenu.focus = true
+
         }
         onOkBtnClicked: {
             root.flipped = false
             root.state = "toFront"
-             globalConsoleInfo("★★SampleRate.qml响应onOkBtnClicked,查看root.parentPointer---"+root.parentPointer)
+            globalConsoleInfo("★★CenterFreq.qml响应onOkBtnClicked,查看root.parentPointer----"+root.parentPointer);
             root.parentPointer.focus=true;//侧边栏获得焦点
             setParam(numberEdit.text)
         }
@@ -72,14 +72,15 @@ Flipable{
             name:"toBack" //背面的状态
             PropertyChanges {target:root; angle:180}
             onCompleted: {
-
+                loadParam()
+                root.showComplete();
             }
         },
         State{
             name:"toFront" //
             PropertyChanges {target:root; angle:360}
             onCompleted: {
-
+                root.state = "toBack"
             }
         }
     ]
@@ -89,18 +90,25 @@ Flipable{
     }
     Component.onCompleted:
     {
-        if(Settings.clkMode() !== 0)
-            btnsamplerate.readOnly = true
-        else
-            btnsamplerate.readOnly = false
+        root.state = "toBack"
     }
     function loadParam()
     {
-        numberEdit.text = Settings.captureRate()
+        numberEdit.text = Settings.ddcFreq()
     }
     function setParam(val)
     {
-        Settings.captureRate(Com.OpSet, val)
-        gatherMenu.updateParams()
+        if(0){
+            messageBox.title = "警告"
+            messageBox.note  = "参数超出范围,已自动为您校正!"
+            messageBox.isWarning = true
+            messageBox.visible = true
+        }
+        if(parseFloat(val) !== Settings.ddcFreq()){
+            Settings.ddcFreq(Com.OpSet, val)
+            preconditionMenu.updateParams();
+        }
+
     }
+
 }

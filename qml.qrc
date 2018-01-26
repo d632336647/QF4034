@@ -49,5 +49,9 @@
         <file>qml/ScopeView2CH.qml</file>
         <file>qml/Menu/PreconditionMenu.qml</file>
         <file>qml/main.qml</file>
+        <file>qml/Menu/FFTPoints.qml</file>
+        <file>qml/Menu/DDCFreq.qml</file>
+        <file>qml/Menu/ExtractFactor.qml</file>
+        <file>qml/Menu/FsbCoef.qml</file>
     </qresource>
 </RCC>

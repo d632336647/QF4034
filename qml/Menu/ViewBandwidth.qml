@@ -8,18 +8,21 @@ import "../UI"
 
 Flipable{
     id:root;
+    objectName: "观测带宽翻转控件";
     width: 200
     height: 91
     signal  showComplete
     property int angle : 0  //翻转角度
     property bool  flipped : false //用来标志是否翻转
     property alias inputFocus:numberEdit.inputFocus
+    property var parentPointer: undefined
     Rectangle{
         color: Com.BGColor_main
     }
 
     front: RightButton {
         id: btn_resolution;
+        objectName: "观测带宽翻转控件正面";
         anchors.fill: parent
         textLabel: "通道"+(Settings.paramsSetCh()+1)+" 观测带宽";
         //icon:"\uf002"
@@ -30,6 +33,7 @@ Flipable{
         }
     }
     back: LineEdit {
+        objectName: "观测带宽翻转控件背面";
         id: numberEdit;
         anchors.fill: parent
         unit: "MHz"
@@ -37,14 +41,17 @@ Flipable{
         okBtn: true
         prefix: btn_resolution.textLabel
         onAccepted: {
-            root.flipped = false
-            root.state = "toFront"
-            setParam(numberEdit.text)
-            analyzeMenu.focus = true
+            root.flipped = false;
+            root.state = "toFront";
+            globalConsoleInfo("★★ViewBandwidth.qml响应onAccepted,查看root.parentPointer---"+root.parentPointer);
+            root.parentPointer.focus=true;//侧边栏获得焦点
+            setParam(numberEdit.text);
         }
         onOkBtnClicked: {
             root.flipped = false
             root.state = "toFront"
+            globalConsoleInfo("★★ViewBandwidth.qml响应onOkBtnClicked,查看root.parentPointer---"+root.parentPointer);
+            root.parentPointer.focus=true;//侧边栏获得焦点
             setParam(numberEdit.text)
         }
         onAreaClicked: {
