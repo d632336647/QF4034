@@ -122,8 +122,10 @@ Rectangle {
                 onClicked: {
                     var ch = Settings.paramsSetCh();
                     ch = ch?0:1;
-                    Settings.paramsSetCh(Com.OpSet, ch)
-                    showName(ch)
+                    Settings.paramsSetCh(Com.OpSet, ch);
+                    showName(ch);
+                    giveRightEleOfChannel(ch);
+
                 }
                 function showName(ch)
                 {
@@ -133,6 +135,55 @@ Rectangle {
                         btnName = "参数更新 通道2"
                     return btnName;
                 }
+                function giveRightEleOfChannel(ch) //0:历史瀑布图分析  1:实时频谱分析  2:实时瀑布图分析
+                {
+
+
+                    if(0===ch) //通道1
+                    {
+                        idScopeView.focusChannel=0;//当前操作通道1
+                        if(1===idScopeView.analyzeMode)
+                        {
+                            idScopeView.whichTypePageOfEle=idScopeView.rtSpectrumObj;
+                        }
+                        else if(2===idScopeView.analyzeMode)
+                        {
+                            idScopeView.whichTypePageOfEle=idScopeView.rtWaterFallObj;
+                        }
+                        //更新slider和checkButton
+                        console.info("♀♀♀♀♀♀♀♀♀通道1查看whichTypePageOfEle♀♀♀♀♀♀♀♀♀==="+idScopeView.whichTypePageOfEle);
+                        idScopeView.whichTypePageOfEle.focus=true;
+                        idScopeView.whichTypePageOfEle.getAllsliders();
+                        idScopeView.getPeakAndmarkEle();
+                        idScopeView.whichTypePageOfEle.getAllcheckButtons();
+
+
+                    }
+
+                    else if(1===ch) //通道2
+                    {
+                        idScopeView.focusChannel=1;//当前操作通道2
+                        if(1===idScopeView.analyzeMode)
+                        {
+                            idScopeView.whichTypePageOfEle=idScopeView.rtSpectrumObj_channel2;
+                        }
+                        else if(2===idScopeView.analyzeMode)
+                        {
+                            idScopeView.whichTypePageOfEle=idScopeView.rtWaterFallObj_channel2;
+                        }
+                        //更新slider和checkButton
+                        console.info("♂♂♂♂♂♂♂♂♂♂♂♂通道2查看 whichTypePageOfEle♂♂♂♂♂♂♂♂♂♂♂♂==="+idScopeView.whichTypePageOfEle);
+                        idScopeView.whichTypePageOfEle.focus=true;
+                        idScopeView.whichTypePageOfEle.getAllsliders();
+                        idScopeView.getPeakAndmarkEle();
+                        idScopeView.whichTypePageOfEle.getAllcheckButtons();
+
+
+                    }
+
+
+                }
+
             }
         }
         StateRect{
@@ -142,10 +193,39 @@ Rectangle {
             height: 64
             anchors.right: parent.right
             btnName:"菜单"
-            visible: (idRightPannel.state == "HIDE")
+            visible: true
             onClicked:{
-                idRightPannel.state = "SHOW"
-                idRightPannel.focus = true
+                if(idScopeView.focusPageOfrightControl.state === "HIDE")
+                {
+                    console.info("====查看菜单触发 idScopeView.focusPageOfrightControl====="+idScopeView.focusPageOfrightControl);
+
+
+                    idScopeView.focusPageOfrightControl.state = "SHOW";
+                    idScopeView.focusPageOfrightControl.focus = true;
+
+                }
+                else
+                {
+
+                    Com.clearTopPage(idScopeView.focusPageOfrightControl);
+                    console.info("#####查看菜单触发 idRightPannel.state#####"+idRightPannel.state);
+
+                    if(idRightPannel.state==="SHOW")
+                    {
+                        idRightPannel.focus=true;
+                        idRightPannel.state==="HIDE";
+                        console.info("!!!主菜单隐藏触发");
+                    }
+                    //                    idScopeView.focusPageOfrightControl.state = "HIDE";
+                    //                    if(idScopeView.whichTypePageOfEle)
+                    //                    {
+                    //                        idScopeView.whichTypePageOfEle.focus=true;
+                    //                    }
+                    //                    else
+                    //                    {
+                    //                        idScopeView.focusPageOfrightControl.focus = true;
+                    //                    }
+                }
             }
         }
     }

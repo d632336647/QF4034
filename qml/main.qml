@@ -15,6 +15,7 @@ import "../SliChart"
 
 Rectangle{
     id:root
+    objectName: "mainboxRectangle";
     visible: true
     width: 1027
     height: 768
@@ -151,21 +152,157 @@ Rectangle{
         id:fileContent
         anchors.fill: parent
         visible: false
+        property var keysOwner: pageLoader
         Loader {
             id: pageLoader
             anchors.left: parent.left
             anchors.verticalCenter: parent.verticalCenter
             anchors.leftMargin: 120
+            onLoaded: {
+                if( pageLoader.item.popuBoxFileListView)
+                    keysOwner=pageLoader.item.popuBoxFileListView;
+            }
+            property var loaderFileRect: undefined  //文件外边框
+            property var loaderFileList: []  //每个列表组成的数组
+
+            //重新设置键盘消息受理者
+            function setKeysOwner(newHostOwner)
+            {
+                if(newHostOwner)
+                {
+                    fileContent.keysOwner=newHostOwner;
+                }
+            }
+            function showLoaderInfo() //获得文件列表
+            {
+                var thefileList=pageLoader.item.getFileListBoxElement(pageLoader.item);//整个对话框而不是文件列表
+
+                var thefileListChlidren=thefileList.children;
+                var theFileListIndex=0;
+                for(var vv=0;vv<thefileListChlidren.length;vv++ )
+                {
+
+                    var theEachfileListChlidren=thefileListChlidren[vv];
+                    var theEachfileListChlidrenStr=theEachfileListChlidren.toString();
+
+                    if(theEachfileListChlidrenStr.indexOf("ListView")!==-1)
+                    {
+                        thefileListChlidren[vv].focus=true;
+                        theFileListIndex=vv;
+                        pageLoader.item.popuBoxFileListView=thefileListChlidren[vv];
+                        setKeysOwner(pageLoader.item.popuBoxFileListView);
+                        //console.info("######找到文件名列表框ListView,索引是#######"+theFileListIndex);
+                        loaderFileList=Com.getEveryItem(thefileListChlidren[vv]);
+                        if(loaderFileList.length>0)
+                        {
+                            console.info("###※○※○※○※○showLoaderInfo调用完毕※○※○※○※○####"+loaderFileList);
+                        }
+                        break;
+                    }
+
+                }
+
+
+            }
+
+            function getBottomRectArray()
+            {
+                //文件列表框
+                pageLoader.item.getFileListBoxElement(pageLoader.item);
+
+                //文件列表框和下面的按钮
+                pageLoader.item.getAllAtomChildrenOfPopBox(pageLoader.item);
+
+                //下面的按钮
+                pageLoader.item.getStateRectOfFileList(pageLoader.item);
+
+                //                console.info("pageLoader.item.popBoxchildArray=="+pageLoader.item.popBoxchildArray);
+                //                console.info("pageLoader.item.filelistchildArray=="+pageLoader.item.filelistchildArray);
+                //                console.info("pageLoader.item.stateRectArray=="+pageLoader.item.stateRectArray);
+            }
+
         }
         onVisibleChanged: {
             if(visible)
             {
-                pageLoader.source = "UI/PopuBox.qml"
+                pageLoader.source = "UI/PopuBox.qml";
+                //loader赋值
+                pageLoader.source.myLoader=pageLoader;
+
+
                 pageLoader.item.parentObject = fileContent
+                fileContent.focus=true;
             }
             else
                 pageLoader.source = ""
         }
+        Keys.enabled: true
+        Keys.forwardTo: [keysOwner]
+        Keys.onPressed:{
+
+            //loader赋值
+            pageLoader.source.myLoader=pageLoader;
+
+            var theTargetItem=pageLoader.item.stateRectArray;
+            switch(event.key)
+            {
+
+            case Qt.Key_1:
+                if(theTargetItem[0])
+                {
+                    theTargetItem[0].clicked();
+                    console.info("-----theTargetItem[0].btnName----"+theTargetItem[0].btnName);
+                }
+                pageLoader.focus=true;
+                break;
+            case Qt.Key_2:
+                if(theTargetItem[1])
+                {
+                    theTargetItem[1].clicked();
+                    console.info("-----theTargetItem[1].btnName----"+theTargetItem[1].btnName);
+                }
+                pageLoader.focus=true;
+                break;
+            case Qt.Key_3:
+                if(theTargetItem[2])
+                {
+                    theTargetItem[2].clicked();
+                    console.info("-----theTargetItem[2].btnName----"+theTargetItem[2].btnName);
+                }
+                pageLoader.focus=true;
+                break;
+            case Qt.Key_4:
+                if(theTargetItem[3])
+                {
+                    theTargetItem[3].clicked();
+                    console.info("-----theTargetItem[3].btnName----"+theTargetItem[3].btnName);
+                }
+                pageLoader.focus=true;
+                break;
+            case Qt.Key_5:
+                if(theTargetItem[4])
+                {
+                    theTargetItem[4].clicked();
+                    console.info("-----theTargetItem[4].btnName----"+theTargetItem[4].btnName);
+                }
+                pageLoader.focus=true;
+                break;
+            case Qt.Key_Escape:
+                if(pageLoader.item.closeBtn)
+                {
+                    pageLoader.item.closeBtn.clicked();
+                    console.info("-----文件选择对话框收到ESC----");
+                }
+
+                break;
+            default:
+                console.info("□□□□□□□□□keysOwner====="+keysOwner+"收到按键消息□□□□□□□□□□□"+event.key);
+
+            }
+            event.accepted=true;//如果不吃掉，Mainbox.qml会收到未注册消息#
+        }
+
+
     }
 
     //动态加载
@@ -275,11 +412,13 @@ Rectangle{
             globalConsoleInfo("#####Mainbox.qml收到Qt.Key_Left按键消息#####");
             idScopeView.focus=true;
             idScopeView.focusPageOfrightControl=idRightPannel;
+            event.accepted=true;
             break;
         case Qt.Key_PageUp://逆时针
             globalConsoleInfo("#####Mainbox.qml收到滚轮逆时针按键消息#####");
             idScopeView.focus=true;
             idScopeView.focusPageOfrightControl=idRightPannel;
+            event.accepted=true;
             break;
         case Qt.Key_Right:
             globalConsoleInfo("#####Mainbox.qml收到Key_Right按键消息#####");

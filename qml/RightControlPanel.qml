@@ -123,18 +123,29 @@ Rectangle{
 
     //过渡动画
     states: [
-         State {
-             name: "SHOW"
-             PropertyChanges { target: root; x: root.parent.width-200}
-             onCompleted:{
-             }
-         },
-         State {
-             name: "HIDE"
-             PropertyChanges { target: root; x: root.parent.width}
-             onCompleted: {
-             }
-         }
+        State {
+            name: "SHOW"
+            PropertyChanges { target: root; x: root.parent.width-200}
+            onCompleted:{
+                root.focus=true;
+                //                 Com.childArray=Com.resetAndgetItemOfControlPannel(root);
+                //                 Com.GlobalTotalchildArray=Com.resetGlobalItemOfElement(root);
+                idScopeView.focusPageOfrightControl=root;
+            }
+        },
+        State {
+            name: "HIDE"
+            PropertyChanges { target: root; x: root.parent.width}
+            onCompleted: {
+
+                idScopeView.focusPageOfrightControl=root;
+                idScopeView.judgeVisiblePage();
+                if(idScopeView.whichTypePageOfEle)
+                {
+                    idScopeView.whichTypePageOfEle.focus=true;
+                }
+            }
+        }
     ]
 
     transitions: [
@@ -159,45 +170,56 @@ Rectangle{
     Keys.forwardTo: [root]
     Keys.onPressed:{
         var curFocusindex=0;//当前获得焦点的子元素索引
+
         globalConsoleInfo("#####RightControlPanel.qml收到按键消息#####"+event.key);
 
-        var thescopeTargeEle=undefined;//SCopeView的子元素whichTypePageOfEle
+        
         switch(event.key)
         {
         case Qt.Key_Escape:
             //btn_exit.click()
             Com.clickchild(0,false);
+            event.accepted=true;
             break;
         case Qt.Key_Exclam://功能键1
             Com.clickchild(1,false);
+            event.accepted=true;
             break;
         case Qt.Key_At://功能键2
             Com.clickchild(2,false);
+            event.accepted=true;
             break;
         case Qt.Key_NumberSign://功能键3
             Com.clickchild(3,false);
+            event.accepted=true;
             break;
         case Qt.Key_Dollar://功能键4
             Com.clickchild(4,false);
+            event.accepted=true;
             break;
         case Qt.Key_Percent://功能键5
             Com.clickchild(5,false);
+            event.accepted=true;
             break;
         case Qt.Key_AsciiCircum://功能键6
             Com.clickchild(6,false);
+            event.accepted=true;
             break;
         case Qt.Key_Space://功能键 return
             Com.clickchild(7,false);
+            event.accepted=true;
             break;
 
         case Qt.Key_Up:
             curFocusindex=Com.getFocusIndex(Com.childArray);
             Com.setPrevFocus(Com.childArray,curFocusindex);
+            event.accepted=true;
             break;
 
         case Qt.Key_Down:
             curFocusindex=Com.getFocusIndex(Com.childArray);
             Com.setNextFocus(Com.childArray,curFocusindex);
+            event.accepted=true;
             break;
 
         case Qt.Key_Left:
@@ -212,34 +234,25 @@ Rectangle{
             idRightPannel.state="SHOW";
             event.accepted=true;
             break;
-        case Qt.Key_Enter:
 
-            //            if(curFocusindex===-1)
-            //            {
-            //            curFocusindex=Com.getFocusIndex(Com.childArray);
-            //            }
-            //            Com.clickchild(curFocusindex,true);
-            //            //event.accepted=true;//阻止事件继续传递
-            //            globalConsoleInfo("确认按钮触发★→");
-            break;
         case Qt.Key_F1:
-            globalConsoleInfo("-----------------------------");
-            globalConsoleInfo("                 ");
-            globalConsoleInfo(root+"!!!!!!收到C_FREQUENCY_CHANNEL信号!!!!!");
+            console.info("-----------------------------");
+            console.info("                 ");
+            console.info(root+"!!!!!!RightControlPanel.qml收到C_FREQUENCY_CHANNEL信号!!!!!");
 
             Com.clearTopPage(root);
             analyzeMenu.focus=true;
             analyzeMenu.state="SHOW";
 
-            globalConsoleInfo("----响应 ◇分析参数◇ 完毕----");
-            globalConsoleInfo("                 ");
-            globalConsoleInfo("------------------ ----------- ");
+            console.info("----RightControlPanel.qml响应 ◇分析参数◇ 完毕----");
+            console.info("                 ");
+            console.info("------------------ ----------- ");
             event.accepted=true;
             break;
         case Qt.Key_F5:
-            globalConsoleInfo("-----------------------------");
-            globalConsoleInfo("                 ");
-            globalConsoleInfo(root+"!!!!!!收到C_SPAN_X_SCALE!!!!!");
+            console.info("-----------------------------");
+            console.info("                 ");
+            console.info(root+"!!!!!!RightControlPanel.qml收到C_SPAN_X_SCALE!!!!!");
             //记录上一个焦点转移的页面
             idScopeView.focusPageOfrightControl=root;
             //idScopeView.getPeakAndmarkEle();//必须调用此函数，whichTypePageOfEle才会有值
@@ -250,66 +263,71 @@ Rectangle{
                 idScopeView.whichTypePageOfEle.getAllcheckButtons();
                 idScopeView.whichTypePageOfEle.noCheckbuttonEleArray[0].focus=true;
                 idScopeView.whichTypePageOfEle.zoomXY="x";
+                console.info("----RightControlPanel.qml响应 ◇C_SPAN_X_SCALE◇ 完毕----");
+            }
+            else
+            {
+                console.info("#####RightControlPanel.qml 图谱不存在！无法响应X轴缩放######");
+                console.info(idScopeView.whichTypePageOfEle.noCheckbuttonEleArray[0]);
             }
 
-            globalConsoleInfo("----响应 ◇C_SPAN_X_SCALE◇ 完毕----");
-            globalConsoleInfo("                 ");
-            globalConsoleInfo("------------------ ----------- ");
+            console.info("                 ");
+            console.info("------------------ ----------- ");
             event.accepted=true;
             break;
         case Qt.Key_F9:
-            globalConsoleInfo("-----------------------------");
-            globalConsoleInfo("                 ");
-            globalConsoleInfo(root+"!!!!!!收到C_AMPLITUDE_Y_SCALE!!!!!");
+            console.info("-----------------------------");
+            console.info("                 ");
+            console.info(root+"!!!!!!RightControlPanel.qml收到C_AMPLITUDE_Y_SCALE!!!!!");
             idScopeView.focusPageOfrightControl=root;
             //idScopeView.getPeakAndmarkEle();//必须调用此函数，whichTypePageOfEle才会有值
             if(idScopeView.whichTypePageOfEle.noCheckbuttonEleArray[0])
             {
                 idScopeView.whichTypePageOfEle.noCheckbuttonEleArray[0].focus=true;
                 idScopeView.whichTypePageOfEle.zoomXY="y";
+                console.info("----RightControlPanel.qml响应 ◇C_AMPLITUDE_Y_SCALE◇ 完毕----");
             }
-            globalConsoleInfo("----响应 ◇C_AMPLITUDE_Y_SCALE◇ 完毕----");
-            globalConsoleInfo("                 ");
-            globalConsoleInfo("------------------ ----------- ");
+            else
+            {
+                console.info("#####RightControlPanel.qml 图谱不存在！无法响应Y轴缩放######");
+                console.info(idScopeView.whichTypePageOfEle.noCheckbuttonEleArray[0]);
+            }
+            console.info("                 ");
+            console.info("------------------ ----------- ");
             event.accepted=true;
             break;
-        case Qt.Key_F14:
-            globalConsoleInfo("-----------------------------");
-            globalConsoleInfo("                 ");
-            globalConsoleInfo(root+"!!!!!!收到C_PRESET!!!!!");
 
-            ////////////////////////
-
-            //////////////////////
-            globalConsoleInfo("----响应 ◇C_PRESET◇ 完毕----");
-            globalConsoleInfo("                 ");
-            globalConsoleInfo("------------------ ----------- ");
-            event.accepted=true;
-            break;
-            //case Qt.Key_F15:
-            case Qt.Key_F2:
-            globalConsoleInfo("-----------------------------");
-            globalConsoleInfo("                 ");
-            globalConsoleInfo(root+"!!!!!!收到C_MARKER!!!!!");
-            globalConsoleInfo("                 ");
-            globalConsoleInfo("------------------ ----------- ");
+        case Qt.Key_F15:
+            //case Qt.Key_F2:
+            console.info("-----------------------------");
+            console.info("                 ");
+            console.info(root+"!!!!!!RightControlPanel.qml收到C_MARKER!!!!!");
+            console.info("                 ");
+            console.info("------------------ ----------- ");
             ////////////////////////
             idScopeView.focusPageOfrightControl=root;
             //idScopeView.judgeVisiblePage();//必须调用此函数，whichTypePageOfEle才会有值
             if(idScopeView.peakPointBtn)
             {
                 idScopeView.peakPointBtn.checkboxClick();
+                idScopeView.whichTypePageOfEle.getAllsliders();
             }
             //////////////////////
-            globalConsoleInfo("----响应  ◇C_MARKER◇  完毕----");
+            console.info("----RightControlPanel.qml响应  ◇C_MARKER◇  完毕----");
             event.accepted=true;
             break;
-            case Qt.Key_F3:
-//        case Qt.Key_F16:
-            globalConsoleInfo("-----------------------------");
-            globalConsoleInfo("                 ");
-            globalConsoleInfo(root+"!!!!!!收到C_PEAK_SEARCH!!!!!");
+            //case Qt.Key_F3:
+        case Qt.Key_F16:
+            console.info("-----------------------------");
+            console.info("                 ");
+            console.info(root+"!!!!!!RightControlPanel.qml收到C_PEAK_SEARCH!!!!!");
             idScopeView.focusPageOfrightControl=root;
+            console.info("---idScopeView.peakPointBtn.visible---"+idScopeView.peakPointBtn.visible);
+            if((idScopeView.peakPointBtn)&&(!idScopeView.peakPointBtn.checked))
+            {
+                idScopeView.peakPointBtn.checkboxClick();
+                idScopeView.whichTypePageOfEle.getAllsliders();
+            }
 
             if(idScopeView.markBtn)
             {
@@ -317,12 +335,12 @@ Rectangle{
                 idScopeView.markBtn.checkboxClick();
                 //焦点给第一个三角滑块
                 idScopeView.whichTypePageOfEle.getAllsliders();//必须重新激活三角滑块
-                thescopeTargeEle=idScopeView.whichTypePageOfEle;
+                
 
-                globalConsoleInfo("thescopeTargeEle.noCheckbuttonEleArray===="+thescopeTargeEle.noCheckbuttonEleArray);
-                if(thescopeTargeEle.uiSliderIndex)
+                
+                if((idScopeView.whichTypePageOfEle.uiSliderIndex>=0)&&(idScopeView.whichTypePageOfEle.uiSliderIndex<idScopeView.whichTypePageOfEle.noCheckbuttonEleArray.length)&&idScopeView.whichTypePageOfEle.noCheckbuttonEleArray[idScopeView.whichTypePageOfEle.uiSliderIndex].visible)
                 {
-                thescopeTargeEle.noCheckbuttonEleArray[thescopeTargeEle.uiSliderIndex].focus=true;
+                    idScopeView.whichTypePageOfEle.noCheckbuttonEleArray[idScopeView.whichTypePageOfEle.uiSliderIndex].focus=true;
                 }
             }
             globalConsoleInfo("----响应  ◇C_PEAK_SEARCH◇   完毕----");
@@ -331,7 +349,8 @@ Rectangle{
             event.accepted=true;
             break;
 
-        case Qt.Key_End://呼出菜单
+            //case Qt.Key_End://呼出菜单
+        case Qt.Key_F13:
             if(idBottomPannel.menuBtn)
             {
                 idBottomPannel.menuBtn.clicked();
@@ -339,7 +358,8 @@ Rectangle{
             globalConsoleInfo("●●●●●●呼出菜单按钮触发●●●●●●idBottomPannel.menuBtn"+idBottomPannel.menuBtn);
             event.accepted=true;
             break;
-        case Qt.Key_Insert://模式切换
+            //case Qt.Key_Insert://模式切换
+        case Qt.Key_F10:
             if(idBottomPannel.modeSwitch)
             {
                 idBottomPannel.modeSwitch.clicked();
@@ -347,18 +367,38 @@ Rectangle{
             globalConsoleInfo("●●●●●●模式切换按钮触发●●●●●●idBottomPannel.modeSwitch"+idBottomPannel.modeSwitch);
             event.accepted=true;
             break;
-        case Qt.Key_Delete://参数更新
+            //case Qt.Key_Delete://参数更新
+        case Qt.Key_F19:
             if(idBottomPannel.paramsUpdate)
             {
                 idBottomPannel.paramsUpdate.clicked();
             }
-            globalConsoleInfo("●●●●●●参数更新按钮触发●●●●●●Com.paramsUpdate"+idBottomPannel.paramsUpdate);
+            console.info("●●●●●●RightControlPanel.qml  参数更新按钮触发●●●●●●Com.paramsUpdate"+idBottomPannel.paramsUpdate);
+            console.info("----RightControlPanel.qml响应 ◇C_PRESET◇ 完毕----");
             event.accepted=true;
             break;
-        default:
+
+
+        default://对于鼠标滚轮，交给图谱
+            root.state="HIDE";
+            if(idScopeView.whichTypePageOfEle.noCheckbuttonEleArray[0])
+            {
+                idScopeView.whichTypePageOfEle.noCheckbuttonEleArray[0].focus=true;
+                console.info("========rightControlPannel传递焦点给图谱======="+idScopeView.whichTypePageOfEle.noCheckbuttonEleArray[0]);
+            }
+            else if(idScopeView.whichTypePageOfEle)
+            {
+                idScopeView.whichTypePageOfEle.focus=true;
+                console.info("========rightControlPannel传递焦点给元素======="+idScopeView.whichTypePageOfEle);
+            }
+            else
+            {
+                idScopeView.focus=true;
+                console.info("========rightControlPannel传递焦点给视图======="+idScopeView);
+            }
             break;
         }
-        event.accepted=true;//阻止事件继续传递
+        event.accepted=true;
     }
 
     Connections {

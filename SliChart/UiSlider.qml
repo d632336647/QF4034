@@ -20,9 +20,13 @@ Item {
     property alias visible3: handle3.visible
     //»¬¿éµÄ¶ÔÓ¦Öµ
     property var exScopeViewEle:undefined
-    property real handle1Value:0
-    property real handle2Value:0
-    property real handle3Value:0
+    property real handle1Value:fftData.peakPoint0.x
+    property real handle2Value:fftData.peakPoint1.x
+    property real handle3Value:fftData.peakPoint2.x
+
+
+
+    property real horizonStepValue :0.02
     Rectangle {
         anchors.fill: parent
 
@@ -100,7 +104,7 @@ Item {
                     handle3Value=0;
                     break;
                 }
-                handle3Value-=0.1;
+                handle3Value-=horizonStepValue;
                 setX(2,handle3Value);
                 root.percent3 = (handle3.x+handle3.width/2)/root.width;
                 event.accepted=true;
@@ -111,13 +115,14 @@ Item {
                     handle3Value=0;
                     break;
                 }
-                handle3Value-=0.1;
+                handle3Value-=horizonStepValue;
                 setX(2,handle3Value);
                 root.percent3 = (handle3.x+handle3.width/2)/root.width;
                 event.accepted=true;
                 break;
             case Qt.Key_Right:
-                handle3Value+=0.1;
+                //console.info("handle3查看步进horizonStepValue===="+horizonStepValue);
+                handle3Value+=horizonStepValue;
                 if(handle3Value>1)
                 {
                     handle3Value=1;
@@ -127,7 +132,7 @@ Item {
                 event.accepted=true;
                 break;
             case Qt.Key_PageDown://Ë³Ê±Õë
-                handle3Value+=0.1;
+                handle3Value+=horizonStepValue;
                 if(handle3Value>1)
                 {
                     handle3Value=1;
@@ -143,11 +148,29 @@ Item {
                 }
                 event.accepted=true;
                 break;
+            case Qt.Key_Exclam://功能键1
+
+            case Qt.Key_At://功能键2
+
+            case Qt.Key_NumberSign://功能键3
+
+            case Qt.Key_Dollar://功能键4
+
+            case Qt.Key_Percent://功能键5
+
+            case Qt.Key_AsciiCircum://功能键6
+
+            case Qt.Key_Space://功能键 return
+                idScopeView.focusPageOfrightControl.focus=true;
+                idScopeView.focusPageOfrightControl.state="SHOW";
+                console.info("※※※※※handle3  功能键呼出菜单※※※※※");
+                event.accepted=true;
+                break;
             default:
                 break;
             }
 
-            event.accepted=true;//×èÖ¹ÊÂ¼þ¼ÌÐø´«µÝ
+            
         }
     }
 
@@ -212,7 +235,7 @@ Item {
                     handle2Value=0;
                     break;
                 }
-                handle2Value-=0.1;
+                handle2Value-=horizonStepValue;
                 setX(1,handle2Value);
                 root.percent2 = (handle2.x+handle2.width/2)/root.width;
                 event.accepted=true;
@@ -223,13 +246,14 @@ Item {
                     handle2Value=0;
                     break;
                 }
-                handle2Value-=0.1;
+                handle2Value-=horizonStepValue;
                 setX(1,handle2Value);
                 root.percent2 = (handle2.x+handle2.width/2)/root.width;
                 event.accepted=true;
                 break;
             case Qt.Key_Right:
-                handle2Value+=0.1;
+                //console.info("handle2查看步进horizonStepValue===="+horizonStepValue);
+                handle2Value+=horizonStepValue;
                 if(handle2Value>1)
                 {
                     handle2Value=1;
@@ -239,7 +263,7 @@ Item {
                 event.accepted=true;
                 break;
             case Qt.Key_PageDown://Ë³Ê±Õë
-                handle2Value+=0.1;
+                handle2Value+=horizonStepValue;
                 if(handle2Value>1)
                 {
                     handle2Value=1;
@@ -255,11 +279,29 @@ Item {
                 }
                 event.accepted=true;
                 break;
+            case Qt.Key_Exclam://功能键1
+
+            case Qt.Key_At://功能键2
+
+            case Qt.Key_NumberSign://功能键3
+
+            case Qt.Key_Dollar://功能键4
+
+            case Qt.Key_Percent://功能键5
+
+            case Qt.Key_AsciiCircum://功能键6
+
+            case Qt.Key_Space://功能键 return
+                idScopeView.focusPageOfrightControl.focus=true;
+                idScopeView.focusPageOfrightControl.state="SHOW";
+                console.info("※※※※※handle2  功能键呼出菜单※※※※※");
+                event.accepted=true;
+                break;
             default:
                 break;
             }
 
-            event.accepted=true;//×èÖ¹ÊÂ¼þ¼ÌÐø´«µÝ
+
         }
     }
 
@@ -308,7 +350,10 @@ Item {
         onXChanged:
         {
             if(dragArea1.pressed)
+            {
                 root.percent1 = (x+width/2)/root.width;
+                console.info("UiSlider.qml 查看percent1=="+percent1);
+            }
         }
 
         Keys.enabled: true
@@ -324,7 +369,8 @@ Item {
                     handle1Value=0;
                     break;
                 }
-                handle1Value-=0.1;
+                handle1Value-=horizonStepValue;
+                //console.info("handle1查看handle1Value===="+handle1Value);
                 setX(0,handle1Value);
                 root.percent1 = (handle1.x+handle1.width/2)/root.width;
                 event.accepted=true;
@@ -335,13 +381,14 @@ Item {
                     handle1Value=0;
                     break;
                 }
-                handle1Value-=0.1;
+                handle1Value-=horizonStepValue;
                 setX(0,handle1Value);
                 root.percent1 = (handle1.x+handle1.width/2)/root.width;
                 event.accepted=true;
                 break;
             case Qt.Key_Right:
-                handle1Value+=0.1;
+                //console.info("handle1查看步进horizonStepValue===="+horizonStepValue);
+                handle1Value+=horizonStepValue;
                 if(handle1Value>1)
                 {
                     handle1Value=1;
@@ -351,7 +398,7 @@ Item {
                 event.accepted=true;
                 break;
             case Qt.Key_PageDown://Ë³Ê±Õë
-                handle1Value+=0.1;
+                handle1Value+=horizonStepValue;
                 if(handle1Value>1)
                 {
                     handle1Value=1;
@@ -367,11 +414,30 @@ Item {
                 }
                 event.accepted=true;
                 break;
+            case Qt.Key_Exclam://功能键1
+
+            case Qt.Key_At://功能键2
+
+            case Qt.Key_NumberSign://功能键3
+
+            case Qt.Key_Dollar://功能键4
+
+            case Qt.Key_Percent://功能键5
+
+            case Qt.Key_AsciiCircum://功能键6
+
+            case Qt.Key_Space://功能键 return
+                idScopeView.focusPageOfrightControl.focus=true;
+                idScopeView.focusPageOfrightControl.state="SHOW";
+                console.info("※※※※※handle1  功能键呼出菜单※※※※※");
+                event.accepted=true;
+                break;
+
             default:
                 break;
             }
 
-            event.accepted=true;//×èÖ¹ÊÂ¼þ¼ÌÐø´«µÝ
+
         }
 
     }

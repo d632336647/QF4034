@@ -33,6 +33,8 @@ Rectangle {
     property var  noCheckbuttonEleArray:[] //存储非checkbutton元素
     property var  uiCheckButtonArray:[];//UiCheckButton按钮数组
     property int  uiSliderIndex:-1 //第一个UiSliderIndex出现的索引号
+
+    property real  fftCount1: 40000
     visible: false
     UiCornerLine{
         anchors.top: parent.top
@@ -147,7 +149,7 @@ Rectangle {
                     zoomXY = "x"
                     //hoveredPoint.x = hoveredPoint.x.toFixed(xPrecision);
                     view.hovered = true
-                    view.hoveredPoint = hoveredPoint                   
+                    view.hoveredPoint = hoveredPoint
                 }else {
                     view.hovered = false
                 }
@@ -313,6 +315,9 @@ Rectangle {
                 axis.min =  tempMin
                 axis.max =  tempMax
             }
+
+            fftCount1= (series1.count > 500)? series1.count: 500;
+
         }//!--function zoom_In END
 
         function zoom_Out( hoveredPoint, XY ) {
@@ -349,6 +354,9 @@ Rectangle {
             }
             axis.max =  (tempMax > axisMax) ? axisMax : tempMax
             axis.min =  (tempMin < axisMin) ? axisMin : tempMin
+
+
+        fftCount1= (series1.count > 500)? series1.count: 500;
         }//!--function zoom_Out END
     }//!-- ChartView end
 
@@ -498,32 +506,43 @@ Rectangle {
         var theaxisMaxY = yAxisMax;
         var themidX=theaxisMinX+(theaxisMaxX-theaxisMinX)/2;
         var themidY=theaxisMinY+(theaxisMaxY-theaxisMinY)/2;
+        var checkButtonTipsStr="";//按键悬浮文本
+        var theSubTriangleIndex=0; //三角滑块索引
+        var theSubFileSliderIndex=0;//文件滑块索引
+
         centerPoint=Qt.point( themidX, themidY );
+
+
+        var moveStepDis=(idaxisX.max-idaxisX.min)*2/fftCount1;
+        if(moveStepDis<0.3)
+            moveStepDis=0.3;
+
+
 
         switch(event.key)
         {
         case Qt.Key_Up:
             view.scrollDown(rateY_btn);
             fileSlider.setMarkRange()
+            event.accepted=true;//阻止事件继续传递
 
-            //globalConsoleInfo("#####TiDomainWave.qml收到↑");
             break;
         case Qt.Key_Down:
             view.scrollUp(rateY_btn);
             fileSlider.setMarkRange()
+            event.accepted=true;//阻止事件继续传递
 
-            //globalConsoleInfo("#####TiDomainWave.qml收到↓");
             break;
         case Qt.Key_Left:
-            globalConsoleInfo("#####TiDomainWave.qml收到Qt.Key_Left");
+
             if((idaxisX.max < xAxisMax)&&(idaxisX.min > xAxisMin))
             {
                 view.scrollLeft(rateX_btn*0.3)
             }
 
             fileSlider.setMarkRange()
-
-            //globalConsoleInfo("#####TiDomainWave.qml收到←");
+            event.accepted=true;//阻止事件继续传递
+            //console.info("#####TiDomainWave.qml收到←");
             break;
         case Qt.Key_Right:
             globalConsoleInfo("#####TiDomainWave.qml收到Qt.Key_Right");
@@ -537,36 +556,29 @@ Rectangle {
             }
 
             fileSlider.setMarkRange()
+            event.accepted=true;//阻止事件继续传递
+            //console.info("#####TiDomainWave.qml收到→");
+            break;
 
-            //globalConsoleInfo("#####TiDomainWave.qml收到→");
-            break;
-        case Qt.Key_Alt://切换X轴Y轴
-            if(root.altPress)
-            {
-                zoomXY = "x"
-            }
-            else
-            {
-                zoomXY = "y"
-            }
-            root.altPress=!root.altPress;
-            globalConsoleInfo("#####TiDomainWave.qml收到Key_Alt");
-            break;
         case Qt.Key_Enter://放大
-            view.wheelZoomXY_ByBtn(true, centerPoint, true,  zoomXY)
-            globalConsoleInfo("#####TiDomainWave.qml收到Key_Enter");
+            view.wheelZoomXY_ByBtn(true, centerPoint, true,  zoomXY);
+            event.accepted=true;//阻止事件继续传递
+
             break;
         case Qt.Key_PageDown://放大
-            view.wheelZoomXY_ByBtn(true, centerPoint, true,  zoomXY)
-            globalConsoleInfo("#####TiDomainWave.qml收到Key_Enter");
+            view.wheelZoomXY_ByBtn(true, centerPoint, true,  zoomXY);
+            event.accepted=true;//阻止事件继续传递
+
             break;
         case Qt.Key_Space://缩小
-            view.wheelZoomXY_ByBtn(true, centerPoint, false,  zoomXY)
-            globalConsoleInfo("#####TiDomainWave.qml收到Key_Space");
+            view.wheelZoomXY_ByBtn(true, centerPoint, false,  zoomXY);
+            event.accepted=true;//阻止事件继续传递
+
             break;
         case Qt.Key_PageUp://缩小
-            view.wheelZoomXY_ByBtn(true, centerPoint, false,  zoomXY)
-            globalConsoleInfo("#####TiDomainWave.qml收到Key_Space");
+            view.wheelZoomXY_ByBtn(true, centerPoint, false,  zoomXY);
+            event.accepted=true;//阻止事件继续传递
+
             break;
         case Qt.Key_Escape://焦点切换到 scopeView
             if(theScopeViewEle)
@@ -574,13 +586,354 @@ Rectangle {
                 theScopeViewEle.focus=true;//焦点重置为ScopeView
                 globalConsoleInfo("#####TiDomainWave.qml收到Key_Escape,焦点交给了:"+theScopeViewEle);
             }
+            event.accepted=true;//阻止事件继续传递
+            break;
+            //Maker-->箭头
+            //case Qt.Key_F18:
+        case Qt.Key_F12:
+            //console.info("#############RtWaterFall.qml收到Maker-->箭头消息#############");
+            theSubTriangleIndex=getTriangleEleIndex();
+            theSubFileSliderIndex=(++theSubTriangleIndex)%(noCheckbuttonEleArray.length);
+            if(theSubFileSliderIndex<uiSliderIndex)
+            {
+                theSubFileSliderIndex=uiSliderIndex+theSubFileSliderIndex;
+            }
+            if(noCheckbuttonEleArray[theSubFileSliderIndex])
+            {
+                noCheckbuttonEleArray[theSubFileSliderIndex].focus=true;
+            }
+            event.accepted=true;//阻止事件继续传递
+            break;
+        case Qt.Key_F1:
+            console.info("-----------------------------");
+            console.info("                 ");
+            console.info(root+"!!!!!!TiDomainWave.qml收到C_FREQUENCY_CHANNEL信号!!!!!");
 
+            Com.clearTopPage(root);
+            analyzeMenu.focus=true;
+            analyzeMenu.state="SHOW";
+
+            console.info("----TiDomainWave.qml响应 ◇分析参数◇ 完毕----");
+            console.info("                 ");
+            console.info("------------------ ----------- ");
+            event.accepted=true;
+            break;
+        case Qt.Key_F5:
+            console.info("-----------------------------");
+            console.info("                 ");
+            console.info(root+"!!!!!!TiDomainWave.qml收到C_SPAN_X_SCALE!!!!!");
+            //记录上一个焦点转移的页面
+
+            //idScopeView.getPeakAndmarkEle();//必须调用此函数，whichTypePageOfEle才会有值
+            if(idScopeView.whichTypePageOfEle.noCheckbuttonEleArray[0])
+            {
+                //更新slider和checkButton
+                idScopeView.whichTypePageOfEle.getAllsliders();
+                idScopeView.whichTypePageOfEle.getAllcheckButtons();
+                idScopeView.whichTypePageOfEle.noCheckbuttonEleArray[0].focus=true;
+                idScopeView.whichTypePageOfEle.zoomXY="x";
+                console.info("----TiDomainWave.qml响应 ◇C_SPAN_X_SCALE◇ 完毕----");
+            }
+            else
+            {
+                console.info("#####TiDomainWave.qml 图谱不存在！无法响应X轴缩放######");
+                console.info(idScopeView.whichTypePageOfEle.noCheckbuttonEleArray[0]);
+            }
+
+            console.info("                 ");
+            console.info("------------------ ----------- ");
+            event.accepted=true;
+            break;
+        case Qt.Key_F9:
+            console.info("-----------------------------");
+            console.info("                 ");
+
+
+            //idScopeView.getPeakAndmarkEle();//必须调用此函数，whichTypePageOfEle才会有值
+            if(idScopeView.whichTypePageOfEle.noCheckbuttonEleArray[0])
+            {
+                idScopeView.whichTypePageOfEle.noCheckbuttonEleArray[0].focus=true;
+                idScopeView.whichTypePageOfEle.zoomXY="y";
+                console.info("----TiDomainWave.qml响应 ◇C_AMPLITUDE_Y_SCALE◇ 完毕----");
+            }
+            else
+            {
+                console.info("#####TiDomainWave.qml 图谱不存在！无法响应Y轴缩放######");
+                console.info(idScopeView.whichTypePageOfEle.noCheckbuttonEleArray[0]);
+            }
+            console.info("                 ");
+            console.info("------------------ ----------- ");
+            event.accepted=true;
+            break;
+
+            case Qt.Key_F15:
+        //case Qt.Key_F2:
+            console.info("-----------------------------");
+            console.info("                 ");
+            console.info(root+"!!!!!!TiDomainWave.qml收到C_MARKER!!!!!");
+            console.info("                 ");
+            console.info("------------------ ----------- ");
+            ////////////////////////
+
+            //idScopeView.judgeVisiblePage();//必须调用此函数，whichTypePageOfEle才会有值
+            if(idScopeView.peakPointBtn)
+            {
+                idScopeView.peakPointBtn.checkboxClick();
+                root.getAllsliders();
+            }
+            //////////////////////
+            console.info("----TiDomainWave.qml响应  ◇C_MARKER◇  完毕----");
+            event.accepted=true;
+            break;
+        //case Qt.Key_F3:
+            case Qt.Key_F16:
+            console.info("-----------------------------");
+            console.info("                 ");
+            console.info(root+"!!!!!!TiDomainWave.qml收到C_PEAK_SEARCH!!!!!");
+
+
+            if((idScopeView.peakPointBtn)&&(!idScopeView.peakPointBtn.checked))
+            {
+                idScopeView.peakPointBtn.checkboxClick();
+                root.getAllsliders();
+            }
+
+
+            if(idScopeView.markBtn)
+            {
+
+                idScopeView.markBtn.checkboxClick();
+                //焦点给第一个三角滑块
+                idScopeView.whichTypePageOfEle.getAllsliders();//必须重新激活三角滑块
+
+
+
+                if((root.uiSliderIndex>=0)&&(root.uiSliderIndex<root.noCheckbuttonEleArray.length)&&root.noCheckbuttonEleArray[root.uiSliderIndex].visible)
+                {
+                    root.noCheckbuttonEleArray[root.uiSliderIndex].focus=true;
+                }
+            }
+            console.info("----TiDomainWave.qml响应  ◇C_PEAK_SEARCH◇   完毕----");
+            console.info("                 ");
+            console.info("------------------ ----------- ");
+            event.accepted=true;
+            break;
+
+            //case Qt.Key_End://呼出菜单
+        case Qt.Key_F13:
+            if(idBottomPannel.menuBtn)
+            {
+                idBottomPannel.menuBtn.clicked();
+            }
+            console.info("●●●●●●TiDomainWave.qml 呼出菜单按钮触发●●●●●●idBottomPannel.menuBtn"+idBottomPannel.menuBtn);
+            event.accepted=true;
+            break;
+            //case Qt.Key_Insert://模式切换
+        case Qt.Key_F10:
+            if(idBottomPannel.modeSwitch)
+            {
+                idBottomPannel.modeSwitch.clicked();
+            }
+            console.info("●●●●●●TiDomainWave.qml 模式切换按钮触发●●●●●●idBottomPannel.modeSwitch"+idBottomPannel.modeSwitch);
+            event.accepted=true;
+            break;
+            //case Qt.Key_Delete://参数更新
+        case Qt.Key_F19:
+            if(idBottomPannel.paramsUpdate)
+            {
+                idBottomPannel.paramsUpdate.clicked();
+            }
+            console.info("●●●●●● TiDomainWave.qml参数更新按钮触发●●●●●●Com.paramsUpdate"+idBottomPannel.paramsUpdate);
+            console.info("----TiDomainWave.qml响应 ◇C_PRESET◇ 完毕----");
+            event.accepted=true;
+            break;
+        case Qt.Key_1://数字1
+            if(root.noCheckbuttonEleArray[1])
+            {
+                root.noCheckbuttonEleArray[1].focus=true;//multisider1获得焦点
+                console.info("卍卍卍卍卍TiDomainWave.qml文件滑块1 获得焦点卍卍卍卍卍")
+            }
+
+            event.accepted=true;
+            break;
+        case Qt.Key_2://数字2
+            if(root.noCheckbuttonEleArray[2])
+            {
+                root.noCheckbuttonEleArray[2].focus=true;//multisider1获得焦点
+                console.info("卍卍卍卍卍TiDomainWave.qml文件滑块1 获得焦点卍卍卍卍卍")
+            }
+
+            event.accepted=true;
+            break;
+        case Qt.Key_3://数字3
+            if(root.noCheckbuttonEleArray[3])
+            {
+                root.noCheckbuttonEleArray[3].focus=true;//multisider1获得焦点
+                console.info("卍卍卍卍卍TiDomainWave.qml文件滑块1 获得焦点卍卍卍卍卍")
+            }
+
+            event.accepted=true;
+            break;
+        case Qt.Key_4://数字4
+            if(root.uiCheckButtonArray[0]&&(!root.uiCheckButtonArray[0].disabled))
+            {
+
+
+                if(typeof root.uiCheckButtonArray[0].tips!==undefined)
+                {
+                    checkButtonTipsStr=root.uiCheckButtonArray[0].tips;
+                }
+                if(checkButtonTipsStr.indexOf("Peak点")!==-1)
+                {
+                    peakPointBtn=root.uiCheckButtonArray[0];
+                    break;
+                }
+                else if(checkButtonTipsStr.indexOf("标尺")!==-1)
+                {
+
+                    markBtn=root.uiCheckButtonArray[0];
+                    break;
+
+                }
+                root.uiCheckButtonArray[0].checkboxClick();
+                root.getAllsliders();//再次刷新slider
+                //刷新sliders
+                console.info("TiDomainWave.qml "+checkButtonTipsStr+"触发点击事件");
+            }
+            event.accepted=true;
+            break;
+        case Qt.Key_5://数字5
+
+
+            if(root.uiCheckButtonArray[1]&&(!root.uiCheckButtonArray[1].disabled))
+            {
+                if(typeof root.uiCheckButtonArray[1].tips!==undefined)
+                {
+                    checkButtonTipsStr=root.uiCheckButtonArray[1].tips;
+                }
+                if(checkButtonTipsStr.indexOf("Peak点")!==-1)
+                {
+                    peakPointBtn=root.uiCheckButtonArray[1];
+                    break;
+                }
+                else if(checkButtonTipsStr.indexOf("标尺")!==-1)
+                {
+
+                    markBtn=root.uiCheckButtonArray[1];
+                    break;
+
+                }
+                root.uiCheckButtonArray[1].checkboxClick();
+                root.getAllsliders();//再次刷新slider
+                console.info("TiDomainWave.qml "+checkButtonTipsStr+"触发点击事件");
+            }
+            event.accepted=true;
+            break;
+        case Qt.Key_6://数字6
+
+
+            if(root.uiCheckButtonArray[2]&&(!root.uiCheckButtonArray[2].disabled))
+            {
+                if(typeof root.uiCheckButtonArray[2].tips!==undefined)
+                {
+                    checkButtonTipsStr=root.uiCheckButtonArray[2].tips;
+                }
+                if(checkButtonTipsStr.indexOf("Peak点")!==-1)
+                {
+                    peakPointBtn=root.uiCheckButtonArray[2];
+                    break;
+                }
+                else if(checkButtonTipsStr.indexOf("标尺")!==-1)
+                {
+
+                    markBtn=root.uiCheckButtonArray[2];
+                    break;
+
+                }
+                root.uiCheckButtonArray[2].checkboxClick();
+                root.getAllsliders();//再次刷新slider
+                console.info("TiDomainWave.qml "+checkButtonTipsStr+"触发点击事件");
+            }
+            event.accepted=true;
+            break;
+        case Qt.Key_7://数字7
+
+
+            if(root.uiCheckButtonArray[3]&&(!root.uiCheckButtonArray[3].disabled))
+            {
+                if(typeof root.uiCheckButtonArray[3].tips!==undefined)
+                {
+                    checkButtonTipsStr=root.uiCheckButtonArray[3].tips;
+                }
+                if(checkButtonTipsStr.indexOf("Peak点")!==-1)
+                {
+                    peakPointBtn=root.uiCheckButtonArray[3];
+                    break;
+                }
+                else if(checkButtonTipsStr.indexOf("标尺")!==-1)
+                {
+
+                    markBtn=root.uiCheckButtonArray[3];
+                    break;
+
+                }
+                root.uiCheckButtonArray[3].checkboxClick();
+                root.getAllsliders();//再次刷新slider
+                console.info("TiDomainWave.qml "+checkButtonTipsStr+"触发点击事件");
+            }
+            event.accepted=true;
+            break;
+        case Qt.Key_8://数字8
+
+
+            if(root.uiCheckButtonArray[4]&&(!root.uiCheckButtonArray[4].disabled))
+            {
+                if(typeof root.uiCheckButtonArray[4].tips!==undefined)
+                {
+                    checkButtonTipsStr=root.uiCheckButtonArray[4].tips;
+                }
+                if(checkButtonTipsStr.indexOf("Peak点")!==-1)
+                {
+                    peakPointBtn=root.uiCheckButtonArray[4];
+                    break;
+                }
+                else if(checkButtonTipsStr.indexOf("标尺")!==-1)
+                {
+
+                    markBtn=root.uiCheckButtonArray[4];
+                    break;
+
+                }
+
+                root.uiCheckButtonArray[4].checkboxClick();
+                root.getAllsliders();//再次刷新slider
+                console.info("TiDomainWave.qml "+checkButtonTipsStr+"触发点击事件");
+            }
+            event.accepted=true;
+            break;
+        case Qt.Key_Exclam://功能键1
+
+        case Qt.Key_At://功能键2
+
+        case Qt.Key_NumberSign://功能键3
+
+        case Qt.Key_Dollar://功能键4
+
+        case Qt.Key_Percent://功能键5
+
+        case Qt.Key_AsciiCircum://功能键6
+
+        case Qt.Key_Space://功能键 return
+            idScopeView.focusPageOfrightControl.focus=true;
+            idScopeView.focusPageOfrightControl.state="SHOW";
+            console.info("※※※※※TiDomainWave.qml  功能键呼出菜单※※※※※"+idScopeView.focusPageOfrightControl);
+            event.accepted=true;
             break;
         default:
             globalConsoleInfo("#####TiDomainWave.qml收到按键消息#####"+event.key);
             break;
         }
-        event.accepted=true;//阻止事件继续传递
+
     }
     function updateParams()
     {
@@ -627,7 +980,7 @@ Rectangle {
                 
                 if(UiMultSliderObj[jj].visible)
                 {
-                noCheckbuttonEleArray.norepeatpush(UiMultSliderObj[jj]);
+                    noCheckbuttonEleArray.norepeatpush(UiMultSliderObj[jj]);
                 }
             }
         }
@@ -636,7 +989,7 @@ Rectangle {
             
             if(UiMultSliderObj.visible)
             {
-            noCheckbuttonEleArray.norepeatpush(UiMultSliderObj);
+                noCheckbuttonEleArray.norepeatpush(UiMultSliderObj);
             }
         }
 
@@ -659,7 +1012,7 @@ Rectangle {
 
                         if(UiSliderObj[kk].children[uu].visible)
                         {
-                        noCheckbuttonEleArray.norepeatpush(UiSliderObj[kk].children[uu]);
+                            noCheckbuttonEleArray.norepeatpush(UiSliderObj[kk].children[uu]);
                         }
 
                     }
@@ -707,13 +1060,48 @@ Rectangle {
         {
 
             var UiCheckButton_Str=root.children[kk].toString();
-            if(UiCheckButton_Str.indexOf("UiCheckButton")!==-1)
+            if((UiCheckButton_Str.indexOf("UiCheckButton")!==-1)&&(root.children[kk].visible))
             {
                 uiCheckButtonArray.norepeatpush(root.children[kk]);//UiCheckButton_QMLTYPE_15元素添加
             }
         }
 
 
+
+    }
+
+    //获取当前获得焦点的三角滑块索引
+    function getTriangleEleIndex()
+    {
+        var focusTriangleIndex=0;
+        for(var kk=uiSliderIndex;kk<noCheckbuttonEleArray.length;kk++)
+        {
+
+            if(noCheckbuttonEleArray[kk].focus)
+            {
+                focusTriangleIndex=kk;
+                break;
+            }
+        }
+        return focusTriangleIndex;
+
+    }
+
+
+    //获取当前文件拖动滑块索引
+    function getFileMultiSilderIndex()
+    {
+        var focusFlieSliderIndex=0;
+        for(var kk=0;kk<uiSliderIndex;kk++)
+        {
+
+            if(noCheckbuttonEleArray[kk].focus)
+            {
+                focusFlieSliderIndex=kk;
+                break;
+            }
+        }
+        return focusFlieSliderIndex;
 
     }
 }

@@ -19,7 +19,10 @@ Item{
     property var peakPointBtn:undefined//peak点对应的btn
 
     property var markBtn:undefined//mark标尺对应的btn
-    property var focusPageOfrightControl:undefined
+
+    property var focusPageOfrightControl:idRightPannel
+
+    property int focusChannel:0 //目前操作通道几
     Item{
         id: waveTable
         anchors.fill: parent
@@ -113,296 +116,173 @@ Item{
         switch(event.key)
         {
 
-        case Qt.Key_Alt:
-            root.getAllScopeChildEle();
-            //            for(var hh=0;hh<root.scopeChildEles.length;hh++)
-            //            {
-            //                globalConsoleInfo("■■■■SSSSSS查看scopeView子元素■■■■:"+hh+"---"+root.scopeChildEles[hh]);
-            //            }
-            whichTypePageOfEle=Com.setNextFocus(root.scopeChildEles,Com.getFocusIndex(root.scopeChildEles));
-
-            break;
-        case Qt.Key_Enter://
-            if(whichTypePageOfEle.noCheckbuttonEleArray[0])
+            //case Qt.Key_End://呼出菜单
+        case Qt.Key_F13:
+            if(idBottomPannel.menuBtn)
             {
-                whichTypePageOfEle.noCheckbuttonEleArray[0].focus=true;//enter键默认设置图形焦点
-                globalConsoleInfo("---------------图谱获得焦点------------");
-
+                idBottomPannel.menuBtn.clicked();
             }
+            console.info("●●●●●●ScopeView.qml触发 呼出菜单  按钮●●●●●●idBottomPannel.menuBtn"+idBottomPannel.menuBtn);
+            event.accepted=true;
+            break;
+            //case Qt.Key_Insert://模式切换
+        case Qt.Key_F10:
+            if(idBottomPannel.modeSwitch)
+            {
+                idBottomPannel.modeSwitch.clicked();
+            }
+            console.info("●●●●●●ScopeView.qml 触发  模式切换  按钮 ●●●●●●idBottomPannel.modeSwitch"+idBottomPannel.modeSwitch);
+            event.accepted=true;
+            break;
+            //case Qt.Key_Delete://参数更新
+        case Qt.Key_F19:
+            if(idBottomPannel.paramsUpdate)
+            {
+                idBottomPannel.paramsUpdate.clicked();
+            }
+            console.info("●●●●●●ScopeView.qml  触发  参数更新   按钮●●●●●●Com.paramsUpdate"+idBottomPannel.paramsUpdate);
+            console.info("----视图响应 ◇C_PRESET◇ 完毕----");
+            event.accepted=true;
+            break;
+        case Qt.Key_F1:
+            console.info("-----------------------------");
+            console.info("                 ");
+            console.info(root+"!!!!!!视图收到C_FREQUENCY_CHANNEL信号!!!!!");
+
+            Com.clearTopPage(root);
+            analyzeMenu.focus=true;
+            analyzeMenu.state="SHOW";
+
+            console.info("----视图响应 ◇分析参数◇ 完毕----");
+            console.info("                 ");
+            console.info("------------------ ----------- ");
+            event.accepted=true;
+            break;
+        case Qt.Key_F5:
+            console.info("-----------------------------");
+            console.info("                 ");
+            console.info(root+"!!!!!!视图收到C_SPAN_X_SCALE!!!!!");
+
+            //idScopeView.getPeakAndmarkEle();//必须调用此函数，whichTypePageOfEle才会有值
+            if(idScopeView.whichTypePageOfEle.noCheckbuttonEleArray[0])
+            {
+                //更新slider和checkButton
+                idScopeView.whichTypePageOfEle.getAllsliders();
+                idScopeView.whichTypePageOfEle.getAllcheckButtons();
+                idScopeView.whichTypePageOfEle.noCheckbuttonEleArray[0].focus=true;
+                idScopeView.whichTypePageOfEle.zoomXY="x";
+                console.info("----视图响应 ◇C_SPAN_X_SCALE◇ 完毕----");
+            }
+            else
+            {
+                console.info("#####视图  图谱不存在！无法响应X轴缩放######");
+                console.info(idScopeView.whichTypePageOfEle.noCheckbuttonEleArray[0]);
+            }
+
+            console.info("                 ");
+            console.info("------------------ ----------- ");
+            event.accepted=true;
+            break;
+        case Qt.Key_F9:
+            console.info("-----------------------------");
+            console.info("                 ");
+            console.info(root+"!!!!!!视图收到C_AMPLITUDE_Y_SCALE!!!!!");
+
+            //idScopeView.getPeakAndmarkEle();//必须调用此函数，whichTypePageOfEle才会有值
+            if(idScopeView.whichTypePageOfEle.noCheckbuttonEleArray[0])
+            {
+                idScopeView.whichTypePageOfEle.noCheckbuttonEleArray[0].focus=true;
+                idScopeView.whichTypePageOfEle.zoomXY="y";
+                console.info("----视图响应 ◇C_AMPLITUDE_Y_SCALE◇ 完毕----");
+            }
+            else
+            {
+                console.info("#####视图 图谱不存在！无法响应Y轴缩放######");
+                console.info(idScopeView.whichTypePageOfEle.noCheckbuttonEleArray[0]);
+            }
+            console.info("                 ");
+            console.info("------------------ ----------- ");
+            event.accepted=true;
+            break;
+
+        case Qt.Key_F15:
+            //case Qt.Key_F2:
+            console.info("-----------------------------");
+            console.info("                 ");
+            console.info(root+"!!!!!!视图收到C_MARKER!!!!!");
+            console.info("                 ");
+            console.info("------------------ ----------- ");
+            ////////////////////////
+
+            //idScopeView.judgeVisiblePage();//必须调用此函数，whichTypePageOfEle才会有值
+            if(idScopeView.peakPointBtn)
+            {
+                idScopeView.peakPointBtn.checkboxClick();
+                idScopeView.whichTypePageOfEle.getAllsliders();
+            }
+            //////////////////////
+            console.info("----视图响应  ◇C_MARKER◇  完毕----");
+            event.accepted=true;
+            break;
+            //case Qt.Key_F3:
+        case Qt.Key_F16:
+            console.info("-----------------------------");
+            console.info("                 ");
+            console.info(root+"!!!!!!视图收到C_PEAK_SEARCH!!!!!");
+
+
+            if((idScopeView.peakPointBtn)&&(!idScopeView.peakPointBtn.checked))
+            {
+                idScopeView.peakPointBtn.checkboxClick();
+                idScopeView.whichTypePageOfEle.getAllsliders();
+            }
+
+
+            if(idScopeView.markBtn)
+            {
+
+                idScopeView.markBtn.checkboxClick();
+                //焦点给第一个三角滑块
+                idScopeView.whichTypePageOfEle.getAllsliders();//必须重新激活三角滑块
+                
+
+                if((idScopeView.whichTypePageOfEle.uiSliderIndex>=0)&&(idScopeView.whichTypePageOfEle.uiSliderIndex<idScopeView.whichTypePageOfEle.noCheckbuttonEleArray.length)&&idScopeView.whichTypePageOfEle.noCheckbuttonEleArray[idScopeView.whichTypePageOfEle.uiSliderIndex].visible)
+                {
+                    idScopeView.whichTypePageOfEle.noCheckbuttonEleArray[idScopeView.whichTypePageOfEle.uiSliderIndex].focus=true;
+                }
+            }
+            console.info("----视图响应  ◇C_PEAK_SEARCH◇   完毕----");
+            console.info("                 ");
+            console.info("------------------ ----------- ");
+            event.accepted=true;
             break;
         case Qt.Key_Exclam://功能键1
-            if(whichTypePageOfEle.noCheckbuttonEleArray[1])
-            {
-                whichTypePageOfEle.noCheckbuttonEleArray[1].focus=true;//multisider1获得焦点
-                globalConsoleInfo("!!!!!"+whichTypePageOfEle.noCheckbuttonEleArray[1]+"获得焦点")
-            }
 
-            break;
         case Qt.Key_At://功能键2
-            if(whichTypePageOfEle.noCheckbuttonEleArray[2])
-            {
-                whichTypePageOfEle.noCheckbuttonEleArray[2].focus=true;//multisider2获得焦点
-                globalConsoleInfo("!!!!!"+whichTypePageOfEle.noCheckbuttonEleArray[2]+"获得焦点")
-            }
-            break;
+
         case Qt.Key_NumberSign://功能键3
-            if(whichTypePageOfEle.noCheckbuttonEleArray[3])
-            {
-                whichTypePageOfEle.noCheckbuttonEleArray[3].focus=true;//multisider2获得焦点
-                globalConsoleInfo("!!!!!"+whichTypePageOfEle.noCheckbuttonEleArray[3]+"获得焦点")
-            }
-            break;
 
         case Qt.Key_Dollar://功能键4
-            if(whichTypePageOfEle.noCheckbuttonEleArray[4])
-            {
-                whichTypePageOfEle.noCheckbuttonEleArray[4].focus=true;//multisider2获得焦点
-                globalConsoleInfo("!!!!!"+whichTypePageOfEle.noCheckbuttonEleArray[4]+"获得焦点")
-            }
-            break;
 
         case Qt.Key_Percent://功能键5
-            if(whichTypePageOfEle.noCheckbuttonEleArray[5])
-            {
-                whichTypePageOfEle.noCheckbuttonEleArray[5].focus=true;//multisider2获得焦点
-                globalConsoleInfo("!!!!!"+whichTypePageOfEle.noCheckbuttonEleArray[5]+"获得焦点")
-            }
-            break;
 
         case Qt.Key_AsciiCircum://功能键6
-            if(whichTypePageOfEle.noCheckbuttonEleArray[6])
-            {
-                whichTypePageOfEle.noCheckbuttonEleArray[6].focus=true;//multisider2获得焦点
-                globalConsoleInfo("!!!!!"+whichTypePageOfEle.noCheckbuttonEleArray[6]+"获得焦点")
-            }
-            break;
 
-        case Qt.Key_1://数字1
-            if(whichTypePageOfEle.uiCheckButtonArray[0]&&(!whichTypePageOfEle.uiCheckButtonArray[0].disabled))
-            {
-                whichTypePageOfEle.uiCheckButtonArray[0].checkboxClick();
-
-
-                if(typeof whichTypePageOfEle.uiCheckButtonArray[0].tips!==undefined)
-                {
-                    checkButtonTipsStr=whichTypePageOfEle.uiCheckButtonArray[0].tips;
-                }
-                if(checkButtonTipsStr.indexOf("Peak点")!==-1)
-                {
-                    peakPointBtn=whichTypePageOfEle.uiCheckButtonArray[0];
-                }
-                else if(checkButtonTipsStr.indexOf("标尺")!==-1)
-                {
-                    whichTypePageOfEle.getAllsliders();//再次刷新slider
-                    markBtn=whichTypePageOfEle.uiCheckButtonArray[0];
-
-                    //焦点给第一个三角滑块
-                    whichTypePageOfEle.noCheckbuttonEleArray[whichTypePageOfEle.uiSliderIndex].focus=true;
-
-                    globalConsoleInfo("1#########找到标尺元素###########");
-                }
-
-
-                globalConsoleInfo("!!!!!"+whichTypePageOfEle.uiCheckButtonArray[0]+"触发点击事件");
-            }
-            break;
-        case Qt.Key_2://数字2
-            if(whichTypePageOfEle.uiCheckButtonArray[1]&&(!whichTypePageOfEle.uiCheckButtonArray[1].disabled))
-            {
-                whichTypePageOfEle.uiCheckButtonArray[1].checkboxClick();
-
-                if(typeof whichTypePageOfEle.uiCheckButtonArray[1].tips!==undefined)
-                {
-                    checkButtonTipsStr=whichTypePageOfEle.uiCheckButtonArray[1].tips;
-                }
-                if(checkButtonTipsStr.indexOf("Peak点")!==-1)
-                {
-                    peakPointBtn=whichTypePageOfEle.uiCheckButtonArray[1];
-                }
-                else if(checkButtonTipsStr.indexOf("标尺")!==-1)
-                {
-                    whichTypePageOfEle.getAllsliders();//再次刷新slider
-                    markBtn=whichTypePageOfEle.uiCheckButtonArray[1];
-
-                    //焦点给第一个三角滑块
-                    whichTypePageOfEle.noCheckbuttonEleArray[whichTypePageOfEle.uiSliderIndex].focus=true;
-                    globalConsoleInfo("2#########找到标尺元素###########");
-                }
-
-
-                globalConsoleInfo("!!!!!"+whichTypePageOfEle.uiCheckButtonArray[1]+"触发点击事件");
-            }
-            break;
-        case Qt.Key_3://数字3
-            if(whichTypePageOfEle.uiCheckButtonArray[2]&&(!whichTypePageOfEle.uiCheckButtonArray[2].disabled))
-            {
-                whichTypePageOfEle.uiCheckButtonArray[2].checkboxClick();
-
-                if(typeof whichTypePageOfEle.uiCheckButtonArray[2].tips!==undefined)
-                {
-                    checkButtonTipsStr=whichTypePageOfEle.uiCheckButtonArray[2].tips;
-                }
-                if(checkButtonTipsStr.indexOf("Peak点")!==-1)
-                {
-                    peakPointBtn=whichTypePageOfEle.uiCheckButtonArray[2];
-                }
-                else if(checkButtonTipsStr.indexOf("标尺")!==-1)
-                {
-                    whichTypePageOfEle.getAllsliders();//再次刷新slider
-                    markBtn=whichTypePageOfEle.uiCheckButtonArray[2];
-
-
-                    //焦点给第一个三角滑块
-                    whichTypePageOfEle.noCheckbuttonEleArray[whichTypePageOfEle.uiSliderIndex].focus=true;
-                    globalConsoleInfo("3#########找到标尺元素###########");
-                }
-
-                globalConsoleInfo("!!!!!"+whichTypePageOfEle.uiCheckButtonArray[2]+"触发点击事件");
-            }
-            break;
-        case Qt.Key_4://数字4
-            if(whichTypePageOfEle.uiCheckButtonArray[3]&&(!whichTypePageOfEle.uiCheckButtonArray[3].disabled))
-            {
-                whichTypePageOfEle.uiCheckButtonArray[3].checkboxClick();
-
-                if(typeof whichTypePageOfEle.uiCheckButtonArray[3].tips!==undefined)
-                {
-                    checkButtonTipsStr=whichTypePageOfEle.uiCheckButtonArray[3].tips;
-                }
-                if(checkButtonTipsStr.indexOf("Peak点")!==-1)
-                {
-                    peakPointBtn=whichTypePageOfEle.uiCheckButtonArray[3];
-                }
-                else if(checkButtonTipsStr.indexOf("标尺")!==-1)
-                {
-                    whichTypePageOfEle.getAllsliders();//再次刷新slider
-                    markBtn=whichTypePageOfEle.uiCheckButtonArray[3];
-
-                    //焦点给第一个三角滑块
-                    whichTypePageOfEle.noCheckbuttonEleArray[whichTypePageOfEle.uiSliderIndex].focus=true;
-                    globalConsoleInfo("4#########找到标尺元素###########");
-                }
-
-                globalConsoleInfo("!!!!!"+whichTypePageOfEle.uiCheckButtonArray[3]+"触发点击事件");
-            }
-            break;
-        case Qt.Key_5://数字5
-            if(whichTypePageOfEle.uiCheckButtonArray[4]&&(!whichTypePageOfEle.uiCheckButtonArray[4].disabled))
-            {
-                whichTypePageOfEle.uiCheckButtonArray[4].checkboxClick();
-
-                if(typeof whichTypePageOfEle.uiCheckButtonArray[4].tips!==undefined)
-                {
-                    checkButtonTipsStr=whichTypePageOfEle.uiCheckButtonArray[4].tips;
-                }
-                if(checkButtonTipsStr.indexOf("Peak点")!==-1)
-                {
-                    peakPointBtn=whichTypePageOfEle.uiCheckButtonArray[4];
-                }
-                else if(checkButtonTipsStr.indexOf("标尺")!==-1)
-                {
-                    whichTypePageOfEle.getAllsliders();//再次刷新slider
-                    markBtn=whichTypePageOfEle.uiCheckButtonArray[4];
-
-                    //焦点给第一个三角滑块
-                    whichTypePageOfEle.noCheckbuttonEleArray[whichTypePageOfEle.uiSliderIndex].focus=true;
-                    globalConsoleInfo("5#########找到标尺元素###########");
-                }
-
-
-
-                globalConsoleInfo("!!!!!"+whichTypePageOfEle.uiCheckButtonArray[4]+"触发点击事件");
-            }
-            break;
-        case Qt.Key_6://数字6
-            if(whichTypePageOfEle.uiCheckButtonArray[5]&&(!whichTypePageOfEle.uiCheckButtonArray[5].disabled))
-            {
-                whichTypePageOfEle.uiCheckButtonArray[5].checkboxClick();
-                if(typeof whichTypePageOfEle.uiCheckButtonArray[5].tips!==undefined)
-                {
-                    checkButtonTipsStr=whichTypePageOfEle.uiCheckButtonArray[5].tips;
-                }
-                if(checkButtonTipsStr.indexOf("Peak点")!==-1)
-                {
-                    peakPointBtn=whichTypePageOfEle.uiCheckButtonArray[5];
-                }
-                else if(checkButtonTipsStr.indexOf("标尺")!==-1)
-                {
-                    whichTypePageOfEle.getAllsliders();//再次刷新slider
-                    markBtn=whichTypePageOfEle.uiCheckButtonArray[5];
-
-                    //焦点给第一个三角滑块
-                    whichTypePageOfEle.noCheckbuttonEleArray[whichTypePageOfEle.uiSliderIndex].focus=true;
-                    globalConsoleInfo("6#########找到标尺元素###########");
-                }
-                globalConsoleInfo("!!!!!"+whichTypePageOfEle.uiCheckButtonArray[5]+"触发点击事件");
-            }
-            break;
-        case Qt.Key_7://数字7
-            if(whichTypePageOfEle.uiCheckButtonArray[6]&&(!whichTypePageOfEle.uiCheckButtonArray[6].disabled))
-            {
-                whichTypePageOfEle.uiCheckButtonArray[6].checkboxClick();
-
-                if(typeof whichTypePageOfEle.uiCheckButtonArray[6].tips!==undefined)
-                {
-                    checkButtonTipsStr=whichTypePageOfEle.uiCheckButtonArray[6].tips;
-                }
-
-                if(checkButtonTipsStr.indexOf("Peak点")!==-1)
-                {
-                    peakPointBtn=whichTypePageOfEle.uiCheckButtonArray[6];
-                }
-
-                else if(checkButtonTipsStr.indexOf("标尺")!==-1)
-                {
-
-                    whichTypePageOfEle.getAllsliders();//再次刷新slider
-                    markBtn=whichTypePageOfEle.uiCheckButtonArray[6];
-
-
-
-                    //焦点给第一个三角滑块
-                    whichTypePageOfEle.noCheckbuttonEleArray[whichTypePageOfEle.uiSliderIndex].focus=true;
-                    globalConsoleInfo("7#########找到标尺元素###########");
-
-                }
-                globalConsoleInfo("!!!!!"+whichTypePageOfEle.uiCheckButtonArray[6]+"触发点击事件");
-            }
-            break;
-        case Qt.Key_8://数字8
-            if(whichTypePageOfEle.uiCheckButtonArray[7]&&(!whichTypePageOfEle.uiCheckButtonArray[7].disabled))
-            {
-                whichTypePageOfEle.uiCheckButtonArray[7].checkboxClick();
-
-                if(typeof whichTypePageOfEle.uiCheckButtonArray[7].tips!==undefined)
-                {
-                    checkButtonTipsStr=whichTypePageOfEle.uiCheckButtonArray[7].tips;
-                }
-                if(checkButtonTipsStr.indexOf("Peak点")!==-1)
-                {
-                    peakPointBtn=whichTypePageOfEle.uiCheckButtonArray[7];
-                }
-                else if(checkButtonTipsStr.indexOf("标尺")!==-1)
-                {
-                    whichTypePageOfEle.getAllsliders();//再次刷新slider
-                    markBtn=whichTypePageOfEle.uiCheckButtonArray[7];
-                    globalConsoleInfo("8#########找到标尺元素###########");
-                }
-
-                globalConsoleInfo("!!!!!"+whichTypePageOfEle.uiCheckButtonArray[7]+"触发点击事件");
-            }
-            break;
-
-        case Qt.Key_Escape://焦点切换到 右侧边栏
-            globalConsoleInfo("♣♣♣♣ScopeView.qml收到Key_Escape♣♣♣♣");
-            if(focusPageOfrightControl!==undefined)
-            {
-                focusPageOfrightControl.focus=true;
-                globalConsoleInfo("#####ScopeView失去焦点，焦点被重置到----"+focusPageOfrightControl);
-            }
-
+        case Qt.Key_Space://功能键 return
+            idScopeView.focusPageOfrightControl.focus=true;
+            idScopeView.focusPageOfrightControl.state="SHOW";
+            console.info("※※※※※ScopeView.qml  功能键呼出菜单※※※※※"+idScopeView.focusPageOfrightControl);
+            event.accepted=true;
             break;
         default:
+            if(focusPageOfrightControl!==undefined)
+            {
+
+                focusPageOfrightControl.focus=true;
+                focusPageOfrightControl.state="SHOW";
+                console.info("!!!!!!!ScopeView收到未注册的，焦点被重置到!!!!--"+focusPageOfrightControl);
+            }
+
             break;
         }
         event.accepted=true;//阻止事件继续传递
@@ -413,18 +293,21 @@ Item{
     function judgeVisiblePage()
     {
         //历史时域波形图
-        if(tiDomainWaveObj.visible)
+        if(tiDomainWaveObj)
         {
-            whichTypePageOfEle=tiDomainWaveObj;
-            compositeFlag=-1;//历史时域波形图
+            if(tiDomainWaveObj.visible)
+            {
+                whichTypePageOfEle=tiDomainWaveObj;
+                compositeFlag=-1;//历史时域波形图
+            }
         }
         if((analyzeMode !== 0)&&(analyzeMode !== 1)) //非实时频谱，非实时瀑布图
         {
-            //历史瀑布图分析
-            if(rtSpectrumObj === undefined || rtWaterFallObj === undefined)
-                return;
-            if(rtSpectrumObj.visible && rtWaterFallObj.visible)
+            if(rtSpectrumObj&&rtWaterFallObj)
             {
+                //历史瀑布图分析
+                if(rtSpectrumObj.visible && rtWaterFallObj.visible)
+                {
 
                 compositeFlag=0;
                 if(rtSpectrumObjtoShow)
@@ -443,38 +326,87 @@ Item{
             {
                 whichTypePageOfEle=rtSpectrumObj;
 
-                compositeFlag=-1;
+                    compositeFlag=-1;
+                }
             }
         }
         if(analyzeMode === 0)   //实时频谱
         {
-            if(rtSpectrumObj === undefined)
-                return;
-            if(!rtSpectrumObj.visible)
+            if(rtSpectrumObj)
             {
-                whichTypePageOfEle=rtSpectrumObj_channel2;
-            }
-            else
-            {
-                whichTypePageOfEle=rtSpectrumObj;
-            }
+                if(!rtSpectrumObj.visible)
+                {
+                    console.info("==ScopeView2CH.qml 通道2 显示");
+                    whichTypePageOfEle=rtSpectrumObj_channel2;
 
+                }
+                else if(rtSpectrumObj_channel2.visible&&(!rtSpectrumObj.visible))
+                {
+                    console.info("==ScopeView2CH.qml 通道2单路 显示");
+                    whichTypePageOfEle=rtSpectrumObj_channel2;
+
+                }
+                else if(rtSpectrumObj.visible&&rtSpectrumObj_channel2.visible)  //双通道可见
+                {
+                    if(1===focusChannel) //通道2
+                    {
+                        console.info("==ScopeView2CH.qml 查看===focusChannel"+focusChannel);
+                        whichTypePageOfEle=rtSpectrumObj_channel2;
+
+                    }
+                    else
+                    {
+                        console.info("!!!ScopeView2CH.qml 查看!!!!focusChannel"+focusChannel);
+                        whichTypePageOfEle=rtSpectrumObj;
+
+                    }
+                }
+            }
 
         }
         if(analyzeMode === 1)   //实时瀑布图
         {
-            if(rtSpectrumObj === undefined)
-                return;
-            if(!rtSpectrumObj.visible)
+            if(rtSpectrumObj)
             {
-                whichTypePageOfEle=rtSpectrumObj_channel2;
-            }
-            else
-            {
-                whichTypePageOfEle=rtSpectrumObj;
+                if(!rtSpectrumObj.visible)
+                {
+                    console.info("==ScopeView2CH.qml 通道2 显示");
+                    whichTypePageOfEle=rtSpectrumObj_channel2;
+
+                }
+                else if(rtSpectrumObj_channel2.visible&&(!rtSpectrumObj.visible))
+                {
+                    console.info("==ScopeView2CH.qml 通道2单路 显示");
+                    whichTypePageOfEle=rtSpectrumObj_channel2;
+
+                }
+                else if(rtSpectrumObj.visible&&rtSpectrumObj_channel2.visible)  //双通道可见
+                {
+                    if(1===focusChannel) //通道2
+                    {
+                        console.info("==ScopeView2CH.qml 查看===focusChannel"+focusChannel);
+                        whichTypePageOfEle=rtSpectrumObj_channel2;
+
+                    }
+                    else
+                    {
+                        console.info("!!!ScopeView2CH.qml 查看!!!!focusChannel"+focusChannel);
+                        whichTypePageOfEle=rtSpectrumObj;
+
+                    }
+                }
             }
         }
-        globalConsoleInfo("▲▼▲▼▲▼▲▼查看操作元素whichTypePageOfEle▲▼▲▼▲▼▲▼=="+whichTypePageOfEle);
+        if(whichTypePageOfEle)
+        {
+            if(whichTypePageOfEle.noCheckbuttonEleArray[0])
+            {
+                whichTypePageOfEle.noCheckbuttonEleArray[0].focus=true;//enter键默认设置图形焦点
+                console.info("---------------图谱"+ whichTypePageOfEle.noCheckbuttonEleArray[0]+"获得焦点------------");
+
+            }
+        }
+        console.info("▲▼▲▼▲▼▲▼查看操作元素whichTypePageOfEle▲▼▲▼▲▼▲▼=="+whichTypePageOfEle);
 
     }
     Component.onCompleted: {
@@ -572,7 +504,7 @@ Item{
     //获取peakbtn元素
     function getPeakAndmarkEle()
     {
-        judgeVisiblePage();
+
         var thecheckButtonTipsStr="";
         if(whichTypePageOfEle)
         {
@@ -586,19 +518,39 @@ Item{
                 if(thecheckButtonTipsStr.indexOf("Peak点")!==-1)
                 {
                     peakPointBtn=whichTypePageOfEle.uiCheckButtonArray[cc];
-                    globalConsoleInfo("#######peakPointBtn添加完毕########");
+                    console.info("#######peakPointBtn添加完毕########"+peakPointBtn);
                 }
                 else if(thecheckButtonTipsStr.indexOf("标尺")!==-1)
                 {
                     whichTypePageOfEle.getAllsliders();//再次刷新slider
                     markBtn=whichTypePageOfEle.uiCheckButtonArray[cc];
-                    globalConsoleInfo("¦¦¦¦¦¦¦¦¦¦¦¦markBtn添加完毕¦¦¦¦¦¦¦¦¦¦");
+                    console.info("¦¦¦¦¦¦¦¦¦¦¦¦markBtn添加完毕¦¦¦¦¦¦¦¦¦¦"+markBtn);
                 }
             }
         }
         else
         {
-            globalConsoleInfo("！！！！！！getPeakAndmarkEle失败，whichTypePageOfEle不存在︽︽︽︽︽︽︽");
+            console.info("！！！！！！getPeakAndmarkEle失败，whichTypePageOfEle不存在︽︽︽︽︽︽︽");
+            judgeVisiblePage();
+            for(var cc=0;cc<whichTypePageOfEle.uiCheckButtonArray.length;cc++)
+            {
+                if(typeof whichTypePageOfEle.uiCheckButtonArray[cc].tips!==undefined)
+                {
+                    thecheckButtonTipsStr=whichTypePageOfEle.uiCheckButtonArray[cc].tips;
+                }
+
+                if(thecheckButtonTipsStr.indexOf("Peak点")!==-1)
+                {
+                    peakPointBtn=whichTypePageOfEle.uiCheckButtonArray[cc];
+                    console.info("#######peakPointBtn添加完毕########"+peakPointBtn);
+                }
+                else if(thecheckButtonTipsStr.indexOf("标尺")!==-1)
+                {
+                    whichTypePageOfEle.getAllsliders();//再次刷新slider
+                    markBtn=whichTypePageOfEle.uiCheckButtonArray[cc];
+                    console.info("¦¦¦¦¦¦¦¦¦¦¦¦markBtn添加完毕¦¦¦¦¦¦¦¦¦¦"+markBtn);
+                }
+            }
         }
     }
     function changeAnalyzeMode()
@@ -736,16 +688,17 @@ Item{
         //
         if(channel1.visible)   //通道1
         {
-            rtSpectrumObj=Com.getNamedELementOfComponent(channel1,"RtSpectrum");
-            rtWaterFallObj=Com.getNamedELementOfComponent(channel1,"RtWaterFall");
-
-            //历史频谱图
+            //rtSpectrumObj=Com.getNamedELementOfComponent(channel1,"RtSpectrum");
+            //rtWaterFallObj=Com.getNamedELementOfComponent(channel1,"RtWaterFall");
+            rtSpectrumObj=spectrumView;
+            rtWaterFallObj=waterfallView;
+            //实时频谱图-双通道
             if(rtSpectrumObj&&(rtSpectrumObj.visible))
             {
                 scopeChildEles.norepeatpush(rtSpectrumObj);
                 globalConsoleInfo("♀♀♀♀♀♀scopeView已添加了子元素:通道1频谱图--"+rtSpectrumObj);
             }
-            //历史瀑布图
+            //实时瀑布图-双通道
             if(rtWaterFallObj&&(rtWaterFallObj.visible))
             {
                 scopeChildEles.norepeatpush(rtWaterFallObj);
@@ -755,8 +708,10 @@ Item{
 
         if(channel2.visible)  //通道2
         {
-            rtSpectrumObj_channel2=Com.getNamedELementOfComponent(channel2,"RtSpectrum");
-            rtWaterFallObj_channel2=Com.getNamedELementOfComponent(channel2,"RtWaterFall");
+            //            rtSpectrumObj_channel2=Com.getNamedELementOfComponent(channel2,"RtSpectrum");
+            //            rtWaterFallObj_channel2=Com.getNamedELementOfComponent(channel2,"RtWaterFall");
+            rtSpectrumObj_channel2=spectrumView2;
+            rtWaterFallObj_channel2=waterfallView2;
             //实时频谱图-双通道
             if(rtSpectrumObj_channel2&&(rtSpectrumObj_channel2.visible))
             {

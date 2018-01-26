@@ -118,4 +118,18 @@ Flipable{
         idScopeView.updateSepctrumAxisY(min, max)
         //analyzeMenu.updateParams()
     }
+
+    Keys.enabled: true
+    Keys.forwardTo: root
+    Keys.onPressed:
+    {
+        switch(event.key)
+        {
+        default:
+            console.info("-----ReferenceLevel.qml收到按键消息-----"+event.key);
+            break;
+        }
+
+    }
+
 }

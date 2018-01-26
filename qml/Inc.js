@@ -39,6 +39,10 @@ var series_color3 = "#dd55ea"
 //获取指定名称或者objectName的元素组成的数组
 var theArrayOfFindEles=[];
 
+
+//不使用GloabalArray存储数组元素的代替数组,可以共用
+var theSharedTargetArray=[];
+
 var controlPannel={
 
     //左侧面板
@@ -57,8 +61,8 @@ var controlPannel={
     C_FREQUENCY_CHANNEL   : "03df",
     C_MEASURE             : "03bf",
     C_DET_DEMOD           : "037f",
-    C_AUTO_COUPLE         : "01bf",
-    C_SPAN_X_SCALE        : "02fe",
+    C_AUTO_COUPLE         : "02fe",
+    C_SPAN_X_SCALE        : "047f",
     C_TRACE_VIEW          : "03fe",
     C_BW_AVG              : "03fd",
     C_TRIG                : "03fb",
@@ -211,11 +215,13 @@ function clickFlexchild(theindex)//第二个参数表示是否是设置起始值
             {
 
                 editobj.rangeMinFocus=true;
+                editobj.selectAllOfTextinput();
 
             }
             else            //单文本输入类型
             {
                 editobj.editfocus=true;
+                editobj.selectAllOfTextinput();
             }
 
             globalConsoleInfo("...........进入编辑状态.............");
@@ -264,8 +270,11 @@ function clickchild(theindex,theenterFlag)//第二个参数表示是不是确认
         }
         else   //翻转控件
         {
-            globalConsoleInfo("clickFlexchild即将调用,查看子元素索引-----"+index);
+            console.info("clickFlexchild即将调用,查看子元素索引-----"+index);
+            if(tempobj.enabled && (!tempobj.readOnly))
+            {
             clickFlexchild(index);
+            }
         }
 
     }
@@ -534,6 +543,82 @@ function getNamedELementOfComponentArray(targetObj,namestr)
     }
     return theArrayOfFindEles;
 }
+
+
+//不使用GlobalTotalchildArray获取元素所有子控件,递归Rectangle,ColumnLayout,QQuickItem
+function getAtomItem(lastObj)
+{
+    var atomlist=lastObj.children;
+
+
+    for ( var i in atomlist)
+    {
+
+        console.info("======getAtomItem函数遍历=:"+i+"===="+atomlist[i]);
+        var tempstr=atomlist[i].toString();
+        var eachChild=atomlist[i];
+        var index=tempstr.indexOf("_");
+        var Rectangleindex=tempstr.indexOf("Rectangle");
+        var ColumnLayoutindex=tempstr.indexOf("ColumnLayout");
+
+        if((Rectangleindex!==-1)||(ColumnLayoutindex!==-1))//子控件为Rectangle布局或ColumnLayout
+        {
+            getAtomItem(atomlist[i]);//递归
+        }
+        else//说明是原子控件
+        {
+            theSharedTargetArray.norepeatpush(atomlist[i]);
+        }
+
+    }
+
+
+    return theSharedTargetArray;
+}
+
+
+//获取某个元素的所有子控件,递归ColumnLayout
+function getEveryItem( targetObj)
+{
+    var primarylist=targetObj.children;
+    var textLabelStr="";
+
+    for ( var i in primarylist)
+    {
+
+
+        var tempstr=primarylist[i].toString();
+        if(typeof primarylist[i]["textLabel"]==="string")
+        {
+            tempstr=primarylist[i]["textLabel"];
+        }
+        console.info("查看   primarylist "+[i]+"===="+tempstr+" "+textLabelStr);
+
+        var eachChild=primarylist[i];
+        var index=tempstr.indexOf("_");
+        var trueth=tempstr.indexOf("ColumnLayout");
+        var QQuickItemindex=tempstr.indexOf("QQuickItem");
+        var QQuickRectangleindex=tempstr.indexOf("QQuickRectangle");
+
+
+        if((trueth!==-1)||(QQuickItemindex!==-1)||(QQuickRectangleindex!==-1))//子控件为ColumnLayout或QQuickItem布局
+        {
+
+            getAtomItem(primarylist[i]);
+
+        }
+        else//说明直接就是子控件
+        {
+
+            var strOfTypeName=tempstr.substr(0,index);
+            theSharedTargetArray.norepeatpush(primarylist[i]);
+        }
+
+    }
+
+    return theSharedTargetArray;
+}
+
 
 //获取某个组件的具有指定名字或objectName的元素
 function getNamedELementOfComponent(targetObj,namestr)

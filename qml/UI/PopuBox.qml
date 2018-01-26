@@ -18,12 +18,18 @@ Item {
     property int nowFocusIndex:-1; //获得焦点的按钮索引
     property var everyElementInStateRect:undefined; //StateRect类型的元素
     property int mouseAreaElementIndex:0; //QQuickMouseArea元素索引
+    property var popuBoxFileListView :undefined  //是哪个文件
+    property var closeBtn :closeBox;
+    property var myLoader: undefined; //loader
+    property var wrapperView: undefined
+    property string filenameText: ""; //通过上下按钮选择时的文件名
     //文件选择框
     ContentBox{
         id:box
         titleText: "文件选择"
         anchors.fill: parent
         bgColor: "#000000"
+
         //遍历文件夹模块
         Item {
             objectName: "fileChoose"
@@ -59,10 +65,11 @@ Item {
                     border.width: wrapper.ListView.isCurrentItem ? 1 :0
                     radius: 4
                     property var flag: chartflag
+                    property string filenameText:savePath+"/"+fName.text;
                     Text {
                         id:fileIndex
                         anchors.left: parent.left
-                        width: parent.width * 0.1
+                        width: parent.width * 0.112
                         text:" "+(index+1)+"/"+foldermodel.count
                         color: foldermodel.isFolder(index)? "#404244" : "#D69545" //判断是否文件夹
                         font.pixelSize: 16
@@ -70,8 +77,8 @@ Item {
                     Text {
                         id:fName
                         anchors.left: fileIndex.right
-                        width: parent.width * 0.8
-                        text:" "+fileName
+                        width: parent.width * 0.788
+                        text:fileName
                         color: foldermodel.isFolder(index)? "#404244" : "#D69545" //判断是否文件夹
                         font.pixelSize: 16
                     }
@@ -170,47 +177,166 @@ Item {
                 Component.onCompleted: {
                     listView.currentIndex = -1
                 }
-                Keys.enabled: true
-                Keys.forwardTo: [fileDelegate]
-                Keys.onPressed:{
-                    switch(event.key)
-                    {
-                    case Qt.Key_0:
-                    case Qt.Key_1:
-                    case Qt.Key_2:
-                    case Qt.Key_3:
-                    case Qt.Key_4:
-                    case Qt.Key_5:
-                    case Qt.Key_6:
-                    case Qt.Key_7:
-                    case Qt.Key_8:
-                    case Qt.Key_9:
-                    event.accepted = true;
-                        //console.log(event.key - Qt.Key_0)
-                        //keyname.text = event.key - Qt.Key_0;
-                        break;
-                    }
-                }
+
             }//文件列表 end
-         }//遍历文件夹模块 end
+        }//遍历文件夹模块 end
 
         StateRect{
-            id:closeBox
-            anchors.right: box.right
-            anchors.rightMargin: 40
-            anchors.bottom: box.bottom
-            anchors.bottomMargin: 10
+            id:select1
+            anchors.right: select2.left
+            anchors.rightMargin: 8
+            anchors.bottom: select2.bottom
             width: 100;
             height: 24
-            //textLabel:"关闭"
-            btnName: "关闭"
+            textIcon: "\uf159"
+            iconColor: Com.series_color1
+            btnName: "通道1"
             onClicked:
             {
-                root.visible = false
-                analyzeMode.focus=true
-                root.focus=false;
-                globalConsoleInfo("查看StateRect里的root=="+root);
-                parentObject.visible = false;
+                /////////////////更新鼠标选中文件名//////////////////
+
+                listView.focus = true;
+                console.info("查看通道1 ------listView.currentItem.filenameText "+listView.currentItem.filenameText);
+                //////////////////////////////////////////////////
+
+                cancleSelect(0,true)
+                if(dataSource.addHistoryFile("series1",listView.currentItem.filenameText))
+                {
+                    listView.currentItem.flag.color = Com.series_color1
+                    Settings.historyFile1(Com.OpSet, listView.currentItem.filenameText);
+                }
+                else
+                {
+
+
+                    noteBox.opacity = 1
+                    noteBox.visible = true
+                    noteText.text = "文件是空文件,通道1已关闭"
+                    fadeOut.stop()
+                    fadeOut.start()
+
+                    //必须把焦点置为文件选择对话框
+                    if(myLoader)
+                    {
+                        myLoader.focus=true;
+                        console.info("****通道1点击 ，loader获得焦点*****")
+                    }
+                }
+                analyzeMenu.updateParams();
+                //必须把焦点置为文件选择对话框
+                if(myLoader)
+                {
+                    myLoader.focus=true;
+                    console.info("通道1点击 ，loader获得焦点")
+                }
+            }
+        }
+
+        StateRect{
+            id:select2
+            anchors.right: select3.left
+            anchors.rightMargin: 8
+            anchors.bottom: select3.bottom
+            width: 100;
+            height: 24
+            textIcon: "\uf159"
+            iconColor: Com.series_color2
+            btnName: "通道2"
+            onClicked:
+            {
+
+
+
+                /////////////////更新鼠标选中文件名//////////////////
+
+                listView.focus = true;
+                console.info("查看通道2 ------listView.currentItem.filenameText "+listView.currentItem.filenameText);
+                //////////////////////////////////////////////////
+
+
+                cancleSelect(1,true);
+                if(dataSource.addHistoryFile("series2",listView.currentItem.filenameText))
+                {
+                    listView.currentItem.flag.color = Com.series_color2
+                    Settings.historyFile2(Com.OpSet, listView.currentItem.filenameText);
+                }
+                else
+                {
+                    noteBox.opacity = 1
+                    noteBox.visible = true
+                    noteText.text = "文件是空文件,通道2已关闭"
+                    fadeOut.stop()
+                    fadeOut.start()
+
+                    //必须把焦点置为文件选择对话框
+                    if(myLoader)
+                    {
+                        myLoader.focus=true;
+                        console.info("****通道2点击 ，loader获得焦点*****")
+                    }
+                }
+                analyzeMenu.updateParams();
+
+                //必须把焦点置为文件选择对话框
+                if(myLoader)
+                {
+                    myLoader.focus=true;
+                    console.info("通道2点击 ，loader获得焦点")
+                }
+
+            }
+        }
+
+        StateRect{
+            id:select3
+            anchors.right: cancleBox.left
+            anchors.rightMargin: 8
+            anchors.bottom: cancleBox.bottom
+            width: 100;
+            height: 24
+            textIcon: "\uf159"
+            iconColor: Com.series_color3
+            btnName: "通道3"
+            onClicked:
+            {
+
+                /////////////////更新鼠标选中文件名//////////////////
+
+                listView.focus = true;
+                console.info("查看通道3 ------listView.currentItem.filenameText "+listView.currentItem.filenameText);
+                //////////////////////////////////////////////////
+
+
+                cancleSelect(2,true);
+                if(dataSource.addHistoryFile("series3",listView.currentItem.filenameText))
+                {
+                    listView.currentItem.flag.color = Com.series_color3
+                    Settings.historyFile3(Com.OpSet, listView.currentItem.filenameText);
+                }
+                else
+                {
+                    noteBox.opacity = 1
+                    noteBox.visible = true
+                    noteText.text = "文件是空文件,通道3已关闭"
+                    fadeOut.stop()
+                    fadeOut.start()
+
+                    //必须把焦点置为文件选择对话框
+                    if(myLoader)
+                    {
+                        myLoader.focus=true;
+                        console.info("****通道3点击 ，loader获得焦点*****")
+                    }
+                }
+                analyzeMenu.updateParams();
+
+
+                //必须把焦点置为文件选择对话框
+                if(myLoader)
+                {
+                    myLoader.focus=true;
+                    console.info("通道3点击 ，loader获得焦点")
+                }
             }
         }
         StateRect{
@@ -251,95 +377,38 @@ Item {
                     fadeOut.start()
                 }
 
+                //必须把焦点置为文件选择对话框
+
+                if(myLoader)
+                {
+                    myLoader.focus=true;
+                    console.info("关闭通道点击 ，loader获得焦点")
+                }
             }
         }
         StateRect{
-            id:select3
-            anchors.right: cancleBox.left
-            anchors.rightMargin: 8
-            anchors.bottom: cancleBox.bottom
+            id:closeBox
+            anchors.right: box.right
+            anchors.rightMargin: 40
+            anchors.bottom: box.bottom
+            anchors.bottomMargin: 10
             width: 100;
             height: 24
-            textIcon: "\uf159"
-            iconColor: Com.series_color3
-            btnName: "通道3"
+            //textLabel:"关闭"
+            btnName: "关闭"
             onClicked:
             {
-                cancleSelect(2,true)
-                if(dataSource.addHistoryFile("series3",selectedFilename))
-                {
-                    listView.currentItem.flag.color = Com.series_color3
-                    Settings.historyFile3(Com.OpSet, selectedFilename);
-                }
-                else
-                {
-                    noteBox.opacity = 1
-                    noteBox.visible = true
-                    noteText.text = "文件是空文件,通道3已关闭"
-                    fadeOut.stop()
-                    fadeOut.start()
-                }
-                analyzeMenu.updateParams();
+                root.visible = false
+                analyzeMode.focus=true
+                root.focus=false;
+                globalConsoleInfo("查看StateRect里的root=="+root);
+                parentObject.visible = false;
             }
         }
-        StateRect{
-            id:select2
-            anchors.right: select3.left
-            anchors.rightMargin: 8
-            anchors.bottom: select3.bottom
-            width: 100;
-            height: 24
-            textIcon: "\uf159"
-            iconColor: Com.series_color2
-            btnName: "通道2"
-            onClicked:
-            {
-                cancleSelect(1,true)
-                if(dataSource.addHistoryFile("series2",selectedFilename))
-                {
-                    listView.currentItem.flag.color = Com.series_color2
-                    Settings.historyFile2(Com.OpSet, selectedFilename);
-                }
-                else
-                {
-                    noteBox.opacity = 1
-                    noteBox.visible = true
-                    noteText.text = "文件是空文件,通道2已关闭"
-                    fadeOut.stop()
-                    fadeOut.start()
-                }
-                analyzeMenu.updateParams();
-            }
-        }
-        StateRect{
-            id:select1
-            anchors.right: select2.left
-            anchors.rightMargin: 8
-            anchors.bottom: select2.bottom
-            width: 100;
-            height: 24
-            textIcon: "\uf159"
-            iconColor: Com.series_color1
-            btnName: "通道1"
-            onClicked:
-            {
-                cancleSelect(0,true)
-                if(dataSource.addHistoryFile("series1",selectedFilename))
-                {
-                    listView.currentItem.flag.color = Com.series_color1
-                    Settings.historyFile1(Com.OpSet, selectedFilename);
-                }
-                else
-                {
-                    noteBox.opacity = 1
-                    noteBox.visible = true
-                    noteText.text = "文件是空文件,通道1已关闭"
-                    fadeOut.stop()
-                    fadeOut.start()
-                }
-                analyzeMenu.updateParams();
-            }
-        }
+
+
+
+
     }//！--文件选择框 end
 
     Rectangle{
@@ -559,12 +628,12 @@ Item {
         var rightListAarry= getItemOfPopBox(popObj);
         for(var idt=0;idt<rightListAarry.length;idt++)
         {
-            var theelement=rightListAarry[i];
+            var theelement=rightListAarry[idt];
             var tempNamestr=theelement.toString();
             var theStateRectindex=tempNamestr.indexOf("StateRect");
             if(theStateRectindex!==-1)
             {
-                filelistchildArray.norepeatpush(rightListAarry[i]);
+                filelistchildArray.norepeatpush(rightListAarry[idt]);
             }
             if(theelement.objectName==="fileChoose")
             {
@@ -657,6 +726,15 @@ Item {
 
 
         }
+
+    }
+
+
+
+
+    Component.onCompleted:
+    {
+        closeBtn=closeBox;
 
     }
 

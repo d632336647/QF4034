@@ -144,110 +144,161 @@ Rectangle{
             event.accepted=true;
             break;
         case Qt.Key_Left:
-            globalConsoleInfo("#####RightControlPanel.qml收到Qt.Key_Left按键消息#####");
+            console.info("#####AnalyzeMenu.qml收到Qt.Key_Left按键消息#####");
             idScopeView.focusPageOfrightControl=root;
             idScopeView.focus=true;
             event.accepted=true;
             break;
-        case Qt.Key_PageUp://逆时针
-            globalConsoleInfo("#####RightControlPanel.qml收到滚轮逆时针消息#####");
-            idScopeView.focusPageOfrightControl=root;
-            idScopeView.focus=true;
-            event.accepted=true;
-            break;
+
         case Qt.Key_Right:
-            globalConsoleInfo("#####RightControlPanel.qml收到滚轮顺时针消息#####");
+
+            console.info("#####AnalyzeMenu.qml收到Qt.Key_Right按键消息#####");
             root.focus=true;
             root.state="SHOW";
             event.accepted=true;
             break;
-    case Qt.Key_PageDown://顺时针
-        globalConsoleInfo("#####RightControlPanel.qml收到Qt.Key_Right按键消息#####");
-        root.focus=true;
-        root.state="SHOW";
-        event.accepted=true;
-        break;
+
         case Qt.Key_Enter://功能键 Key_Enter
             event.accepted=true;
             break;
         case Qt.Key_F1:
-            globalConsoleInfo("-----------------------------");
-            globalConsoleInfo("                 ");
-            globalConsoleInfo(root+"!!!!!!收到F1!!!!!");
-            Com.jumptoTargetPage(root,gatherMenu,"ClockSeting");
-            globalConsoleInfo("----响应 时钟模式 完毕----");
-            globalConsoleInfo("                 ");
-            globalConsoleInfo("------------------ ----------- ");
-            event.accepted=true;
-            break;
-        case Qt.Key_F2:
-            globalConsoleInfo("-----------------------------");
-            globalConsoleInfo("                 ");
-            globalConsoleInfo(root+"!!!!!!收到F2!!!!!");
-            Com.jumptoTargetPage(root,gatherMenu,"TriggerMode");
-            globalConsoleInfo("----响应 触发模式 完毕----");
-            globalConsoleInfo("                 ");
-            globalConsoleInfo("------------------ ----------- ");
-            event.accepted=true;
-            break;
-        case Qt.Key_F3:
-            globalConsoleInfo("-----------------------------");
-            globalConsoleInfo("                 ");
-            globalConsoleInfo(root+"!!!!!!收到F3!!!!!");
-            Com.jumptoTargetPage(root,gatherMenu,"GatherMode");
-            globalConsoleInfo("----响应 采集模式 完毕----");
-            globalConsoleInfo("                 ");
-            globalConsoleInfo("------------------ ----------- ");
-            event.accepted=true;
-            break;
-        case Qt.Key_F4:
-            globalConsoleInfo("-----------------------------");
-            globalConsoleInfo("                 ");
-            globalConsoleInfo(root+"!!!!!!收到F4!!!!!");
+            console.info("-----------------------------");
+            console.info("                 ");
+            console.info(root+"!!!!!!AnalyzeMenu.qml收到C_FREQUENCY_CHANNEL信号!!!!!");
 
-            ////////////////////////
             Com.clearTopPage(root);
+            analyzeMenu.focus=true;
+            analyzeMenu.state="SHOW";
 
-            gatherMenu.focus=true;
-            gatherMenu.state="SHOW";
-            //////////////////////
-            globalConsoleInfo("----响应 采集设置 完毕----");
-            globalConsoleInfo("                 ");
-            globalConsoleInfo("------------------ ----------- ");
+            console.info("----AnalyzeMenu.qml响应 ◇分析参数◇ 完毕----");
+            console.info("                 ");
+            console.info("------------------ ----------- ");
             event.accepted=true;
             break;
         case Qt.Key_F5:
-            globalConsoleInfo("-----------------------------");
-            globalConsoleInfo("                 ");
-            globalConsoleInfo(root+"!!!!!!收到F5!!!!!");
-            globalConsoleInfo("                 ");
-            globalConsoleInfo("------------------ ----------- ");
+            console.info("-----------------------------");
+            console.info("                 ");
+            console.info(root+"!!!!!!AnalyzeMenu.qml收到C_SPAN_X_SCALE!!!!!");
+            //记录上一个焦点转移的页面
+            idScopeView.focusPageOfrightControl=root;
+            //idScopeView.getPeakAndmarkEle();//必须调用此函数，whichTypePageOfEle才会有值
+            if(idScopeView.whichTypePageOfEle.noCheckbuttonEleArray[0])
+            {
+                //更新slider和checkButton
+                idScopeView.whichTypePageOfEle.getAllsliders();
+                idScopeView.whichTypePageOfEle.getAllcheckButtons();
+                idScopeView.whichTypePageOfEle.noCheckbuttonEleArray[0].focus=true;
+                idScopeView.whichTypePageOfEle.zoomXY="x";
+                console.info("----AnalyzeMenu.qml响应 ◇C_SPAN_X_SCALE◇ 完毕----");
+            }
+            else
+            {
+                console.info("#####AnalyzeMenu.qml 图谱不存在！无法响应X轴缩放######");
+                console.info(idScopeView.whichTypePageOfEle.noCheckbuttonEleArray[0]);
+            }
+
+            console.info("                 ");
+            console.info("------------------ ----------- ");
+            event.accepted=true;
+            break;
+        case Qt.Key_F9:
+            console.info("-----------------------------");
+            console.info("                 ");
+
+            idScopeView.focusPageOfrightControl=root;
+            //idScopeView.getPeakAndmarkEle();//必须调用此函数，whichTypePageOfEle才会有值
+            if(idScopeView.whichTypePageOfEle.noCheckbuttonEleArray[0])
+            {
+                idScopeView.whichTypePageOfEle.noCheckbuttonEleArray[0].focus=true;
+                idScopeView.whichTypePageOfEle.zoomXY="y";
+                console.info("----AnalyzeMenu.qml响应 ◇C_AMPLITUDE_Y_SCALE◇ 完毕----");
+            }
+            else
+            {
+                console.info("#####AnalyzeMenu.qml 图谱不存在！无法响应Y轴缩放######");
+                console.info(idScopeView.whichTypePageOfEle.noCheckbuttonEleArray[0]);
+            }
+            console.info("                 ");
+            console.info("------------------ ----------- ");
+            event.accepted=true;
+            break;
+
+            case Qt.Key_F15:
+        //case Qt.Key_F2:
+            console.info("-----------------------------");
+            console.info("                 ");
+            console.info(root+"!!!!!!AnalyzeMenu.qml收到C_MARKER!!!!!");
+            console.info("                 ");
+            console.info("------------------ ----------- ");
             ////////////////////////
-            Com.clearTopPage(root);
-            analyzeMode.focus=true;
-            analyzeMode.state="SHOW";
+            idScopeView.focusPageOfrightControl=root;
+            //idScopeView.judgeVisiblePage();//必须调用此函数，whichTypePageOfEle才会有值
+            if(idScopeView.peakPointBtn)
+            {
+                idScopeView.peakPointBtn.checkboxClick();
+                idScopeView.whichTypePageOfEle.getAllsliders();
+            }
             //////////////////////
-            globalConsoleInfo("----响应  分析模式  完毕----");
+            console.info("----AnalyzeMenu.qml响应  ◇C_MARKER◇  完毕----");
             event.accepted=true;
             break;
-        case Qt.Key_F6:
-            globalConsoleInfo("-----------------------------");
-            globalConsoleInfo("                 ");
-            globalConsoleInfo(root+"!!!!!!收到F6!!!!!");
-            Com.jumptoTargetPage(root,saveCfgMenu,"NameMode");
-            globalConsoleInfo("----响应  命名模式   完毕----");
-            globalConsoleInfo("                 ");
-            globalConsoleInfo("------------------ ----------- ");
+        //case Qt.Key_F3:
+            case Qt.Key_F16:
+            console.info("-----------------------------");
+            console.info("                 ");
+            console.info(root+"!!!!!!AnalyzeMenu.qml收到C_PEAK_SEARCH!!!!!");
+            idScopeView.focusPageOfrightControl=root;
+
+            if((idScopeView.peakPointBtn)&&(!idScopeView.peakPointBtn.checked))
+            {
+                idScopeView.peakPointBtn.checkboxClick();
+                idScopeView.whichTypePageOfEle.getAllsliders();
+            }
+
+
+            if(idScopeView.markBtn)
+            {
+
+                idScopeView.markBtn.checkboxClick();
+                //焦点给第一个三角滑块
+                idScopeView.whichTypePageOfEle.getAllsliders();//必须重新激活三角滑块
+                if((idScopeView.whichTypePageOfEle.uiSliderIndex>=0)&&(idScopeView.whichTypePageOfEle.uiSliderIndex<idScopeView.whichTypePageOfEle.noCheckbuttonEleArray.length)&&idScopeView.whichTypePageOfEle.noCheckbuttonEleArray[idScopeView.whichTypePageOfEle.uiSliderIndex].visible)
+                {
+                    idScopeView.whichTypePageOfEle.noCheckbuttonEleArray[idScopeView.whichTypePageOfEle.uiSliderIndex].focus=true;
+                }
+            }
+            console.info("----AnalyzeMenu.qml响应  ◇C_PEAK_SEARCH◇   完毕----");
+            console.info("                 ");
+            console.info("------------------ ----------- ");
             event.accepted=true;
             break;
-        case Qt.Key_F7:
-            globalConsoleInfo("-----------------------------");
-            globalConsoleInfo("                 ");
-            globalConsoleInfo(root+"!!!!!!收到F7!!!!!");
-            Com.jumptoTargetPage(root,saveCfgMenu,"SaveMode");
-            globalConsoleInfo("----响应  保存模式  完毕----");
-            globalConsoleInfo("                 ");
-            globalConsoleInfo("------------------ ----------- ");
+
+            //case Qt.Key_End://呼出菜单
+           case Qt.Key_F13:
+            if(idBottomPannel.menuBtn)
+            {
+                idBottomPannel.menuBtn.clicked();
+            }
+            console.info("●●●●●● AnalyzeMenu.qml 呼出菜单按钮触发●●●●●●idBottomPannel.menuBtn"+idBottomPannel.menuBtn);
+            event.accepted=true;
+            break;
+        //case Qt.Key_Insert://模式切换
+            case Qt.Key_F10:
+            if(idBottomPannel.modeSwitch)
+            {
+                idBottomPannel.modeSwitch.clicked();
+            }
+            console.info("●●●●●● AnalyzeMenu.qml  模式切换按钮触发●●●●●●idBottomPannel.modeSwitch"+idBottomPannel.modeSwitch);
+            event.accepted=true;
+            break;
+        //case Qt.Key_Delete://参数更新
+            case Qt.Key_F19:
+            if(idBottomPannel.paramsUpdate)
+            {
+                idBottomPannel.paramsUpdate.clicked();
+            }
+            console.info("●●●●●● AnalyzeMenu.qml  参数更新按钮触发●●●●●●Com.paramsUpdate"+idBottomPannel.paramsUpdate);
+            console.info("----AnalyzeMenu.qml响应 ◇C_PRESET◇ 完毕----");
             event.accepted=true;
             break;
 

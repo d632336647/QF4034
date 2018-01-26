@@ -99,8 +99,8 @@ Item {
             {
                 slider.value=0;
             }
-            slider.value-=0.05;
-
+            slider.value-=0.02;
+            event.accepted=true;
             break;
         case Qt.Key_PageUp://ËõÐ¡
             globalConsoleInfo("UiMultSlider.qmlÊÕµ½¹öÂÖÄæÊ±ÕëÏûÏ¢");
@@ -108,8 +108,8 @@ Item {
             {
                 slider.value=0;
             }
-            slider.value-=0.05;
-
+            slider.value-=0.02;
+            event.accepted=true;
             break;
         case Qt.Key_Right:
             globalConsoleInfo("UiMultSlider.qmlÊÕµ½Qt.Key_RightÏûÏ¢");
@@ -117,8 +117,8 @@ Item {
             {
                 slider.value=1;
             }
-            slider.value+=0.05;
-
+            slider.value+=horizonStepValue;
+            event.accepted=true;
             break;
         case Qt.Key_PageDown://·Å´ó
             globalConsoleInfo("UiMultSlider.qmlÊÕµ½¹öÂÖË³Ê±ÕëÏûÏ¢");
@@ -126,8 +126,8 @@ Item {
             {
                 slider.value=1;
             }
-            slider.value+=0.05;
-
+            slider.value+=horizonStepValue;
+            event.accepted=true;
             break;
         case Qt.Key_Escape://½¹µãÇÐ»»µ½ scopeView¶ø²»ÊÇTiDomainWave
             globalConsoleInfo("#####²é¿´UiMultSlider.parent.parent===="+root.parent.parent);
@@ -136,11 +136,30 @@ Item {
             {
                 exScopeViewEle.focus=true;
             }
+            event.accepted=true;
+            break;
+        case Qt.Key_Exclam://功能键1
+
+        case Qt.Key_At://功能键2
+
+        case Qt.Key_NumberSign://功能键3
+
+        case Qt.Key_Dollar://功能键4
+
+        case Qt.Key_Percent://功能键5
+
+        case Qt.Key_AsciiCircum://功能键6
+
+        case Qt.Key_Space://功能键 return
+            idScopeView.focusPageOfrightControl.focus=true;
+            idScopeView.focusPageOfrightControl.state="SHOW";
+            console.info("※※※※※UiMultSlider.qml  功能键呼出菜单※※※※※"+idScopeView.focusPageOfrightControl);
+            event.accepted=true;
             break;
         default:
             globalConsoleInfo("#####UiMultSlider.qmlÊÕµ½°´¼üÏûÏ¢#####"+event.key);
             break;
         }
-        event.accepted=true;//×èÖ¹ÊÂ¼þ¼ÌÐø´«µÝ
+
     }
 }

@@ -110,6 +110,7 @@ Flipable{
             analyzeMenu.reloadParams()
             analyzeMenu.updateParams()
         }
+
     }
 
 }

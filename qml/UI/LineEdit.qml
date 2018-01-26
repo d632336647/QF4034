@@ -125,6 +125,40 @@ Rectangle {
                 color: "white"
             }
 
+            Keys.enabled: true
+            Keys.forwardTo: [input]
+            Keys.onPressed:{
+                switch(event.key)
+                {
+
+                case Qt.Key_Left:
+
+
+                    input.focus=true;
+
+                    event.accepted=true;//阻止事件继续传递
+                    break;
+
+                case Qt.Key_Right:
+
+
+                    input.focus=true;
+
+                    event.accepted=true;//阻止事件继续传递
+                    break;
+                case Qt.Key_Enter:
+                    root.okBtnClicked();
+                    event.accepted=true;//阻止事件继续传递
+                    break;
+
+                default:
+                    root.okBtnClicked();
+
+                    break;
+                }
+
+            }
+
         }
         Item{
             id: rangeInput
@@ -161,16 +195,35 @@ Rectangle {
                     switch(event.key)
                     {
                     case Qt.Key_Alt:
-                        globalConsoleInfo("-----------------------------");
-                        globalConsoleInfo("                 ");
-                        globalConsoleInfo("minval.cursorPosition=="+cursorPosition+"===text"+minval.text);
-
+                        console.info("-----------------------------");
+                        console.info("                 ");
+                        console.info("minval.cursorPosition=="+cursorPosition+"===text: "+minval.text);
+                        console.info("minval.text.length== :"+minval.text.length);
                         maxval.focus=true;
+                        break;
+
+                    case Qt.Key_Left:
+
+                        maxval.selectAll();
+                        maxval.focus=true;
+
+                        event.accepted=true;//阻止事件继续传递
+                        break;
+
+                    case Qt.Key_Right:
+
+                        maxval.selectAll();
+                        maxval.focus=true;
+
+                        event.accepted=true;//阻止事件继续传递
                         break;
                     case Qt.Key_Enter:
                         root.okBtnClicked();
+                        event.accepted=true;//阻止事件继续传递
                         break;
+
                     default:
+                        root.okBtnClicked();
                         globalConsoleInfo(minval+"收到未注册消息#####"+event.key);
                         break;
                     }
@@ -216,16 +269,34 @@ Rectangle {
                     switch(event.key)
                     {
                     case Qt.Key_Alt:
-                        globalConsoleInfo("-----------------------------");
-                        globalConsoleInfo("                 ");
-                        globalConsoleInfo("maxval.cursorPosition=="+cursorPosition+"===text"+maxval.text);
-
+                        console.info("-----------------------------");
+                        console.info("                 ");
+                        console.info("maxval.cursorPosition=="+cursorPosition+"===text :"+maxval.text);
+                        console.info("maxval.text.length=="+maxval.text.length);
                         minval.focus=true;
                         break;
+                    case Qt.Key_Left:
+
+                        console.info("                 ");
+                        minval.selectAll();
+                        minval.focus=true;
+                        event.accepted=true;//阻止事件继续传递
+
+                        break;
+
+                    case Qt.Key_Right:
+
+                        console.info("                 ");
+                        minval.selectAll();
+                        minval.focus=true;
+                        event.accepted=true;//阻止事件继续传递
+
+                        break;
                     case Qt.Key_Enter:
-                         root.okBtnClicked();
+                        root.okBtnClicked();
                         break;
                     default:
+                        root.okBtnClicked();
                         globalConsoleInfo(maxval+"收到未注册消息#####"+event.key);
                         break;
                     }
@@ -305,5 +376,21 @@ Rectangle {
     //        wrapper.border.color = "red"
     //    else
     //        wrapper.border.color = "#67696B"
+    }
+    //文本框选中状态
+    function selectAllOfTextinput()
+    {
+        if(input.focus)
+        {
+        input.selectAll();
+        }
+        else if(minval.focus)
+        {
+        minval.selectAll();
+        }
+        else if(maxval.focus)
+        {
+        maxval.selectAll();
+        }
     }
 }
