@@ -128,20 +128,17 @@ Rectangle {
             Keys.enabled: true
             Keys.forwardTo: [input]
             Keys.onPressed:{
+                console.info("LineEdit.qml 收到键盘消息，键值为：--"+event.key);
                 switch(event.key)
                 {
 
                 case Qt.Key_Left:
-
-
                     input.focus=true;
 
                     event.accepted=true;//阻止事件继续传递
                     break;
 
                 case Qt.Key_Right:
-
-
                     input.focus=true;
 
                     event.accepted=true;//阻止事件继续传递
@@ -152,6 +149,7 @@ Rectangle {
                     break;
 
                 default:
+                    console.info("☎☎☎☎☎☎☎LineEdit 收到未处理的消息，okBtnClicked触发☎☎☎☎☎☎"+event.key);
                     root.okBtnClicked();
 
                     break;
@@ -372,25 +370,25 @@ Rectangle {
     }
     onInputFocusChanged:
     {
-    //    if(inputFocus)
-    //        wrapper.border.color = "red"
-    //    else
-    //        wrapper.border.color = "#67696B"
+        //    if(inputFocus)
+        //        wrapper.border.color = "red"
+        //    else
+        //        wrapper.border.color = "#67696B"
     }
     //文本框选中状态
     function selectAllOfTextinput()
     {
         if(input.focus)
         {
-        input.selectAll();
+            input.selectAll();
         }
         else if(minval.focus)
         {
-        minval.selectAll();
+            minval.selectAll();
         }
         else if(maxval.focus)
         {
-        maxval.selectAll();
+            maxval.selectAll();
         }
     }
 }

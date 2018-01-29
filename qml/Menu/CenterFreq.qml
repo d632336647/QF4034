@@ -16,6 +16,7 @@ Flipable{
     property var parentPointer: undefined
     objectName: "中心频率翻转控件"
     property alias inputFocus:numberEdit.inputFocus
+    property bool  readOnly:false //为了和采样率的属性保持一致
     Rectangle{
         color: Com.BGColor_main
     }

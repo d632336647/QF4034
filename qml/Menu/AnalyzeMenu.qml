@@ -333,7 +333,7 @@ Rectangle{
                 globalConsoleInfo("                                    ");
                 globalConsoleInfo("                                    ");
 
-                globalConsoleInfo("☆☆☆☆AnalyzeMenu.qml获得焦点☆☆☆☆");
+                console.info("☆☆☆☆AnalyzeMenu.qml获得焦点☆☆☆☆");
                 globalConsoleInfo("                                    ");
                 globalConsoleInfo("                                    ");
                 //传递获得焦点的页面元素

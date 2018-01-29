@@ -270,10 +270,11 @@ function clickchild(theindex,theenterFlag)//第二个参数表示是不是确认
         }
         else   //翻转控件
         {
-            console.info("clickFlexchild即将调用,查看子元素索引-----"+index);
+
             if(tempobj.enabled && (!tempobj.readOnly))
             {
-            clickFlexchild(index);
+
+                clickFlexchild(index);
             }
         }
 

@@ -16,6 +16,7 @@ Flipable{
     property bool  flipped : false //用来标志是否翻转
     property alias inputFocus:numberEdit.inputFocus
     property var parentPointer: undefined
+    property bool  readOnly:false //为了和采样率的属性保持一致
     Rectangle{
         color: Com.BGColor_main
     }
