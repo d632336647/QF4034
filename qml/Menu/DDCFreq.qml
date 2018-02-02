@@ -3,25 +3,24 @@ import QtQuick.Controls 1.4
 import QtQuick.Controls.Styles 1.4
 import QtQuick.Layouts 1.3
 import "../Inc.js" as Com
+import "../Lib.js" as Lib
 import "../UI"
 
 
 Flipable{
     id:root;
+    objectName: "ddcFreq"
     width: 200
     height: 91
     signal  showComplete
     property int angle : 0  //翻转角度
     property bool  flipped :  false //用来标志是否翻转
-    property var parentPointer: undefined
-    objectName: "DDC频率翻转控件"
-    property alias inputFocus:numberEdit.inputFocus
+    property var   parentPointer: undefined
+    property alias inputFocus: numberEdit.inputFocus
     Rectangle{
         color: Com.BGColor_main
     }
-
     front: RightButton {
-        objectName: "DDC频率翻转控件正面";
         id: ddcfreq;
         anchors.fill: parent
         textLabel: "DDC频率";
@@ -33,7 +32,6 @@ Flipable{
     }
     back: LineEdit {
         id: numberEdit;
-        objectName: "DDC频率翻转控件背面";
         anchors.fill: parent
         unit: "MHz"
         text: "60"
@@ -42,17 +40,13 @@ Flipable{
         onAccepted: {
             root.flipped = false
             root.state = "toFront"
-            globalConsoleInfo("★★CenterFreq.qml响应onAccepted,查看root.parentPointer---"+root.parentPointer);
-            root.parentPointer.focus=true;//侧边栏获得焦点
+            root.parentPointer.focus = true;
             setParam(numberEdit.text)
-            analyzeMenu.focus = true
-
         }
         onOkBtnClicked: {
             root.flipped = false
             root.state = "toFront"
-            globalConsoleInfo("★★CenterFreq.qml响应onOkBtnClicked,查看root.parentPointer----"+root.parentPointer);
-            root.parentPointer.focus=true;//侧边栏获得焦点
+            root.parentPointer.focus = true;
             setParam(numberEdit.text)
         }
         onAreaClicked: {
@@ -91,6 +85,20 @@ Flipable{
     Component.onCompleted:
     {
         root.state = "toBack"
+    }
+    function returnParent()
+    {
+        preconditionMenu.state = "HIDE"
+        idRightPannel.focus = true
+    }
+    function selfPressed()
+    {
+        numberEdit.borderColor = "#67696B"
+        preconditionMenu.focus = true
+    }
+    function keyPressed()
+    {
+        numberEdit.showSelectStyle()
     }
     function loadParam()
     {

@@ -10,11 +10,11 @@ Flipable{
     id:root;
     width: 200
     height: 91
+    objectName: "centerFreq"
     signal  showComplete
     property int angle : 0  //翻转角度
     property bool  flipped :  false //用来标志是否翻转
     property var parentPointer: undefined
-    objectName: "中心频率翻转控件"
     property alias inputFocus:numberEdit.inputFocus
     property bool  readOnly:false //为了和采样率的属性保持一致
     Rectangle{
@@ -22,7 +22,6 @@ Flipable{
     }
 
     front: RightButton {
-        objectName: "中心频率翻转控件正面";
         id: btn_centerfreq;
         anchors.fill: parent
         textLabel: "通道"+(Settings.paramsSetCh()+1)+" 中心频率";
@@ -34,7 +33,6 @@ Flipable{
     }
     back: LineEdit {
         id: numberEdit;
-        objectName: "中心频率翻转控件背面";
         anchors.fill: parent
         unit: "MHz"
         text: "60"
@@ -43,17 +41,14 @@ Flipable{
         onAccepted: {
             root.flipped = false
             root.state = "toFront"
-            globalConsoleInfo("★★CenterFreq.qml响应onAccepted,查看root.parentPointer---"+root.parentPointer);
-            root.parentPointer.focus=true;//侧边栏获得焦点
+            root.parentPointer.focus = true;
             setParam(numberEdit.text)
-            analyzeMenu.focus = true
 
         }
         onOkBtnClicked: {
             root.flipped = false
             root.state = "toFront"
-            globalConsoleInfo("★★CenterFreq.qml响应onOkBtnClicked,查看root.parentPointer----"+root.parentPointer);
-            root.parentPointer.focus=true;//侧边栏获得焦点
+            root.parentPointer.focus = true;
             setParam(numberEdit.text)
         }
         onAreaClicked: {
@@ -92,6 +87,20 @@ Flipable{
     Component.onCompleted:
     {
         root.state = "toBack"
+    }
+    function returnParent()
+    {
+        analyzeMenu.state = "HIDE"
+        idRightPannel.focus = true
+    }
+    function selfPressed()
+    {
+        numberEdit.borderColor = "#67696B"
+        analyzeMenu.focus = true
+    }
+    function keyPressed()
+    {
+        numberEdit.showSelectStyle()
     }
     function loadParam()
     {

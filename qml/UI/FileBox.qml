@@ -11,18 +11,9 @@ Item {
     height: 400
     property string savePath:  Settings.filePath() //"D:/Store/"
     property string selectedFilename: ""
-    property var    parentObject: undefined
-    property var popBoxchildArray:[]; //弹出框子元素存储数组
-    property var filelistchildArray:[]; //弹出对话框的所有子元素
-    property var stateRectArray:[]; //弹出对话框下面的按钮
-    property int nowFocusIndex:-1; //获得焦点的按钮索引
-    property var everyElementInStateRect:undefined; //StateRect类型的元素
-    property int mouseAreaElementIndex:0; //QQuickMouseArea元素索引
-    property var popuBoxFileListView :undefined  //是哪个文件
-    property var closeBtn :closeBox;
-    property var myLoader: undefined; //loader
-    property var wrapperView: undefined
-    property string filenameText: ""; //通过上下按钮选择时的文件名
+    property var    parentPointer: undefined
+    property var    updatePointer: undefined
+    property var    closeBtn : closeBox
     //文件选择框
     ContentBox{
         id:box
@@ -39,7 +30,6 @@ Item {
             anchors.leftMargin: 4
             height: 320
             width: parent.width-40
-
             FolderListModel
             {
                  id: foldermodel
@@ -52,7 +42,6 @@ Item {
                  sortReversed: false //如果为真，逆转排序顺序。默认为假
 
             }
-
             Component {
                 id: fileDelegate
                 Rectangle{
@@ -175,7 +164,11 @@ Item {
                 //    color:"lightblue"
                 //}
                 Component.onCompleted: {
-                    listView.currentIndex = -1
+                    listView.currentIndex = 0
+                    if(listView.currentItem !== null)
+                        selectedFilename = listView.currentItem.filenameText
+                    else
+                        selectedFilename = ""
                 }
 
             }//文件列表 end
@@ -193,12 +186,6 @@ Item {
             btnName: "通道1"
             onClicked:
             {
-                /////////////////更新鼠标选中文件名//////////////////
-
-                listView.focus = true;
-                console.info("查看通道1 ------listView.currentItem.filenameText "+listView.currentItem.filenameText);
-                //////////////////////////////////////////////////
-
                 cancleSelect(0,true)
                 if(dataSource.addHistoryFile("series1",listView.currentItem.filenameText))
                 {
@@ -207,28 +194,13 @@ Item {
                 }
                 else
                 {
-
-
                     noteBox.opacity = 1
                     noteBox.visible = true
                     noteText.text = "文件是空文件,通道1已关闭"
                     fadeOut.stop()
                     fadeOut.start()
-
-                    //必须把焦点置为文件选择对话框
-                    if(myLoader)
-                    {
-                        myLoader.focus=true;
-                        console.info("****通道1点击 ，loader获得焦点*****")
-                    }
                 }
-                analyzeMenu.updateParams();
-                //必须把焦点置为文件选择对话框
-                if(myLoader)
-                {
-                    myLoader.focus=true;
-                    console.info("通道1点击 ，loader获得焦点")
-                }
+                updatePointer.updateParams();
             }
         }
 
@@ -244,16 +216,6 @@ Item {
             btnName: "通道2"
             onClicked:
             {
-
-
-
-                /////////////////更新鼠标选中文件名//////////////////
-
-                listView.focus = true;
-                console.info("查看通道2 ------listView.currentItem.filenameText "+listView.currentItem.filenameText);
-                //////////////////////////////////////////////////
-
-
                 cancleSelect(1,true);
                 if(dataSource.addHistoryFile("series2",listView.currentItem.filenameText))
                 {
@@ -268,22 +230,8 @@ Item {
                     fadeOut.stop()
                     fadeOut.start()
 
-                    //必须把焦点置为文件选择对话框
-                    if(myLoader)
-                    {
-                        myLoader.focus=true;
-                        console.info("****通道2点击 ，loader获得焦点*****")
-                    }
                 }
-                analyzeMenu.updateParams();
-
-                //必须把焦点置为文件选择对话框
-                if(myLoader)
-                {
-                    myLoader.focus=true;
-                    console.info("通道2点击 ，loader获得焦点")
-                }
-
+                updatePointer.updateParams();
             }
         }
 
@@ -299,14 +247,6 @@ Item {
             btnName: "通道3"
             onClicked:
             {
-
-                /////////////////更新鼠标选中文件名//////////////////
-
-                listView.focus = true;
-                console.info("查看通道3 ------listView.currentItem.filenameText "+listView.currentItem.filenameText);
-                //////////////////////////////////////////////////
-
-
                 cancleSelect(2,true);
                 if(dataSource.addHistoryFile("series3",listView.currentItem.filenameText))
                 {
@@ -321,22 +261,8 @@ Item {
                     fadeOut.stop()
                     fadeOut.start()
 
-                    //必须把焦点置为文件选择对话框
-                    if(myLoader)
-                    {
-                        myLoader.focus=true;
-                        console.info("****通道3点击 ，loader获得焦点*****")
-                    }
                 }
-                analyzeMenu.updateParams();
-
-
-                //必须把焦点置为文件选择对话框
-                if(myLoader)
-                {
-                    myLoader.focus=true;
-                    console.info("通道3点击 ，loader获得焦点")
-                }
+                updatePointer.updateParams();
             }
         }
         StateRect{
@@ -368,21 +294,13 @@ Item {
                         apply = false
                     }
                     if(apply)
-                        analyzeMenu.updateParams();
+                        updatePointer.updateParams();
                 }else{
                     noteBox.opacity = 1
                     noteBox.visible = true
                     noteText.text = "请先选取文件"
                     fadeOut.stop()
                     fadeOut.start()
-                }
-
-                //必须把焦点置为文件选择对话框
-
-                if(myLoader)
-                {
-                    myLoader.focus=true;
-                    console.info("关闭通道点击 ，loader获得焦点")
                 }
             }
         }
@@ -399,16 +317,9 @@ Item {
             onClicked:
             {
                 root.visible = false
-                analyzeMode.focus=true
-                root.focus=false;
-                globalConsoleInfo("查看StateRect里的root=="+root);
-                parentObject.visible = false;
+                parentPointer.visible = false
             }
         }
-
-
-
-
     }//！--文件选择框 end
 
     Rectangle{
@@ -556,185 +467,51 @@ Item {
         return isExist
     }
 
-
-    //遍历弹出框的元素
-    function getItemOfPopBox(popObj)
-    {
-        var atomlist=popObj.children;
-
-
-
-        for ( var i in atomlist)
-        {
-
-
-            var tempstr=atomlist[i].toString();
-            var eachChild=atomlist[i];
-            var index=tempstr.indexOf("_");
-            var ContentBoxindex=tempstr.indexOf("ContentBox");
-
-            var StateRectindex=tempstr.indexOf("StateRect");
-
-            var QQuickItemindex=tempstr.indexOf("QQuickItem");
-
-
-            if(StateRectindex!==-1)
-            {
-                popBoxchildArray.norepeatpush(atomlist[i]);
-            }
-
-            if(eachChild.objectName==="fileChoose")
-            {
-                popBoxchildArray.norepeatpush(eachChild);
-            }
-            if(ContentBoxindex!==-1)//子控件为ContentBoxindex
-            {
-
-                getItemOfPopBox(atomlist[i]);//递归
-            }
-
-
-        }
-
-
-        return popBoxchildArray;
-    }
-
-    //文件列表框
-    function getFileListBoxElement(popObj)
-    {
-        var rightListAarry= getItemOfPopBox(popObj);
-        for(var idt=0;idt<rightListAarry.length;idt++)
-        {
-
-            var theelement=rightListAarry[idt];
-            var tempNamestr=theelement.toString();
-            globalConsoleInfo("◆◆◆◆rightListAarry"+idt+"===="+tempNamestr);
-            if(theelement.objectName==="fileChoose")
-            {
-                globalConsoleInfo("★★★★找到文件列表框");
-                return theelement;
-            }
-
-        }
-        globalConsoleInfo("××××未到文件列表框");
-        return popObj;
-
-    }
-
-    //文件列表框和下面的按钮
-    function getAllAtomChildrenOfPopBox(popObj)
-    {
-        var rightListAarry= getItemOfPopBox(popObj);
-        for(var idt=0;idt<rightListAarry.length;idt++)
-        {
-            var theelement=rightListAarry[idt];
-            var tempNamestr=theelement.toString();
-            var theStateRectindex=tempNamestr.indexOf("StateRect");
-            if(theStateRectindex!==-1)
-            {
-                filelistchildArray.norepeatpush(rightListAarry[idt]);
-            }
-            if(theelement.objectName==="fileChoose")
-            {
-                filelistchildArray.norepeatpush(theelement);
-            }
-
-        }
-        return filelistchildArray;
-    }
-
-    //下面的按钮
-    function getStateRectOfFileList(popObj)
-    {
-        var rightListAarry= getItemOfPopBox(popObj);
-        for(var idt=0;idt<rightListAarry.length;idt++)
-        {
-            var theelement=rightListAarry[idt];
-            var tempNamestr=theelement.toString();
-            var theStateRectindex=tempNamestr.indexOf("StateRect");
-            if(theStateRectindex!==-1)
-            {
-                stateRectArray.norepeatpush(rightListAarry[idt]);
-            }
-
-
-        }
-        return stateRectArray;
-    }
     Keys.enabled: true
-    Keys.forwardTo: root
+    Keys.forwardTo: [root]
     Keys.onPressed:
     {
         switch(event.key)
         {
-        case Qt.Key_Escape:
-
-            root.visible = false
-
-            root.focus=false;
-            analyzeMode.analyzeChildren[analyzeMode.currentBorderSel].focus=true;
-
-            //analyzeMode.focus=true;
+        case Qt.Key_Down:
+        case Qt.Key_PageDown:
+            if(listView.currentIndex + 1 < listView.count )
+                listView.currentIndex ++
             break;
-        case Qt.Key_Left:
-            globalConsoleInfo("PopuBox.qml收到Qt.Key_Left消息");
-            nowFocusIndex--;
-            if(nowFocusIndex<0)
-            {
-                nowFocusIndex=stateRectArray.length-1;
-            }
-            stateRectArray[nowFocusIndex].focus=true;
-
-            for(var pp=0;pp<stateRectArray[nowFocusIndex].children.length;pp++ )
-            {
-                //globalConsoleInfo(pp+"      ==="+stateRectArray[nowFocusIndex].children[pp]);
-                everyElementInStateRect=stateRectArray[nowFocusIndex].children[pp];
-                if(everyElementInStateRect.toString().indexOf("MouseArea")!=="-1")
-                    mouseAreaElementIndex= pp;
-            }
-            everyElementInStateRect=stateRectArray[nowFocusIndex].children[mouseAreaElementIndex];
-            everyElementInStateRect.entered();
-            everyElementInStateRect.exited();
-            globalConsoleInfo("←"+stateRectArray[nowFocusIndex].btnName);
+        case Qt.Key_Up:
+        case Qt.Key_PageUp:
+            if(listView.currentIndex > 0 )
+                listView.currentIndex --
             break;
-        case Qt.Key_Right:
-            globalConsoleInfo("PopuBox.qml收到Qt.Key_Right消息");
-            nowFocusIndex++;
-
-            if(nowFocusIndex>stateRectArray.length-1)
-            {
-                nowFocusIndex=0;
-            }
-            stateRectArray[nowFocusIndex].focus=true;
-            for(var qq=0;qq<stateRectArray[nowFocusIndex].children.length;qq++ )
-            {
-                //globalConsoleInfo(pp+"      ==="+stateRectArray[nowFocusIndex].children[pp]);
-                everyElementInStateRect=stateRectArray[nowFocusIndex].children[qq];
-                if(everyElementInStateRect.toString().indexOf("MouseArea")!=="-1")
-                    mouseAreaElementIndex= qq;
-            }
-            everyElementInStateRect=stateRectArray[nowFocusIndex].children[mouseAreaElementIndex];
-            everyElementInStateRect.entered();
-            everyElementInStateRect.exited();
-
-            globalConsoleInfo("→"+stateRectArray[nowFocusIndex].btnName);
+        case Qt.Key_1:
+            select1.clicked()
             break;
-        default:
-            globalConsoleInfo("popBox.qml收到按键消息"+event.key);
+        case Qt.Key_2:
+            select2.clicked()
             break;
-
-
+        case Qt.Key_3:
+            select3.clicked()
+            break;
+        case Qt.Key_Delete:
+            cancleBox.clicked()
+            break;
+        case Qt.Key_F1:
+        case Qt.Key_F8:
+            closeBox.clicked()
+            break;
         }
 
+        if(listView.currentItem !== null)
+            selectedFilename = listView.currentItem.filenameText
+        else
+            selectedFilename = ""
+
+        event.accepted = true;
     }
-
-
 
 
     Component.onCompleted:
     {
-        closeBtn=closeBox;
 
     }
 

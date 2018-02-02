@@ -1,5 +1,6 @@
 import QtQuick 2.7
 import "../Inc.js" as Com
+import "../Lib.js" as Lib
 
 Rectangle {
     id: root
@@ -21,6 +22,7 @@ Rectangle {
     property bool focused:false
     property bool okBtn: false
     property bool rangeMode: false
+    property color borderColor: "#67696B"
     signal accepted
     signal okBtnClicked
     signal areaClicked
@@ -30,7 +32,7 @@ Rectangle {
         id:wrapper
         anchors.fill: parent
         color: "#121212"
-        border.color: "#67696B"
+        border.color: borderColor
         border.width: 1
         radius: 4
         clip:true
@@ -92,6 +94,16 @@ Rectangle {
                 to: "#121212"
                 duration: 200
             }
+            PropertyAnimation {
+                id: clickAnim;
+                target: root;
+                property: "borderColor";
+                to: "white"
+                duration: 200
+                onStopped: {
+                    //wrapper.border.color = "#67696B"
+                }
+            }
         }
 
 
@@ -123,38 +135,6 @@ Rectangle {
                 width: parent.width
                 height: 1
                 color: "white"
-            }
-
-            Keys.enabled: true
-            Keys.forwardTo: [input]
-            Keys.onPressed:{
-                console.info("LineEdit.qml 收到键盘消息，键值为：--"+event.key);
-                switch(event.key)
-                {
-
-                case Qt.Key_Left:
-                    input.focus=true;
-
-                    event.accepted=true;//阻止事件继续传递
-                    break;
-
-                case Qt.Key_Right:
-                    input.focus=true;
-
-                    event.accepted=true;//阻止事件继续传递
-                    break;
-                case Qt.Key_Enter:
-                    root.okBtnClicked();
-                    event.accepted=true;//阻止事件继续传递
-                    break;
-
-                default:
-                    console.info("☎☎☎☎☎☎☎LineEdit 收到未处理的消息，okBtnClicked触发☎☎☎☎☎☎"+event.key);
-                    root.okBtnClicked();
-
-                    break;
-                }
-
             }
 
         }
@@ -192,37 +172,14 @@ Rectangle {
                 Keys.onPressed:{
                     switch(event.key)
                     {
-                    case Qt.Key_Alt:
-                        console.info("-----------------------------");
-                        console.info("                 ");
-                        console.info("minval.cursorPosition=="+cursorPosition+"===text: "+minval.text);
-                        console.info("minval.text.length== :"+minval.text.length);
-                        maxval.focus=true;
-                        break;
-
-                    case Qt.Key_Left:
-
-                        maxval.selectAll();
-                        maxval.focus=true;
-
-                        event.accepted=true;//阻止事件继续传递
-                        break;
-
                     case Qt.Key_Right:
-
-                        maxval.selectAll();
-                        maxval.focus=true;
-
-                        event.accepted=true;//阻止事件继续传递
+                    case Qt.Key_Left:
+                        console.log("cursorPosition:", cursorPosition)
+                        maxval.focus = true
+                        maxval.selectAll()
+                        event.accepted = true;
                         break;
-                    case Qt.Key_Enter:
-                        root.okBtnClicked();
-                        event.accepted=true;//阻止事件继续传递
-                        break;
-
                     default:
-                        root.okBtnClicked();
-                        globalConsoleInfo(minval+"收到未注册消息#####"+event.key);
                         break;
                     }
                 }
@@ -266,36 +223,13 @@ Rectangle {
                 Keys.onPressed:{
                     switch(event.key)
                     {
-                    case Qt.Key_Alt:
-                        console.info("-----------------------------");
-                        console.info("                 ");
-                        console.info("maxval.cursorPosition=="+cursorPosition+"===text :"+maxval.text);
-                        console.info("maxval.text.length=="+maxval.text.length);
-                        minval.focus=true;
-                        break;
-                    case Qt.Key_Left:
-
-                        console.info("                 ");
-                        minval.selectAll();
-                        minval.focus=true;
-                        event.accepted=true;//阻止事件继续传递
-
-                        break;
-
                     case Qt.Key_Right:
-
-                        console.info("                 ");
-                        minval.selectAll();
-                        minval.focus=true;
-                        event.accepted=true;//阻止事件继续传递
-
-                        break;
-                    case Qt.Key_Enter:
-                        root.okBtnClicked();
+                    case Qt.Key_Left:
+                        minval.focus = true
+                        minval.selectAll()
+                        event.accepted = true;
                         break;
                     default:
-                        root.okBtnClicked();
-                        globalConsoleInfo(maxval+"收到未注册消息#####"+event.key);
                         break;
                     }
                 }
@@ -374,6 +308,55 @@ Rectangle {
         //        wrapper.border.color = "red"
         //    else
         //        wrapper.border.color = "#67696B"
+    }
+    Keys.enabled: true
+    Keys.forwardTo: [input, minval, maxval]
+    Keys.onPressed:{
+        console.log("event.key:",event.key)
+        if(Lib.operateSpecView(event.key))
+        {
+            root.borderColor = "#67696B"
+            root.parent.loadParam()
+            root.parent.returnParent()
+            event.accepted = true;
+            return
+        }
+        switch(event.key)
+        {
+        case Qt.Key_F1:
+        case Qt.Key_F8:
+            root.borderColor = "#67696B"
+            root.parent.loadParam()
+            root.parent.returnParent()
+            break;
+        case Qt.Key_F2:
+        case Qt.Key_F3:
+        case Qt.Key_F4:
+        case Qt.Key_F5:
+        case Qt.Key_F6:
+            root.parent.selfPressed()
+            return;
+        case Qt.Key_Enter:
+            root.okBtnClicked();
+            root.borderColor = "#67696B"
+            break;
+        default:
+            break;
+        }
+        event.accepted = true;
+    }
+
+    function showSelectStyle()
+    {
+        clickAnim.start();
+        if(!rangeMode){
+            input.focus = true
+            input.selectAll();
+        }
+        else{
+            minval.focus = true
+            minval.selectAll()
+        }
     }
     //文本框选中状态
     function selectAllOfTextinput()

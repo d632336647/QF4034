@@ -13,6 +13,7 @@ Item {
     property color  textColor: "white"
     property string mode: "checkbox"  //  button / checkbox
     property string tips: ""
+    property int    iconRotation: 0
     signal clicked
     visible: true
     width: 30
@@ -23,11 +24,12 @@ Item {
         width: parent.width - 2
         height: parent.height - 2
         font.family: "FontAwesome"
-        font.pixelSize: 22
+        font.pixelSize: width - 6
         color: disabled ? "#67696B" : textColor
         text: "\uf1de"
         verticalAlignment: Text.AlignVCenter
         horizontalAlignment: Text.AlignHCenter
+        rotation: iconRotation
     }
     Rectangle{
         id:bg
@@ -53,6 +55,16 @@ Item {
             radius: 4
         }
     }
+    Timer{
+        id:pressedTimer
+        interval: 500;
+        running: false
+        repeat: true
+        onTriggered: {
+            interval = 50
+            root.clicked()
+        }
+    }
     MouseArea{
         id: btnMouseArea;
         anchors.fill: parent;
@@ -75,13 +87,16 @@ Item {
         onPressed:{
             if(mode == "button"){
                 bg.border.color = "#D29928"
-                iconFont.color  = "#D29928"
+                //iconFont.color  = "#D29928"
+                pressedTimer.start()
             }
         }
         onReleased: {
             if(mode == "button"){
                 bg.border.color = "#D3D4D4"
-                iconFont.color  = textColor
+                //iconFont.color  = textColor
+                pressedTimer.stop()
+                pressedTimer.interval = 500
             }
         }
         PropertyAnimation {
@@ -97,6 +112,22 @@ Item {
             property: "border.color";
             to: "#67696B"
             duration: 300
+        }
+        PropertyAnimation {
+            id: clickAnim;
+            target: bg;
+            property: "border.color";
+            to: "white"
+            duration: 100
+            onStopped: {
+                bg.border.color = "#67696B"
+            }
+        }
+        Connections{
+            target: root
+            onClicked:{
+                clickAnim.start()
+            }
         }
     }
 

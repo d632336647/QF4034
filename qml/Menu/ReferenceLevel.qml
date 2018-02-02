@@ -15,7 +15,7 @@ Flipable{
     property bool flipped : false //用来标志是否翻转
     property var parentPointer: undefined
     property alias inputFocus:numberEdit.inputFocus
-    objectName: "参考电平翻转控件";
+    objectName: "referLevel";
     property bool  readOnly:false //为了和采样率的属性保持一致
     Rectangle{
         color: Com.BGColor_main
@@ -23,7 +23,6 @@ Flipable{
 
     front: RightButton {
         id: btn_centerfreq;
-        objectName: "参考电平翻转控件正面";
         anchors.fill: parent
         textLabel: "通道"+(Settings.paramsSetCh()+1)+" 参考电平";
         onClick: {
@@ -34,7 +33,6 @@ Flipable{
     }
     back:LineEdit {
         id: numberEdit;
-        objectName: "参考电平翻转控件背面";
         anchors.fill: parent
         unit: "dBm"
         rangeMode: true
@@ -45,14 +43,12 @@ Flipable{
         onAccepted: {
             root.flipped = false;
             root.state = "toFront";
-            globalConsoleInfo("★★ReferenceLevel.qml响应onAccepted,查看root.parentPointer---"+root.parentPointer);
-            root.parentPointer.focus=true;//侧边栏获得焦点
+            root.parentPointer.focus=true;
         }
         onOkBtnClicked: {
             root.flipped = false
             root.state = "toFront"
-            globalConsoleInfo("★★ReferenceLevel.qml响应onOkBtnClicked,查看root.parentPointer---"+root.parentPointer);
-            root.parentPointer.focus=true;//侧边栏获得焦点
+            root.parentPointer.focus=true;
             setParam(numberEdit.min, numberEdit.max)
         }
         onAreaClicked: {
@@ -94,6 +90,20 @@ Flipable{
         root.state = "toBack"
         //idScopeView.updateSepctrumAxisY(numberEdit.min, numberEdit.max)
     }
+    function returnParent()
+    {
+        analyzeMenu.state = "HIDE"
+        idRightPannel.focus = true
+    }
+    function selfPressed()
+    {
+        numberEdit.borderColor = "#67696B"
+        analyzeMenu.focus = true
+    }
+    function keyPressed()
+    {
+        numberEdit.showSelectStyle()
+    }
     function loadParam()
     {
         numberEdit.min = Settings.reflevelMin()
@@ -119,18 +129,4 @@ Flipable{
         idScopeView.updateSepctrumAxisY(min, max)
         //analyzeMenu.updateParams()
     }
-
-    Keys.enabled: true
-    Keys.forwardTo: root
-    Keys.onPressed:
-    {
-        switch(event.key)
-        {
-        default:
-            console.info("-----ReferenceLevel.qml收到按键消息-----"+event.key);
-            break;
-        }
-
-    }
-
 }

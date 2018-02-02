@@ -15,14 +15,12 @@ Flipable{
     property bool flipped : false //用来标志是否翻转
     property alias inputFocus:numberEdit.inputFocus
     property var parentPointer: undefined
-    objectName: "分辨率翻转控件";
     Rectangle{
         color: Com.BGColor_main
     }
 
     front: RightButton {
         id: btn_resolution;
-        objectName: "分辨率翻转控件正面";
         anchors.fill: parent
         textLabel: "通道"+(Settings.paramsSetCh()+1)+" FFT 点数";
         onClick: {
@@ -33,7 +31,6 @@ Flipable{
     }
     back: LineEdit {
         id: numberEdit;
-        objectName: "分辨率翻转控件背面";
         anchors.fill: parent
         unit: ""
         text: "1000"
@@ -42,15 +39,13 @@ Flipable{
         onAccepted: {
             root.flipped = false;
             root.state = "toFront";
-            globalConsoleInfo("★★Resolution.qml响应onAccepted,查看root.parentPointer---"+root.parentPointer);
-            root.parentPointer.focus=true;//侧边栏获得焦点
+            root.parentPointer.focus = true;//侧边栏获得焦点
             setParam(numberEdit.text);
         }
         onOkBtnClicked: {
             root.flipped = false
             root.state = "toFront"
-            globalConsoleInfo("★★Resolution.qml响应onOkBtnClicked,查看root.parentPointer---"+root.parentPointer);
-            root.parentPointer.focus=true;//侧边栏获得焦点
+            root.parentPointer.focus = true;//侧边栏获得焦点
             setParam(numberEdit.text)
         }
         onAreaClicked: {
@@ -97,7 +92,6 @@ Flipable{
     }
     function setParam(val)
     {
-
         if(0){
             messageBox.title = "警告"
             messageBox.note  = "参数超出范围,已自动为您校正!"

@@ -8,7 +8,7 @@ import "../UI"
 
 Flipable{
     id:root;
-    objectName: "采样率翻转控件"
+    objectName: "sampRate"
     width: 200
     height: 91
     signal  showComplete
@@ -23,7 +23,6 @@ Flipable{
     }
 
     front: RightButton {
-        objectName: "采样率翻转控件正面";
         id: btnsamplerate;
         anchors.fill: parent
         textLabel: "采样率";
@@ -34,7 +33,6 @@ Flipable{
         }
     }
     back: LineEdit {
-        objectName: "采样率翻转控件背面";
         id: numberEdit;
         anchors.fill: parent
         unit: "MHz"
@@ -44,14 +42,12 @@ Flipable{
         onAccepted: {
             root.flipped = false
             root.state = "toFront"
-            globalConsoleInfo("★★SampleRate.qml响应onAccepted,查看root.parentPointer---"+root.parentPointer)
             root.parentPointer.focus=true;//侧边栏获得焦点
             setParam(numberEdit.text);
         }
         onOkBtnClicked: {
             root.flipped = false
             root.state = "toFront"
-             globalConsoleInfo("★★SampleRate.qml响应onOkBtnClicked,查看root.parentPointer---"+root.parentPointer)
             root.parentPointer.focus=true;//侧边栏获得焦点
             setParam(numberEdit.text)
         }
@@ -72,14 +68,15 @@ Flipable{
             name:"toBack" //背面的状态
             PropertyChanges {target:root; angle:180}
             onCompleted: {
-
+                loadParam()
+                root.showComplete();
             }
         },
         State{
             name:"toFront" //
             PropertyChanges {target:root; angle:360}
             onCompleted: {
-
+                root.state = "toBack"
             }
         }
     ]
@@ -89,10 +86,21 @@ Flipable{
     }
     Component.onCompleted:
     {
-        if(Settings.clkMode() !== 0)
-            btnsamplerate.readOnly = true
-        else
-            btnsamplerate.readOnly = false
+        root.state = "toBack"
+    }
+    function returnParent()
+    {
+        gatherMenu.state = "HIDE"
+        idRightPannel.focus = true
+    }
+    function selfPressed()
+    {
+        numberEdit.borderColor = "#67696B"
+        gatherMenu.focus = true
+    }
+    function keyPressed()
+    {
+        numberEdit.showSelectStyle()
     }
     function loadParam()
     {

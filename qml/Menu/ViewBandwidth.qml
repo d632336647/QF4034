@@ -44,14 +44,12 @@ Flipable{
         onAccepted: {
             root.flipped = false;
             root.state = "toFront";
-            globalConsoleInfo("★★ViewBandwidth.qml响应onAccepted,查看root.parentPointer---"+root.parentPointer);
             root.parentPointer.focus=true;//侧边栏获得焦点
             setParam(numberEdit.text);
         }
         onOkBtnClicked: {
             root.flipped = false
             root.state = "toFront"
-            globalConsoleInfo("★★ViewBandwidth.qml响应onOkBtnClicked,查看root.parentPointer---"+root.parentPointer);
             root.parentPointer.focus=true;//侧边栏获得焦点
             setParam(numberEdit.text)
         }
@@ -91,6 +89,20 @@ Flipable{
     Component.onCompleted:
     {
         root.state = "toBack"
+    }
+    function returnParent()
+    {
+        analyzeMenu.state = "HIDE"
+        idRightPannel.focus = true
+    }
+    function selfPressed()
+    {
+        numberEdit.borderColor = "#67696B"
+        analyzeMenu.focus = true
+    }
+    function keyPressed()
+    {
+        numberEdit.showSelectStyle()
     }
     function loadParam()
     {

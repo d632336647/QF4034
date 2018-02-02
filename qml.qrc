@@ -28,7 +28,6 @@
         <file>qml/Menu/SaveCfgMenu.qml</file>
         <file>qml/Menu/NameMode.qml</file>
         <file>qml/Menu/SaveMode.qml</file>
-        <file>qml/UI/PopuBox.qml</file>
         <file>qml/UI/ContentBox.qml</file>
         <file>SliChart/RtSpectrum.qml</file>
         <file>SliChart/UiCheckBox.qml</file>
@@ -53,5 +52,6 @@
         <file>qml/Menu/DDCFreq.qml</file>
         <file>qml/Menu/ExtractFactor.qml</file>
         <file>qml/Menu/FsbCoef.qml</file>
+        <file>qml/UI/FileBox.qml</file>
     </qresource>
 </RCC>

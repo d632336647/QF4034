@@ -16,25 +16,6 @@ Rectangle{
     property int selectBorderSize: 2
     property bool readOnly: false;
     signal click();
-    signal getxxFocus();
-
-
-    onGetxxFocus:
-    {
-
-
-        globalConsoleInfo(rightBtn+"»ñµÃ½¹µã")
-        if(rightBtn.focus)
-        {
-            clearSelectBorder()
-            selected(true)
-        }
-        else
-        {
-            clearSelectBorder()
-        }
-
-    }
 
     Text{
         id: btnLabel;
@@ -163,6 +144,21 @@ Rectangle{
             to: "#121212"
             duration: Com.animationSpeed
         }
+        PropertyAnimation {
+            id: clickAnim;
+            target: rightBtn;
+            property: "border.color";
+            to: "white"
+            duration: 200
+            onStopped: {
+                rightBtn.border.color = "#67696B"
+                rightBtn.click()
+            }
+        }
+    }
+    function keyPressed()
+    {
+        clickAnim.start();
     }
     function selected(flag)
     {
@@ -177,4 +173,5 @@ Rectangle{
         GradientStop{ position: 1.0; color: bHovered ? "#024b42" : "#040436"}
     }
     */
+
 }

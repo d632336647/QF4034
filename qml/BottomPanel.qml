@@ -64,12 +64,19 @@ Rectangle {
                 onClicked: {
                     var mode = Settings.channelMode()
                     if(mode<2)
+                    {
+                        Settings.paramsSetCh(Com.OpSet, mode)
                         mode += 1
+                    }
                     else
+                    {
                         mode = 0;
+                        Settings.paramsSetCh(Com.OpSet, 0)
+                    }
                     showMode(mode)
                     Settings.channelMode(Com.OpSet, mode)
                     idScopeView.changeChannelMode(mode);
+                    idScopeView.svSetActiveChannel()
                 }
                 function showMode(mode)
                 {
@@ -123,9 +130,8 @@ Rectangle {
                     var ch = Settings.paramsSetCh();
                     ch = ch?0:1;
                     Settings.paramsSetCh(Com.OpSet, ch);
+                    idScopeView.svSetActiveChannel()
                     showName(ch);
-                    giveRightEleOfChannel(ch);
-
                 }
                 function showName(ch)
                 {
@@ -135,55 +141,6 @@ Rectangle {
                         btnName = "参数更新 通道2"
                     return btnName;
                 }
-                function giveRightEleOfChannel(ch) //0:历史瀑布图分析  1:实时频谱分析  2:实时瀑布图分析
-                {
-
-
-                    if(0===ch) //通道1
-                    {
-                        idScopeView.focusChannel=0;//当前操作通道1
-                        if(1===idScopeView.analyzeMode)
-                        {
-                            idScopeView.whichTypePageOfEle=idScopeView.rtSpectrumObj;
-                        }
-                        else if(2===idScopeView.analyzeMode)
-                        {
-                            idScopeView.whichTypePageOfEle=idScopeView.rtWaterFallObj;
-                        }
-                        //更新slider和checkButton
-                        console.info("♀♀♀♀♀♀♀♀♀通道1查看whichTypePageOfEle♀♀♀♀♀♀♀♀♀==="+idScopeView.whichTypePageOfEle);
-                        idScopeView.whichTypePageOfEle.focus=true;
-                        idScopeView.whichTypePageOfEle.getAllsliders();
-                        idScopeView.getPeakAndmarkEle();
-                        idScopeView.whichTypePageOfEle.getAllcheckButtons();
-
-
-                    }
-
-                    else if(1===ch) //通道2
-                    {
-                        idScopeView.focusChannel=1;//当前操作通道2
-                        if(1===idScopeView.analyzeMode)
-                        {
-                            idScopeView.whichTypePageOfEle=idScopeView.rtSpectrumObj_channel2;
-                        }
-                        else if(2===idScopeView.analyzeMode)
-                        {
-                            idScopeView.whichTypePageOfEle=idScopeView.rtWaterFallObj_channel2;
-                        }
-                        //更新slider和checkButton
-                        console.info("♂♂♂♂♂♂♂♂♂♂♂♂通道2查看 whichTypePageOfEle♂♂♂♂♂♂♂♂♂♂♂♂==="+idScopeView.whichTypePageOfEle);
-                        idScopeView.whichTypePageOfEle.focus=true;
-                        idScopeView.whichTypePageOfEle.getAllsliders();
-                        idScopeView.getPeakAndmarkEle();
-                        idScopeView.whichTypePageOfEle.getAllcheckButtons();
-
-
-                    }
-
-
-                }
-
             }
         }
         StateRect{
@@ -195,36 +152,12 @@ Rectangle {
             btnName:"菜单"
             visible: true
             onClicked:{
-                if(idScopeView.focusPageOfrightControl.state === "HIDE")
+                idRightPannel.focus=true;
+                if(idRightPannel.state==="SHOW")
                 {
-                    console.info("====查看菜单触发 idScopeView.focusPageOfrightControl====="+idScopeView.focusPageOfrightControl);
-
-
-                    idScopeView.focusPageOfrightControl.state = "SHOW";
-                    idScopeView.focusPageOfrightControl.focus = true;
-
-                }
-                else
-                {
-
-                    Com.clearTopPage(idScopeView.focusPageOfrightControl);
-                    console.info("#####查看菜单触发 idRightPannel.state#####"+idRightPannel.state);
-
-                    if(idRightPannel.state==="SHOW")
-                    {
-                        idRightPannel.focus=true;
-                        idRightPannel.state==="HIDE";
-                        console.info("!!!主菜单隐藏触发");
-                    }
-                    //                    idScopeView.focusPageOfrightControl.state = "HIDE";
-                    //                    if(idScopeView.whichTypePageOfEle)
-                    //                    {
-                    //                        idScopeView.whichTypePageOfEle.focus=true;
-                    //                    }
-                    //                    else
-                    //                    {
-                    //                        idScopeView.focusPageOfrightControl.focus = true;
-                    //                    }
+                    idRightPannel.state="HIDE";
+                }else{
+                    idRightPannel.state="SHOW";
                 }
             }
         }
@@ -250,6 +183,14 @@ Rectangle {
         else
             idMarkRange.textData   = "---- dBm"
     }
+    function chanegParamSetCh()
+    {
+        idChannel2.clicked()
+    }
+    function chanegSignalCh()
+    {
+        idChannel1.clicked()
+    }
     function setSaveState(state)
     {
         saveAnimated.visible = state;
@@ -258,66 +199,8 @@ Rectangle {
         else
             idSaveMode.textData = "--------"
     }
-
-
-    //遍历BottomPannel元素
-    function getStateRectOfFileList(popObj)
-    {
-        var atomlist=popObj.children;
-        for ( var i in atomlist)
-        {
-
-            var tempstr=atomlist[i].toString();
-            var eachChild=atomlist[i];
-            var index=tempstr.indexOf("_");
-
-
-            var StateRectindex=tempstr.indexOf("StateRect");
-
-            var QQuickRectangleindex=tempstr.indexOf("Rectangle");
-
-            var QQuickGridindex=tempstr.indexOf("QQuickGrid");
-            if((QQuickRectangleindex!==-1)||(QQuickGridindex!==-1))
-            {
-                globalConsoleInfo("!!!!!递归调用getItemOfPopBox");
-                getStateRectOfFileList(atomlist[i]);
-            }
-            if(StateRectindex!==-1)
-            {
-                stateRectArray.norepeatpush(atomlist[i]);
-            }
-
-
-        }
-
-
-        return popBoxchildArray;
-    }
-
-
     Component.onCompleted:
     {
-        globalConsoleInfo("☆☆☆☆BottomPanel.qml加载完毕☆☆☆☆");
-        getStateRectOfFileList(root);
-        for(var tt=0;tt<stateRectArray.length;tt++)
-        {
-
-            if(stateRectArray[tt].objectName==="paramUpdate")
-            {
-                paramsUpdate=stateRectArray[tt];//参数更新
-                globalConsoleInfo("======参数更新按钮已添加=======paramsUpdate=="+paramsUpdate);
-            }
-            else if(stateRectArray[tt].objectName==="modeSwitch")
-            {
-                modeSwitch=stateRectArray[tt];//模式切换
-                globalConsoleInfo("======模式切换按钮已添加=======modeSwitch=="+modeSwitch);
-            }
-            else if(stateRectArray[tt].objectName==="menuBtn")
-            {
-                menuBtn=stateRectArray[tt];//菜单显示
-                globalConsoleInfo("======菜单显示按钮已添加=======menuBtn=="+menuBtn);
-            }
-        }
 
     }
 }

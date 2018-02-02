@@ -89,8 +89,6 @@ Item {
         color: titleColor
         font.pixelSize: 14
     }
-
-
     MouseArea{
         anchors.fill: parent;
         hoverEnabled: true;
@@ -122,6 +120,21 @@ Item {
             duration: Com.animationSpeed
         }
     }
-
+    PropertyAnimation {
+        id: clickAnim;
+        target: root;
+        property: "themeColor";
+        to: "white"
+        duration: 100
+        onStopped: {
+            root.themeColor = "#67696B"
+        }
+    }
+    Connections{
+        target: root
+        onClicked:{
+            clickAnim.start()
+        }
+    }
 
 }

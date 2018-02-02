@@ -8,7 +8,6 @@ Item {
 
     //border.color: "#808080";
 
-
     property string btnName: "";
     property string textLabel: "";
     property string textData: "";
@@ -55,7 +54,6 @@ Item {
             color: root.themeColor;
             rotation: 45
         }
-
         Rectangle{
             id:topRightRect
             anchors.top: parent.top
@@ -68,9 +66,6 @@ Item {
             color: Com.BGColor_main//"red"
         }
     }
-
-
-
 
     Rectangle{
         id:bottomLine
@@ -88,16 +83,15 @@ Item {
         clip: true
         Rectangle{
             id: bottomBackground
-            width:  parent.width*0.8
+            width: parent.width*0.8
             height: width
-            //color: "#D6CF9A";
             color: root.themeColor;
         }
         Rectangle{
-            id:bottomRight
+            id: bottomRight
             anchors.left: bottomBackground.left
             anchors.leftMargin: bottomBackground.width-width/2
-            width:  parent.height*2
+            width: parent.height*2
             height: width
             rotation: 45
             color: root.themeColor
@@ -106,13 +100,12 @@ Item {
             id:bottomLeft
             anchors.right: bottomMidRect.right
             anchors.rightMargin: bottomMidRect.width-width/2
-            width:  parent.height*2
+            width: parent.height*2
             height: width
             rotation: 45
             color: Com.BottomBGColor;
         }
     }
-
     Text{
         id:textTile
         anchors.top: topLine.bottom
@@ -128,7 +121,6 @@ Item {
     }
 
 
-
     Text{
         anchors.bottom: bottomLine.bottom
         anchors.bottomMargin: 2
@@ -141,7 +133,6 @@ Item {
         color: "yellow"
         font.pixelSize: 12
     }
-
     Text{
         anchors.centerIn: parent
         horizontalAlignment: Text.AlignLeft;
@@ -151,7 +142,6 @@ Item {
         color: titleColor
         font.pixelSize: 16
     }
-
 
     MouseArea{
         anchors.fill: parent;

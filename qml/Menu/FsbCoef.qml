@@ -3,6 +3,7 @@ import QtQuick.Controls 1.4
 import QtQuick.Controls.Styles 1.4
 import QtQuick.Layouts 1.3
 import "../Inc.js" as Com
+import "../Lib.js" as Lib
 import "../UI"
 
 Rectangle{
@@ -30,8 +31,8 @@ Rectangle{
             icon:"\uf112"
             width: parent.itemWidth
             onClick: {
-                root.state = "HIDE";
-                saveCfgMenu.focus = true;
+                root.state = "HIDE"
+                root.parent.focus = true
             }
         }
         RightButton {
@@ -91,7 +92,6 @@ Rectangle{
             onClick: {
                 root.state = "HIDE";
                 root.parent.state = "HIDE";
-                root.parent.state="HIDE";//非直接菜单必须加这句
                 idRightPannel.state="SHOW";
                 idRightPannel.focus=true;
             }
@@ -102,20 +102,31 @@ Rectangle{
     Keys.enabled: true
     Keys.forwardTo: [root]
     Keys.onPressed:{
+        if(Lib.operateSpecView(event.key))
+        {
+            root.state = "HIDE"
+            root.parent.state = "HIDE"
+            event.accepted = true;
+            return
+        }
+        switch(event.key)
+        {
+        case Qt.Key_F1:
+            btn_return.keyPressed()
+            break;
+        case Qt.Key_F2:
+            break;
+        case Qt.Key_F3:
+            break;
+        case Qt.Key_F8:
+            btn_exit.keyPressed()
+            break;
+        default:
+            break;
+        }
+        event.accepted=true;
+    }
 
-    }
-    function keyup()
-    {
-        globalConsoleInfo("key up")
-    }
-    function keydowm()
-    {
-        globalConsoleInfo("key down")
-    }
-    function keyenter()
-    {
-        globalConsoleInfo("key enter")
-    }
     //过渡动画
     states: [
         State {
@@ -123,15 +134,6 @@ Rectangle{
             PropertyChanges { target: root; x: root.parent.width-root.width}
             onCompleted:{
                 root.focus = true;
-                globalConsoleInfo("                                    ");
-                globalConsoleInfo("                                    ");
-                globalConsoleInfo("☆☆☆☆SaveMode.qml获得焦点☆☆☆☆");
-                globalConsoleInfo("                                    ");
-                globalConsoleInfo("                                    ");
-                //传递获得焦点的页面元素
-                idScopeView.focusPageOfrightControl=root;
-                Com.childArray=Com.resetAndgetItemOfControlPannel(root);
-                Com.GlobalTotalchildArray=Com.resetGlobalItemOfElement(root);
             }
         },
         State {

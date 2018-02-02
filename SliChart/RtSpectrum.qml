@@ -28,22 +28,12 @@ Rectangle {
     property bool  fullWide: false   //全宽显示,横向
     property int   yTicks:  fullMode ? 21 : 11
     property bool  realTimeMode: false   //实时刷新显示
-    property var  theScopeViewEle: undefined
-    property bool  altPress:true
     property color seriesColor1: Com.series_color1
     property color seriesColor2: Com.series_color2
     property color seriesColor3: Com.series_color3
-
-    property point centerPoint: Qt.point( 0, 0 )
-    property var  noCheckbuttonEleArray:[] //存储非checkbutton元素
-    property var  uiCheckButtonArray:[];//UiCheckButton按钮数组
-    property int  uiSliderIndex:-1 //第一个UiSliderIndex出现的索引号
-
-    property real  fftCount1: 30000
-
     visible: false
-
     UiCornerLine{
+        id:cornerLine
         anchors.top: parent.top
         anchors.topMargin: 4
         anchors.right: parent.right
@@ -52,6 +42,13 @@ Rectangle {
         anchors.leftMargin: 4
         anchors.bottom: parent.bottom
         anchors.bottomMargin: 4
+        onShowHeadLineChanged:
+        {
+            if(showHeadLine)
+                chName.textColor = "white"
+            else
+                chName.textColor = "#C0C0C0"
+        }
     }
     Canvas{
         id: chName
@@ -61,8 +58,9 @@ Rectangle {
         anchors.left: parent.left
         anchors.leftMargin: 5
         width: 60
-        height: 16
+        height: 18
         contextType: "2d";
+        property color textColor: "#C0C0C0"
         onPaint: {
             context.lineWidth = 1;
             context.strokeStyle = "#00000000";
@@ -77,15 +75,17 @@ Rectangle {
             context.stroke();
         }
         Text {
-            anchors.fill: parent
+            anchors.top: parent.top
+            anchors.topMargin: 2
+            anchors.left: parent.left
+            anchors.leftMargin: 2
             font.pixelSize: 12
-            color:"white"
+            color: chName.textColor
             font.family: "幼圆"
             text: "通道"+(chIndex+1)
-
         }
-    }
 
+    }
     Text {
         id: xTitle
         anchors.bottom: parent.bottom
@@ -120,7 +120,7 @@ Rectangle {
         color:"white"
         text: " REF: "+axisY.max.toFixed(2)+" dBm"
     }
-
+    //chart view
     ChartView {
         id: view
         //title: "Two Series, Common Axes"
@@ -144,8 +144,9 @@ Rectangle {
             //titleText: "<a style='color:red'>MHz</a>";
             //titleText: "MHz";
             //titleFont.pixelSize: 12;
-        }
+            labelsColor: "#C0C0C0"
 
+        }
         ValueAxis {
             id: axisY
             min: yAxisMin
@@ -153,9 +154,8 @@ Rectangle {
             tickCount: yTicks
             labelFormat:"%.2f";
             gridLineColor: "#4C7049"
+            labelsColor: "#C0C0C0"
         }
-
-
         LineSeries {
             id: series1
             objectName: "series1"
@@ -169,7 +169,6 @@ Rectangle {
             }
 
         }
-
         LineSeries {
             id: series2
             objectName: "series2"
@@ -182,7 +181,6 @@ Rectangle {
                 //console.log("onClicked: " + point.x + ", " + point.y);
             }
         }
-
         LineSeries {
             id: series3
             objectName: "series3"
@@ -260,7 +258,10 @@ Rectangle {
                     zoomXStep = minStep;
 
                 //console.log("resolution/10000:"+(resolution/10000))
-                view.wheelZoomXY(view.hovered, wheel, view.hoveredPoint,  zoomXY);
+                var isZoomIn = false;
+                if( wheel.angleDelta.y > 0 )
+                    isZoomIn = true;
+                view.wheelZoomXY(view.hovered, isZoomIn, view.hoveredPoint,  zoomXY);
                 markSlider.setMarkRange();
                 updateCharts();
             }
@@ -283,7 +284,7 @@ Rectangle {
 
         }//!--MouseArea END
 
-        function wheelZoomXY( enable, wheel, point, XY)
+        function wheelZoomXY( enable, isin, point, XY)
         {
             if(!enable)
                 return
@@ -297,7 +298,7 @@ Rectangle {
                 axisMin = yAxisMin
                 axisMax = yAxisMax
             }
-            if( wheel.angleDelta.y > 0 ) {
+            if( isin ) {
                 if( axis.max - axis.min <= zoomXStep ) {
                     return
                 }
@@ -312,41 +313,6 @@ Rectangle {
                 }
             }
         }//!--function wheelZoomXY END
-
-        //按键控制放大缩小
-        function wheelZoomXY_ByBtn( enable, point,isZoomIn, XY)//flag表示放大还是缩小的布尔值
-        {
-            if(!enable)
-                return
-            var axis, axisMin, axisMax
-            if(XY === "x"){
-                axis = axisX
-                axisMin = xAxisMin
-                axisMax = xAxisMax
-            }else{
-                axis = axisY
-                axisMin = yAxisMin
-                axisMax = yAxisMax
-            }
-            if( isZoomIn) {
-                if( axis.max - axis.min <= 1 ) {
-                    return
-                }
-                view.zoom_In( point , XY)
-            } else {
-                view.zoom_Out( point , XY)
-                if( axis.min <= axisMin ) {
-                    axis.min = axisMin
-                }
-                if( axis.max >= axisMax ) {
-                    axis.max = axisMax
-                }
-            }
-
-            markSlider.setMarkRange();
-            updateCharts();
-
-        }//!--function wheelZoomXY_ByBtn END
 
         function zoom_In( hoveredPoint , XY) {
             var axis, axisMin, axisMax, hoveredXY
@@ -386,10 +352,6 @@ Rectangle {
                 axis.min =  tempMin
                 axis.max =  tempMax
             }
-
-            fftCount1= (series1.count > 500)? series1.count: 500;
-
-            markSlider.horizonStepValue=((axisX.max-axisX.min)*(axisX.max-axisX.min))/fftCount1;
         }//!--function zoom_In END
 
         function zoom_Out( hoveredPoint, XY ) {
@@ -424,18 +386,11 @@ Rectangle {
             }
             axis.max =  (tempMax > axisMax) ? axisMax : tempMax
             axis.min =  (tempMin < axisMin) ? axisMin : tempMin
-
-
-
-            fftCount1= (series1.count > 40000)? series1.count: 40000;
-
-            markSlider.horizonStepValue=(axisX.max-axisX.min)/fftCount1;
-
         }//!--function zoom_Out END
     }//!-- ChartView end
 
 
-    //ctrl panel
+    //----右侧控制按钮-----
     UiCheckButton{
         id:stopCapture
         anchors.bottom: btnZoomReset.top
@@ -538,6 +493,7 @@ Rectangle {
         tips:"显示/关闭Peak点"
         onClicked:
         {
+
             rtPeak1.visible = (checked && series1.visible)
             rtPeak2.visible = (checked && series2.visible)
             rtPeak3.visible = (checked && series3.visible)
@@ -551,7 +507,7 @@ Rectangle {
     UiCheckButton{
         id:movePeak
         anchors.bottom: parent.bottom
-        anchors.bottomMargin: 80
+        anchors.bottomMargin: 60
         anchors.right: parent.right
         anchors.rightMargin: 10
         iconFontText:"\uf07e"
@@ -567,9 +523,10 @@ Rectangle {
             markSlider.visible2 = (checked && seriesSignal2.checked)
             markSlider.visible3 = (checked && seriesSignal3.checked)
         }
-    }//!--ctrl panel end
+    }//!----右侧控制按钮--- END
 
 
+    //---文件进度条拖动控制--
     UiMultSlider {
         id: fileSlider1
         anchors.top: parent.top
@@ -581,7 +538,6 @@ Rectangle {
         max:axisX.max
         visible: series1.visible && !realTimeMode
         handleColor: Com.series_color1
-        exScopeViewEle:root.theScopeViewEle
         onValueChanged: {
             var percent = value.toFixed(3);
             dataSource.setFileOffset("series1", percent)
@@ -603,7 +559,6 @@ Rectangle {
         anchors.top: fileSlider1.bottom
         anchors.left: fileSlider1.left
         width: fileSlider1.width
-        exScopeViewEle:root.theScopeViewEle
         min:axisX.min
         max:axisX.max
         visible: series2.visible && !realTimeMode
@@ -617,7 +572,6 @@ Rectangle {
     }
     UiMultSlider {
         id: fileSlider3
-        exScopeViewEle:root.theScopeViewEle
         anchors.top: fileSlider2.bottom
         anchors.left: fileSlider2.left
         width: fileSlider2.width
@@ -632,7 +586,9 @@ Rectangle {
             fftData.refreshSeriesPoints(root.chIndex, 2);
         }
     }
+    //!---文件进度条拖动控制-- END
 
+    //---PeakMark点控制显示--
     UiSlider {
         id: markSlider
         anchors.bottom: parent.bottom
@@ -643,7 +599,6 @@ Rectangle {
         min:axisX.min
         max:axisX.max
         visible: false
-        exScopeViewEle:root.theScopeViewEle
         /**********************************************************
         参数说明     功能 重新标定滑动条的长度和范围
         ***********************************************************/
@@ -669,17 +624,17 @@ Rectangle {
             var move_point = Qt.point(percent1*range+min, axisY.max/2);
             root.movePeakPosition(rtPeak1, move_point,  0, series1);
 
-            markSlider.handle1Value=percent1;
+            //markSlider.handle1Value=percent1;
         }
         onPercent2Changed: {
             var move_point = Qt.point(percent2*range+min, axisY.max/2);
             root.movePeakPosition(rtPeak2, move_point,  1, series2);
-            markSlider.handle2Value=percent2;
+            //markSlider.handle2Value=percent2;
         }
         onPercent3Changed: {
             var move_point = Qt.point(percent3*range+min, axisY.max/2);
             root.movePeakPosition(rtPeak3, move_point,  2, series3);
-            markSlider.handle3Value=percent3;
+            //markSlider.handle3Value=percent3;
         }
     }
     PeakText{
@@ -713,8 +668,6 @@ Rectangle {
         textColor: Com.series_color3
         visible: rtPeak3.visible
     }
-
-
     PeakRect{
         id:rtPeak1
         onVisibleChanged: {
@@ -726,7 +679,7 @@ Rectangle {
                     fftData.refreshSeriesPoints(root.chIndex, 0);
                     root.updatePeak(rtPeak1, fftData.peakPoint0, 0, series1);
                     //绝对值转换为相对值
-                    markSlider.handle1Value=(fftData.peakPoint0.x-axisX.min)/(axisX.max-axisX.min);
+                    //markSlider.handle1Value=(fftData.peakPoint0.x-axisX.min)/(axisX.max-axisX.min);
 
                 }
             }
@@ -734,7 +687,6 @@ Rectangle {
                 idBottomPannel.updateMarkRange(false, 0);
         }
     }
-
     PeakRect{
         id:rtPeak2
         onVisibleChanged: {
@@ -744,14 +696,12 @@ Rectangle {
                 if( (!realTimeMode) || (!captureThread.isRunning()) ){
                     fftData.refreshSeriesPoints(root.chIndex, 1);
                     root.updatePeak(rtPeak2, fftData.peakPoint1, 1, series2);
-
                     //绝对值转换为相对值
-                    markSlider.handle2Value=(fftData.peakPoint1.x-axisX.min)/(axisX.max-axisX.min);
+                    //markSlider.handle2Value=(fftData.peakPoint1.x-axisX.min)/(axisX.max-axisX.min);
                 }
             }
         }
     }
-
     PeakRect{
         id:rtPeak3
         onVisibleChanged: {
@@ -762,486 +712,396 @@ Rectangle {
                     fftData.refreshSeriesPoints(root.chIndex, 2);
                     root.updatePeak(rtPeak3, fftData.peakPoint2, 2, series3);
                     //绝对值转换为相对值
-                    markSlider.handle3Value=(fftData.peakPoint2.x-axisX.min)/(axisX.max-axisX.min);
+                    //markSlider.handle3Value=(fftData.peakPoint2.x-axisX.min)/(axisX.max-axisX.min);
                 }
             }
         }
     }
+    //!---PeakMark点控制显示-- END
 
 
-
-
-    Keys.enabled: true
-    Keys.forwardTo: [root]
-    Keys.onPressed:{
-
-
-        var rateY_btn = (yAxisMax-yAxisMin)/(axisY.max - axisY.min);
-        var currentRangeX_btn = axisX.max - axisX.min;
-        var rateX_btn = bandwidth/currentRangeX_btn;
-        var theaxisMinX = xAxisMin;
-        var theaxisMaxX = xAxisMax;
-
-        var theaxisMinY = yAxisMin;
-        var theaxisMaxY = yAxisMax;
-        var themidX=theaxisMinX+(theaxisMaxX-theaxisMinX)/2;
-        var themidY=theaxisMinY+(theaxisMaxY-theaxisMinY)/2;
-        var checkButtonTipsStr="";//按键悬浮文本
-        var theSubTriangleIndex=0; //三角滑块索引
-        var theSubFileSliderIndex=0;//文件滑块索引
-        centerPoint=Qt.point( themidX, themidY );
-
-
-        var moveStepDis=(axisX.max-axisX.min)*2/fftCount1;
-        if(moveStepDis<0.3)
-            moveStepDis=0.3;
-
-
-        switch(event.key)
+    //*************频谱图控制按钮*************
+    UiCheckButton{
+        id:xSpanIn
+        anchors.top: root.top
+        anchors.topMargin: 26
+        anchors.left: root.left
+        anchors.leftMargin: 8
+        iconFontText:"\uf065"
+        textColor: "white"
+        checked: true
+        mode:"button"
+        tips:"横坐标放大"
+        iconRotation: 45
+        disabled: true
+        width: 22
+        height: width
+        onClicked:
         {
-        case Qt.Key_Up:
-            view.scrollDown(rateY_btn);
-            markSlider.setMarkRange()
-            updateCharts()
-
-            event.accepted=true;//阻止事件继续传递
-            break;
-        case Qt.Key_Down:
-            view.scrollUp(rateY_btn);
-            markSlider.setMarkRange();
-            updateCharts();
-            //console.info("========RtSpectrum.qml收到↓");
-            event.accepted=true;//阻止事件继续传递
-            break;
-        case Qt.Key_Left:
-
-            if((axisX.max < xAxisMax)&&(axisX.min > xAxisMin))
+            checked = true
+            if(workZoomXStep())
             {
 
-                console.info("fftCount1-------"+fftCount1);
-                console.info("axisX.max-axisX.min==="+(axisX.max-axisX.min));
-                console.info("xAxisMax-xAxisMin==="+(xAxisMax-xAxisMin));
-                view.scrollLeft(rateX_btn*moveStepDis)
+                var centerPoint = Qt.point( 0, 0 )
+                centerPoint.x = (axisX.max-axisX.min) / 2 + axisX.min
+                centerPoint.y = (axisY.max-axisY.min) / 2 + axisY.min
+                 //console.log("xSpanIn clicked centerPoint:",centerPoint)
+
+                view.wheelZoomXY(true, true, centerPoint,  "x");
+                markSlider.setMarkRange();
+                updateCharts();
             }
-
-            markSlider.setMarkRange();
-            updateCharts();
-            event.accepted=true;//阻止事件继续传递
-
-            break;
-        case Qt.Key_Right:
-
-            if(axisX.min<0)//防止出现负数
-            {
-                axisX.min=0;
-            }
-            if((axisX.max <= xAxisMax)&&(axisX.min >= xAxisMin))
-            {
-                console.info("fftCount1-------"+fftCount1);
-                console.info("axisX.max-axisX.min==="+(axisX.max-axisX.min));
-                console.info("xAxisMax-xAxisMin==="+(xAxisMax-xAxisMin));
-                view.scrollRight(rateX_btn*moveStepDis);
-            }
-            markSlider.setMarkRange();
-            updateCharts();
-            event.accepted=true;//阻止事件继续传递
-            //console.info("========RtSpectrum.qml收到→");
-            break;
-
-        case Qt.Key_Enter://放大
-            view.wheelZoomXY_ByBtn(true, centerPoint, true,  zoomXY);
-            event.accepted=true;//阻止事件继续传递
-
-            break;
-        case Qt.Key_PageDown://放大
-            view.wheelZoomXY_ByBtn(true, centerPoint, true,  zoomXY);
-            event.accepted=true;//阻止事件继续传递
-
-            break;
-        case Qt.Key_Space://缩小
-            view.wheelZoomXY_ByBtn(true, centerPoint, false,  zoomXY);
-            event.accepted=true;//阻止事件继续传递
-            //console.info("========RtSpectrum.qml收到Key_Space");
-            break;
-        case Qt.Key_PageUp://缩小
-            view.wheelZoomXY_ByBtn(true, centerPoint, false,  zoomXY);
-            event.accepted=true;//阻止事件继续传递
-            //console.info("========RtSpectrum.qml收到滚轮缩小");
-            break;
-        case Qt.Key_Escape://焦点切换到 scopeView
-
-            if(theScopeViewEle)
-            {
-
-                theScopeViewEle.focus=true;//焦点重置为ScopeView
-
-                console.info("========RtSpectrum.qml收到Key_Escape,焦点交给了:"+theScopeViewEle);
-            }
-            event.accepted=true;//阻止事件继续传递
-            break;
-            //Maker-->箭头
-            //case Qt.Key_F18:
-        case Qt.Key_F12:
-            //console.info("※◇※◇※※◇※◇※※◇※◇※RtSpectrum.qml收到Maker-->箭头消息※◇※◇※※◇※◇※※◇※◇※");
-            theSubTriangleIndex=getTriangleEleIndex();
-
-            theSubFileSliderIndex=(++theSubTriangleIndex)%(noCheckbuttonEleArray.length);
-            if(theSubFileSliderIndex<uiSliderIndex)
-            {
-                theSubFileSliderIndex=uiSliderIndex+theSubFileSliderIndex;
-            }
-            if(noCheckbuttonEleArray[theSubFileSliderIndex])
-            {
-                noCheckbuttonEleArray[theSubFileSliderIndex].focus=true;
-            }
-            event.accepted=true;//阻止事件继续传递
-            break;
-        case Qt.Key_F1:
-            console.info("-----------------------------");
-            console.info("                 ");
-            console.info(root+"!!!!!!RtSpectrum.qml收到C_FREQUENCY_CHANNEL信号!!!!!");
-            Com.clearTopPage(root);
-            analyzeMenu.focus=true;
-            analyzeMenu.state="SHOW";
-
-            console.info("----RtSpectrum.qml响应 ◇分析参数◇ 完毕----");
-            console.info("                 ");
-            console.info("------------------ ----------- ");
-            event.accepted=true;
-            break;
-        case Qt.Key_F5:
-            console.info("-----------------------------");
-            console.info("                 ");
-            console.info(root+"!!!!!!RtSpectrum.qml收到C_SPAN_X_SCALE!!!!!");
-
-            //idScopeView.getPeakAndmarkEle();//必须调用此函数，whichTypePageOfEle才会有值
-            if(idScopeView.whichTypePageOfEle.noCheckbuttonEleArray[0])
-            {
-                //更新slider和checkButton
-                idScopeView.whichTypePageOfEle.getAllsliders();
-                idScopeView.whichTypePageOfEle.getAllcheckButtons();
-                idScopeView.whichTypePageOfEle.noCheckbuttonEleArray[0].focus=true;
-                idScopeView.whichTypePageOfEle.zoomXY="x";
-                console.info("----RtSpectrum.qml响应 ◇C_SPAN_X_SCALE◇ 完毕----");
-            }
-            else
-            {
-                console.info("----RtSpectrum.qml 图谱不存在！无法响应X轴缩放----");
-                console.info(idScopeView.whichTypePageOfEle.noCheckbuttonEleArray[0]);
-            }
-
-            console.info("                 ");
-            console.info("------------------ ----------- ");
-            event.accepted=true;
-            break;
-        case Qt.Key_F9:
-            console.info("-----------------------------");
-            console.info("                 ");
-            console.info(root+"!!!!!!RtSpectrum.qml收到C_AMPLITUDE_Y_SCALE!!!!!");
-
-
-            if(idScopeView.whichTypePageOfEle.noCheckbuttonEleArray[0])
-            {
-                idScopeView.whichTypePageOfEle.noCheckbuttonEleArray[0].focus=true;
-                idScopeView.whichTypePageOfEle.zoomXY="y";
-                console.info("----RtSpectrum.qml响应 ◇C_AMPLITUDE_Y_SCALE◇ 完毕----");
-            }
-            else
-            {
-                console.info("#####RtSpectrum.qml 图谱不存在！无法响应Y轴缩放######");
-                console.info(idScopeView.whichTypePageOfEle.noCheckbuttonEleArray[0]);
-            }
-            console.info("                 ");
-            console.info("------------------ ----------- ");
-            event.accepted=true;
-            break;
-
-        case Qt.Key_F15:
-            //case Qt.Key_F2:
-            console.info("-----------------------------");
-            console.info("                 ");
-            console.info(root+"!!!!!!RtSpectrum.qml收到C_MARKER!!!!!");
-            console.info("                 ");
-            console.info("------------------ ----------- ");
-            ////////////////////////
-
-            //idScopeView.judgeVisiblePage();//必须调用此函数，whichTypePageOfEle才会有值
-            if(idScopeView.peakPointBtn)
-            {
-                idScopeView.peakPointBtn.checkboxClick();
-                root.getAllsliders();//先checkboxClick()再getAllsliders
-                //绝对值转换为相对值
-                markSlider.handle1Value=(fftData.peakPoint0.x-axisX.min)/(axisX.max-axisX.min);
-                //console.info("Key_F2触发※※※※※fftData.peakPoint0.x※※※※※"+fftData.peakPoint0.x);
-                markSlider.handle2Value=(fftData.peakPoint1.x-axisX.min)/(axisX.max-axisX.min);
-                markSlider.handle3Value=(fftData.peakPoint2.x-axisX.min)/(axisX.max-axisX.min);
-                console.info("----RtSpectrum.qml响应  ◇C_MARKER◇  完毕----");
-            }
-            //////////////////////
-
-            event.accepted=true;
-            break;
-            //case Qt.Key_F3:
-        case Qt.Key_F16:
-            console.info("-----------------------------");
-            console.info("                 ");
-            console.info(root+"!!!!!!RtSpectrum.qml收到C_PEAK_SEARCH!!!!!");
-
-
-            if((idScopeView.peakPointBtn)&&(!idScopeView.peakPointBtn.checked))
-            {
-                idScopeView.peakPointBtn.checkboxClick();
-                root.getAllsliders();//先checkboxClick()再getAllsliders
-                //绝对值转换为相对值
-                markSlider.handle1Value=(fftData.peakPoint0.x-axisX.min)/(axisX.max-axisX.min);
-                console.info("Key_F3触发○○○○○○○○○fftData.peakPoint0.x○○○○○○○○○"+fftData.peakPoint0.x);
-                markSlider.handle2Value=(fftData.peakPoint1.x-axisX.min)/(axisX.max-axisX.min);
-                markSlider.handle3Value=(fftData.peakPoint2.x-axisX.min)/(axisX.max-axisX.min);
-            }
-            if(idScopeView.markBtn)
-            {
-
-                idScopeView.markBtn.checkboxClick();
-                //焦点给第一个三角滑块
-                root.getAllsliders();//必须重新激活三角滑块
-                if((root.uiSliderIndex>=0)&&(root.uiSliderIndex<root.noCheckbuttonEleArray.length)&&root.noCheckbuttonEleArray[root.uiSliderIndex].visible)
-                {
-                    root.noCheckbuttonEleArray[root.uiSliderIndex].focus=true;
-                }
-
-                //绝对值转换为相对值
-                markSlider.handle1Value=(fftData.peakPoint0.x-axisX.min)/(axisX.max-axisX.min);
-                console.info("●●●●●●●●●●fftData.peakPoint0.x●●●●●●●●●●"+fftData.peakPoint0.x);
-                markSlider.handle2Value=(fftData.peakPoint1.x-axisX.min)/(axisX.max-axisX.min);
-                markSlider.handle3Value=(fftData.peakPoint2.x-axisX.min)/(axisX.max-axisX.min);
-            }
-            console.info("----RtSpectrum.qml响应  ◇C_PEAK_SEARCH◇   完毕----");
-
-            console.info("------------------ ----------- ");
-            event.accepted=true;
-            break;
-
-            //case Qt.Key_End://呼出菜单
-        case Qt.Key_F13:
-            if(idBottomPannel.menuBtn)
-            {
-                idBottomPannel.menuBtn.clicked();
-            }
-            console.info("●●●●●●RtSpectrum.qml 呼出菜单按钮触发●●●●●●idBottomPannel.menuBtn"+idBottomPannel.menuBtn);
-            event.accepted=true;
-            break;
-            //case Qt.Key_Insert://模式切换
-        case Qt.Key_F10:
-            if(idBottomPannel.modeSwitch)
-            {
-                idBottomPannel.modeSwitch.clicked();
-            }
-            console.info("●●●●●●RtSpectrum.qml 模式切换按钮触发●●●●●●idBottomPannel.modeSwitch"+idBottomPannel.modeSwitch);
-            event.accepted=true;
-            break;
-            //        case Qt.Key_Delete://参数更新
-        case Qt.Key_F19:
-            if(idBottomPannel.paramsUpdate)
-            {
-                idBottomPannel.paramsUpdate.clicked();
-            }
-            console.info("●●●●●●RtSpectrum.qml  参数更新按钮触发●●●●●●Com.paramsUpdate"+idBottomPannel.paramsUpdate);
-            console.info("----RtSpectrum.qml 响应 ◇C_PRESET◇ 完毕----");
-            event.accepted=true;
-            break;
-        case Qt.Key_1://数字1
-            if(root.noCheckbuttonEleArray[1])
-            {
-                root.noCheckbuttonEleArray[1].focus=true;//multisider1获得焦点
-                console.info("√√√√√√√√√RtSpectrum.qml 文件滑块1 获得焦点√√√√√√√√√")
-            }
-
-            event.accepted=true;
-            break;
-        case Qt.Key_2://数字2
-            if(root.noCheckbuttonEleArray[2])
-            {
-                root.noCheckbuttonEleArray[2].focus=true;//multisider1获得焦点
-                console.info("√√√√√√√√√RtSpectrum.qml 文件滑块1 获得焦点√√√√√√√√√")
-            }
-
-            event.accepted=true;
-            break;
-        case Qt.Key_3://数字3
-            if(root.noCheckbuttonEleArray[3])
-            {
-                root.noCheckbuttonEleArray[3].focus=true;//multisider1获得焦点
-                console.info("√√√√√√√√√RtSpectrum.qml 文件滑块1 获得焦点√√√√√√√√√")
-            }
-
-            event.accepted=true;
-            break;
-        case Qt.Key_4://数字4
-
-            if(root.uiCheckButtonArray[0]&&(!root.uiCheckButtonArray[0].disabled))
-            {
-                if(typeof root.uiCheckButtonArray[0].tips!==undefined)
-                {
-                    checkButtonTipsStr=root.uiCheckButtonArray[0].tips;
-                }
-                if(checkButtonTipsStr.indexOf("Peak点")!==-1)
-                {
-                    peakPointBtn=root.uiCheckButtonArray[0];
-                    break;
-                }
-                else if(checkButtonTipsStr.indexOf("标尺")!==-1)
-                {
-
-                    markBtn=root.uiCheckButtonArray[0];
-                    break;
-
-                }
-
-                //先触发点击checkbutton然后调用getAllsliders
-                root.uiCheckButtonArray[0].checkboxClick();
-                root.getAllsliders();//再次刷新slider
-
-
-                console.info("RtSpectrum.qml "+checkButtonTipsStr+"触发点击事件");
-            }
-            event.accepted=true;
-            break;
-        case Qt.Key_5://数字5
-
-            if(root.uiCheckButtonArray[1]&&(!root.uiCheckButtonArray[1].disabled))
-            {
-                if(typeof root.uiCheckButtonArray[1].tips!==undefined)
-                {
-                    checkButtonTipsStr=root.uiCheckButtonArray[1].tips;
-                }
-                if(checkButtonTipsStr.indexOf("Peak点")!==-1)
-                {
-                    peakPointBtn=root.uiCheckButtonArray[1];
-                    break;
-                }
-                else if(checkButtonTipsStr.indexOf("标尺")!==-1)
-                {
-
-                    markBtn=root.uiCheckButtonArray[1];
-                    break;
-
-                }
-
-                //先触发点击checkbutton然后调用getAllsliders
-                root.uiCheckButtonArray[1].checkboxClick();
-                root.getAllsliders();//再次刷新slider
-
-                console.info("RtSpectrum.qml "+checkButtonTipsStr+"触发点击事件");
-            }
-            event.accepted=true;
-            break;
-        case Qt.Key_6://数字6
-
-            if(root.uiCheckButtonArray[2]&&(!root.uiCheckButtonArray[2].disabled))
-            {
-                if(typeof root.uiCheckButtonArray[2].tips!==undefined)
-                {
-                    checkButtonTipsStr=root.uiCheckButtonArray[2].tips;
-                }
-                if(checkButtonTipsStr.indexOf("Peak点")!==-1)
-                {
-                    peakPointBtn=root.uiCheckButtonArray[2];
-                    break;
-                }
-                else if(checkButtonTipsStr.indexOf("标尺")!==-1)
-                {
-
-                    markBtn=root.uiCheckButtonArray[2];
-                    break;
-
-                }
-                //先触发点击checkbutton然后调用getAllsliders
-                root.uiCheckButtonArray[2].checkboxClick();
-                root.getAllsliders();//再次刷新slider
-                console.info("RtSpectrum.qml "+checkButtonTipsStr+"触发点击事件");
-            }
-            event.accepted=true;
-            break;
-        case Qt.Key_7://数字7
-
-            if(root.uiCheckButtonArray[3]&&(!root.uiCheckButtonArray[3].disabled))
-            {
-                if(typeof root.uiCheckButtonArray[3].tips!==undefined)
-                {
-                    checkButtonTipsStr=root.uiCheckButtonArray[3].tips;
-                }
-                if(checkButtonTipsStr.indexOf("Peak点")!==-1)
-                {
-                    peakPointBtn=root.uiCheckButtonArray[3];
-                    break;
-                }
-                else if(checkButtonTipsStr.indexOf("标尺")!==-1)
-                {
-
-                    markBtn=root.uiCheckButtonArray[3];
-                    break;
-
-                }
-                //先触发点击checkbutton然后调用getAllsliders
-                root.uiCheckButtonArray[3].checkboxClick();
-                root.getAllsliders();//再次刷新slider
-                console.info("RtSpectrum.qml "+checkButtonTipsStr+"触发点击事件");
-            }
-            event.accepted=true;
-            break;
-        case Qt.Key_8://数字8
-
-            if(root.uiCheckButtonArray[4]&&(!root.uiCheckButtonArray[4].disabled))
-            {
-                if(typeof root.uiCheckButtonArray[4].tips!==undefined)
-                {
-                    checkButtonTipsStr=root.uiCheckButtonArray[4].tips;
-                }
-                if(checkButtonTipsStr.indexOf("Peak点")!==-1)
-                {
-                    peakPointBtn=root.uiCheckButtonArray[4];
-                    break;
-                }
-                else if(checkButtonTipsStr.indexOf("标尺")!==-1)
-                {
-
-                    markBtn=root.uiCheckButtonArray[4];
-                    break;
-
-                }
-                //先触发点击checkbutton然后调用getAllsliders
-                root.uiCheckButtonArray[4].checkboxClick();
-                root.getAllsliders();//再次刷新slider
-
-                console.info("RtSpectrum.qml "+checkButtonTipsStr+"触发点击事件");
-            }
-            event.accepted=true;
-            break;
-        case Qt.Key_Exclam://功能键1
-
-        case Qt.Key_At://功能键2
-
-        case Qt.Key_NumberSign://功能键3
-
-        case Qt.Key_Dollar://功能键4
-
-        case Qt.Key_Percent://功能键5
-
-        case Qt.Key_AsciiCircum://功能键6
-
-        case Qt.Key_Space://功能键 return
-            idScopeView.focusPageOfrightControl.focus=true;
-            idScopeView.focusPageOfrightControl.state="SHOW";
-            console.info("※※※※※RtSpectrum.qml  功能键呼出菜单※※※※※"+idScopeView.focusPageOfrightControl);
-            event.accepted=true;
-            break;
-        default:
-            globalConsoleInfo("========RtSpectrum.qml收到按键消息#####"+event.key);
-            break;
         }
-
     }
+    UiCheckButton{
+        id:xSpanOut
+        anchors.top: xSpanIn.bottom
+        anchors.topMargin: 2
+        anchors.left: xSpanIn.left
+        iconFontText:"\uf066"
+        textColor: "white"
+        checked: true
+        mode:"button"
+        tips:"横坐标缩小"
+        iconRotation: 45
+        disabled: true
+        width: 22
+        height: width
+        onClicked:
+        {
+            checked = true
+            workZoomXStep()
 
+            var centerPoint = Qt.point( 0, 0 )
+            centerPoint.x = (axisX.max-axisX.min) / 2 + axisX.min
+            centerPoint.y = (axisY.max-axisY.min) / 2 + axisY.min
+             //console.log("xSpan clicked centerPoint:",centerPoint)
+
+            view.wheelZoomXY(true, false, centerPoint,  "x");
+            markSlider.setMarkRange();
+            updateCharts();
+
+        }
+    }
+    UiCheckButton{
+        id:ySpanIn
+        anchors.top: xSpanOut.bottom
+        anchors.topMargin: 2
+        anchors.left: xSpanOut.left
+        iconFontText:"\uf065"
+        textColor: "white"
+        checked: true
+        mode:"button"
+        tips:"纵坐标放大"
+        iconRotation: -45
+        disabled: true
+        width: 22
+        height: width
+        onClicked:
+        {
+            checked = true
+
+            var centerPoint = Qt.point( 0, 0 )
+            centerPoint.x = (axisX.max-axisX.min) / 2 + axisX.min
+            centerPoint.y = (axisY.max-axisY.min) / 2 + axisY.min
+             //console.log("xSpan clicked centerPoint:",centerPoint)
+
+            view.wheelZoomXY(true, true, centerPoint,  "y");
+            markSlider.setMarkRange();
+            updateCharts();
+
+        }
+    }
+    UiCheckButton{
+        id:ySpanOut
+        anchors.top: ySpanIn.bottom
+        anchors.topMargin: 2
+        anchors.left: ySpanIn.left
+        iconFontText:"\uf066"
+        textColor: "white"
+        checked: true
+        mode:"button"
+        tips:"纵坐标缩小"
+        iconRotation: -45
+        disabled: true
+        width: 22
+        height: width
+        onClicked:
+        {
+            checked = true
+
+            var centerPoint = Qt.point( 0, 0 )
+            centerPoint.x = (axisX.max-axisX.min) / 2 + axisX.min
+            centerPoint.y = (axisY.max-axisY.min) / 2 + axisY.min
+             //console.log("xSpan clicked centerPoint:",centerPoint)
+
+            view.wheelZoomXY(true, false, centerPoint,  "y");
+            markSlider.setMarkRange();
+            updateCharts();
+
+        }
+    }
+    UiCheckButton{
+        id:specUP
+        anchors.top: ySpanOut.bottom
+        anchors.topMargin: 2
+        anchors.left: ySpanOut.left
+        iconFontText:"\uf077"
+        textColor: "white"
+        checked: true
+        mode:"button"
+        tips:"上移频谱图"
+        disabled: (xSpanIn.disabled && ySpanIn.disabled)
+        width: 22
+        height: width
+        onClicked:
+        {
+            checked = true
+            var rateY = (yAxisMax-yAxisMin)/(axisY.max - axisY.min)
+            view.scrollDown(rateY*2)
+            //markSlider.setMarkRange();
+            updateCharts();
+        }
+    }
+    UiCheckButton{
+        id:specDown
+        anchors.top: specUP.bottom
+        anchors.topMargin: 2
+        anchors.left: specUP.left
+        iconFontText:"\uf078"
+        textColor: "white"
+        checked: true
+        mode:"button"
+        tips:"下移频谱图"
+        disabled: specUP.disabled
+        width: 22
+        height: width
+        onClicked:
+        {
+            checked = true
+            var rateY = (yAxisMax-yAxisMin)/(axisY.max - axisY.min)
+            view.scrollDown(-rateY*2)
+            updateCharts();
+        }
+    }
+    UiCheckButton{
+        id:specLeft
+        anchors.top: specDown.bottom
+        anchors.topMargin: 2
+        anchors.left: specDown.left
+        iconFontText:"\uf053"
+        textColor: "white"
+        checked: true
+        mode:"button"
+        tips:"左移频谱图"
+        disabled: specUP.disabled
+        width: 22
+        height: width
+        onClicked:
+        {
+            checked = true
+            var currentRangeX = axisX.max - axisX.min
+            if(currentRangeX < bandwidth)
+            {
+                var rateX = bandwidth/currentRangeX
+                if(axisX.max < xAxisMax) {
+                    view.scrollRight(rateX*2)
+                    markSlider.setMarkRange();
+                    updateCharts();
+                }
+            }
+
+        }
+    }
+    UiCheckButton{
+        id:specRight
+        anchors.top: specLeft.bottom
+        anchors.topMargin: 2
+        anchors.left: specLeft.left
+        iconFontText:"\uf054"
+        textColor: "white"
+        checked: true
+        mode:"button"
+        tips:"右移频谱图"
+        disabled: specUP.disabled
+        width: 22
+        height: width
+        onClicked:
+        {
+            checked = true
+            var currentRangeX = axisX.max - axisX.min
+            if(currentRangeX < bandwidth)
+            {
+                var rateX = bandwidth/currentRangeX
+                if(axisX.min > xAxisMin){
+                    view.scrollLeft(rateX*2)
+                    markSlider.setMarkRange();
+                    updateCharts();
+                }
+            }
+        }
+    }
+    UiCheckButton{
+        id:opPeakLeft
+        anchors.top: specRight.bottom
+        anchors.topMargin: 2
+        anchors.left: specRight.left
+        iconFontText:"\uf060"
+        textColor: opFileSelect.textColor
+        checked: true
+        mode:"button"
+        tips:"左移Mark点"
+        disabled: !markSlider.visible
+        width: 22
+        height: width
+        onClicked:
+        {
+            checked = true
+            var idx = opFileSelect.curFileIdx
+            var p   = opFileSelect.peakHandle[idx]
+            p -= 0.005
+            if(p < 0)
+                p = 0
+            markSlider.setX(idx, p)
+        }
+    }
+    UiCheckButton{
+        id:opPeakRight
+        anchors.top: opPeakLeft.bottom
+        anchors.topMargin: 2
+        anchors.left: opPeakLeft.left
+        iconFontText:"\uf061"
+        textColor: opFileSelect.textColor
+        checked: true
+        mode:"button"
+        tips:"右移Mark点"
+        disabled: !markSlider.visible
+        width: 22
+        height: width
+        onClicked:
+        {
+            checked = true
+            var idx = opFileSelect.curFileIdx
+            var p   = opFileSelect.peakHandle[idx]
+            p += 0.005
+            if(p > 1)
+                p = 1
+            markSlider.setX( idx, p)
+        }
+    }
+    UiCheckButton{
+        id:opFileSelect
+        anchors.bottom: stopCapture.top
+        anchors.bottomMargin: 2
+        anchors.right: root.right
+        anchors.rightMargin: 10
+        iconFontText:"\uf1de"
+        textColor: "#daae00"
+        checked: true
+        mode:"button"
+        tips:"切换操作的文件"
+        disabled: true
+        property var fileHandle: [fileSlider1, fileSlider2, fileSlider3]
+        property var peakHandle: [markSlider.percent1, markSlider.percent2, markSlider.percent3]
+        property int curFileIdx: 0
+        onClicked:
+        {
+
+            checked = true
+            var idx = curFileIdx;
+            if(idx<2)
+                idx++
+            else
+                idx=0
+            curFileIdx = idx
+            for(var i=0; i<3; i++)
+                fileHandle[i].sliderOpacity = 0.5
+            fileHandle[idx].sliderOpacity = 1
+
+            var arrayColor =  [seriesColor1, seriesColor2, seriesColor3]
+            opFileSelect.textColor = arrayColor[idx]
+
+        }
+    }
+    UiCheckButton{
+        id:opFileNext
+        anchors.top: opPeakRight.bottom
+        anchors.topMargin: 2
+        anchors.left: opPeakRight.left
+        iconFontText:"\uf124"
+        textColor: opFileSelect.textColor
+        checked: true
+        mode:"button"
+        tips:"读取下一部分文件"
+        disabled: true
+        iconRotation: 45
+        width: 22
+        height: width
+        onClicked:
+        {
+            checked = true
+            var idx =  opFileSelect.curFileIdx
+            if(opFileSelect.fileHandle[idx].visible)
+            {
+                var val =  opFileSelect.fileHandle[idx].value //fileSlider1.value;
+                val += 0.001
+                if(val > 1)
+                    val = 1;
+                opFileSelect.fileHandle[idx].value = val
+            }
+        }
+    }
+    UiCheckButton{
+        id:opFilePrev
+        anchors.top: opFileNext.bottom
+        anchors.topMargin: 2
+        anchors.left: opFileNext.left
+        iconFontText:"\uf124"
+        textColor: opFileSelect.textColor
+        checked: true
+        mode:"button"
+        tips:"读取前一部分文件"
+        disabled: true
+        iconRotation: -135
+        width: 22
+        height: width
+        onClicked:
+        {
+            checked = true
+            var idx =  opFileSelect.curFileIdx
+            if(opFileSelect.fileHandle[idx].visible)
+            {
+                var val =  opFileSelect.fileHandle[idx].value //fileSlider1.value;
+                val -= 0.001
+                if(val < 0)
+                    val = 0;
+                opFileSelect.fileHandle[idx].value = val
+            }
+        }
+    }
+    //！--*************频谱图控制按钮*************--END
+
+
+    /**********************************************************
+    参数说明     功能 计算横坐标缩放的步进， 根据fft点数和带宽来计算
+    ***********************************************************/
+    function workZoomXStep()
+    {
+        var bdw = Settings.baseBandwidth(Com.OpGet, 0, chIndex)
+        var fft = Settings.fftPoints(Com.OpGet, 0, chIndex)
+        var res = (bdw * 1000000) / fft;
+
+        var cur_bdw = (axisX.max - axisX.min)
+        var cur_fft = (cur_bdw * 1000000) / res
+
+        //console.log("res:", res, "cur_fft:", cur_fft);
+
+        if( cur_fft < 100) //100, 设定最小显示100个FFT点
+            return false
+
+        zoomXStep = cur_bdw * 0.05
+        return true
+    }
 
     /**********************************************************
     参数说明     功能 刷新曲线的顶点
@@ -1399,19 +1259,12 @@ Rectangle {
             }
         }
     }
-    // Add data dynamically to the series
     Component.onCompleted: {
-        //根据分辨率计算横坐标需要精确的位数
         chartCtrl.setLineSeriesPenWidth(series1, 1)
         chartCtrl.setAxisGridLinePenStyle(axisX, Qt.DotLine)//DashLine
         chartCtrl.setAxisGridLinePenStyle(axisY, Qt.DotLine)
-
         //axisY.min = Settings.reflevelMin()
         //axisY.max = Settings.reflevelMax()
-	
-	        //读取相应slider和checkButton控件
-        getAllsliders();
-        getAllcheckButtons();
     }
 
     function updateCharts()
@@ -1459,18 +1312,6 @@ Rectangle {
         }
 
     }
-
-    //设置操作焦点是X轴
-    function setSpanXScale()
-    {
-        zoomXY = "x"
-    }
-
-    //设置操作焦点是Y轴
-    function setSpanYScale()
-    {
-        zoomXY = "y"
-    }
     function updateParams()
     {
 
@@ -1497,7 +1338,6 @@ Rectangle {
         seriesSignal3.checked = false
         seriesSignal3.disabled = true
 
-        //dataSource.setForceRefresh()//deprecate
         fftData.setForceRefresh(root.chIndex)
         if(realTimeMode){
             series1.visible = true
@@ -1530,153 +1370,231 @@ Rectangle {
         }
         updateCharts()
         updatePeakShow()
-        //更新slider和checkButton
-        getAllsliders();
-        getAllcheckButtons();
     }
 
-    //获取所有非checkButton元素
-    function getAllsliders()
+
+
+
+    /**********************************************************
+    以下函数为对外操作接口,直接调用即可,可视需求自由修改
+    原则:接口函数在本级禁止互相调用,由上层使用者互相调用
+    统一返回值定义:true 调用成功  false:调用无效
+    ***********************************************************/
+    //选择 X 轴缩放
+    function setXSpan(ch, en)
+    {
+        if(ch !== chIndex)
+            return false
+        console.log("setXSpan ch:",ch, en)
+        xSpanIn.disabled = !en
+        xSpanOut.disabled = !en
+        return true
+    }
+    //选择 Y 轴缩放
+    function setYSpan(ch, en)
+    {
+        if(ch !== chIndex)
+            return false
+        console.log("setYSpan ch:",ch, en)
+        ySpanIn.disabled = !en
+        ySpanOut.disabled = !en
+        return true
+    }
+    //放大操作
+    function setZoomIn(ch)
     {
 
-        noCheckbuttonEleArray.splice(0,noCheckbuttonEleArray.length);
-        noCheckbuttonEleArray=[];
-        noCheckbuttonEleArray.norepeatpush(view);//第一个就是图谱
-        var UiMultSliderObj=Com.getNamedELementOfComponentArray(root,"UiMultSlider");
-        if(Com.isArray(UiMultSliderObj))
+        if(ch !== chIndex)
+            return false
+        if(!xSpanIn.disabled)
         {
-            for(var jj=0;jj<UiMultSliderObj.length;jj++)//添加UiMultSliderObj
-            {
-
-                if(UiMultSliderObj[jj].visible)
-                {
-                    noCheckbuttonEleArray.norepeatpush(UiMultSliderObj[jj]);
-                    globalConsoleInfo("!!!RtSpectrum.qml数组 添加multiSlider--"+jj);
-                }
-            }
+            xSpanIn.clicked()
+            console.log("setZoomIn X ch:",ch)
+            return true
         }
-        else if(UiMultSliderObj!==undefined)
+        if(!ySpanIn.disabled)
         {
-
-            if(UiMultSliderObj.visible)
-            {
-                noCheckbuttonEleArray.norepeatpush(UiMultSliderObj);
-                globalConsoleInfo("####RtSpectrum.qml 直接添加multiSlider--");
-            }
+            ySpanIn.clicked()
+            console.log("setZoomIn Y ch:",ch)
+            return true
         }
-
-        uiSliderIndex=noCheckbuttonEleArray.length;//获得UiSlider索引号
-        var UiSliderObj=Com.getNamedELementOfComponentArray(root,"UiSlider");//添加UiSlider
-
-
-        if(Com.isArray(UiSliderObj))
-        {
-            for(var kk=0;kk<UiSliderObj.length;kk++)
-            {
-
-
-
-                for(var uu=0;uu<UiSliderObj[kk].children.length;uu++)
-                {
-
-                    if(UiSliderObj[kk].children[uu].objectName==="triangleEle")
-                    {
-
-                        if(UiSliderObj[kk].children[uu].visible)//只添加可视的三角滑块
-                        {
-                            noCheckbuttonEleArray.norepeatpush(UiSliderObj[kk].children[uu]);
-                        }
-
-                    }
-                }
-
-
-                globalConsoleInfo("-----RtSpectrum.qml 添加三角滑块 triangleEle "+kk);
-            }
-        }
-        else if(UiSliderObj!==undefined)
-        {
-
-
-
-            for(var nn=0;nn<UiSliderObj.children.length;nn++)
-            {
-
-                if(UiSliderObj.children[nn].objectName==="triangleEle")
-                {
-
-                    if(UiSliderObj.children[nn].visible)
-                    {
-                        noCheckbuttonEleArray.norepeatpush(UiSliderObj.children[nn]);
-                    }
-
-                }
-                globalConsoleInfo("======RtSpectrum.qml 添加triangleEle "+nn);
-            }
-
-
-
-        }
-
-
-
+        return false
     }
-
-
-
-    //获取所有checkButton元素
-    function getAllcheckButtons()
+    //缩小操作
+    function setZoomOut(ch)
     {
-        //先清空
-        uiCheckButtonArray.splice(0,uiCheckButtonArray.length);
-        uiCheckButtonArray=[];
-        for(var kk=0;kk<root.children.length;kk++)
+        if(ch !== chIndex)
+            return false
+        if(!xSpanOut.disabled)
         {
-
-            var UiCheckButton_Str=root.children[kk].toString();
-            if((UiCheckButton_Str.indexOf("UiCheckButton")!==-1)&&(root.children[kk].visible))
-            {
-                uiCheckButtonArray.norepeatpush(root.children[kk]);//UiCheckButton_QMLTYPE_15元素添加
-            }
+            xSpanOut.clicked()
+            console.log("setZoomOut X ch:",ch)
+            return true
         }
-
-
-
+        if(!ySpanOut.disabled)
+        {
+            ySpanOut.clicked()
+            console.log("setZoomOut Y ch:",ch)
+            return true
+        }
+        return false
     }
-
-
-    //获取当前获得焦点的三角滑块索引
-    function getTriangleEleIndex()
+    //平移操作
+    function setDragMove(ch, direction)
     {
-        var focusTriangleIndex=0;
-        for(var kk=uiSliderIndex;kk<noCheckbuttonEleArray.length;kk++)
-        {
-
-            if(noCheckbuttonEleArray[kk].focus)
-            {
-                focusTriangleIndex=kk;
-                break;
-            }
-        }
-        return focusTriangleIndex;
-
+        //direction 0:up  1:down 2:left 3:right
+        var idx = parseInt(direction)
+        if(ch !== chIndex)
+            return false
+        if(idx < 0 || idx > 3)
+            return false
+        var btnArray = [specUP, specDown, specLeft, specRight]
+        if(btnArray[idx].disabled)
+            return false
+        console.log("setDragMove direction:",direction,"ch:",ch)
+        btnArray[idx].clicked()
+        return true
     }
-
-
-    //获取当前文件拖动滑块索引
-    function getFileMultiSilderIndex()
+    //复位频谱图缩放和位置
+    function setChartReset(ch)
     {
-        var focusFlieSliderIndex=0;
-        for(var kk=0;kk<uiSliderIndex;kk++)
-        {
-
-            if(noCheckbuttonEleArray[kk].focus)
-            {
-                focusFlieSliderIndex=kk;
-                break;
-            }
-        }
-        return focusFlieSliderIndex;
-
+        if(ch !== chIndex)
+            return false
+        btnZoomReset.clicked()
     }
+    //显示Peak点
+    function setShowPeak(ch)
+    {
+        if(ch !== chIndex)
+            return false
+        console.log("setShowPeak ch:",ch)
+        peakCtrl.checked = !peakCtrl.checked
+        peakCtrl.clicked()
+        return true
+    }
+    //关闭Peak点
+    function setClosePeak(ch)
+    {
+        if(ch !== chIndex)
+            return false
+        console.log("setClosePeak ch:",ch)
+        if(peakCtrl.checked){
+            peakCtrl.checked = !peakCtrl.checked
+            peakCtrl.clicked()
+        }
+        return true
+    }
+    //设置操作Mark点
+    function setShowMark(ch)
+    {
+        if(ch !== chIndex)
+            return false
+        if(!peakCtrl.checked)
+            return false
+        console.log("setShowMark ch:",ch)
+        movePeak.checked = !movePeak.checked
+        movePeak.clicked()
+        return true
+    }
+    //关闭Mark平移操作
+    function setCloseMark(ch)
+    {
+        if(ch !== chIndex)
+            return false
+        if(!peakCtrl.checked)
+            return false
+        if(!movePeak.checked)
+            return false
+        console.log("setCloseMark ch:",ch)
+        movePeak.checked = !movePeak.checked
+        movePeak.clicked()
+        return true
+    }
+    //左右平移Mark点
+    function setMoveMark(ch, direction)
+    {
+        //direction 0:left  1:right
+        if(ch !== chIndex)
+            return false
+        if(!peakCtrl.checked)
+            return false
+        if(opPeakLeft.disabled || opPeakRight.disabled)
+            return false
+        console.log("setMoveMark direction:",direction, "ch:",ch)
+        if(0 === direction)
+            opPeakLeft.clicked()
+        else
+            opPeakRight.clicked()
+        return true
+    }
+    //切换选择操作的文件
+    function setSwitchFile(ch)
+    {
+        if(ch !== chIndex)
+            return false
+        if(opFileSelect.disabled)
+            return false
+        console.log("setSwitchFile switch ch:",ch)
+        opFileSelect.clicked()
+        return true
+    }
+    //设置是否允许切换选择文件
+    function setSwitchFileEnable(ch, en)
+    {
+        if(ch !== chIndex)
+            return false
+        //非文件模式,直接禁用
+        var mode = Settings.analyzeMode()
+        if(mode < 2)
+            en = false
+        console.log("setSwitchFile enable:", en, "ch:", ch)
+        //同步当前文件是否高亮
+        var idx = opFileSelect.curFileIdx
+        opFileSelect.fileHandle[idx].sliderOpacity = (en?1:0.5)
+        opFileSelect.disabled = !en
+        return true
+    }
+    //设置允许(禁止)向前(后)读取文件
+    function setActiveFile(ch, en)
+    {
+        if(ch !== chIndex)
+            return false
+        if(opFileSelect.disabled)
+            en = false
+        console.log("setActiveFile disabled:", !en, "ch:",ch)
+        opFileNext.disabled = !en
+        opFilePrev.disabled = !en
+        return true
+    }
+    //左右平移文件
+    function setMoveFile(ch, direction)
+    {
+        //direction 0:left  1:right
+        if(ch !== chIndex)
+            return false
+        if(opFileNext.disabled || opFilePrev.disabled)
+            return false
+        console.log("setMoveFile direction:",direction, "ch:",ch)
+        if(0 === direction)
+            opFilePrev.clicked()
+        else
+            opFileNext.clicked()
+        return true
+    }
+    //设置本通道样式(选中和未选中时的样式)
+    function setActiveChannel(ch)
+    {
+        if(!realTimeMode)
+        {
+            cornerLine.showHeadLine = false
+            return false
+        }
+        console.log("setActiveChannel ch:",ch)
+        if(ch === chIndex)
+            cornerLine.showHeadLine = true
+        else
+            cornerLine.showHeadLine = false
+        return true
+    }
+
 }

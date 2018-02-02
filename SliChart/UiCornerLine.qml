@@ -1,6 +1,7 @@
 import QtQuick 2.0
 import QtQuick.Controls 1.4
 import QtQuick.Layouts 1.3
+import QtGraphicalEffects 1.0
 import "../qml/Inc.js" as Com
 
 Item {
@@ -16,7 +17,7 @@ Item {
 
     property color themeColor: "#67696B"
     property color titleColor: "#ffffff"
-
+    property bool  showHeadLine: false
     signal clicked;
 
     Rectangle{
@@ -25,23 +26,24 @@ Item {
         color: "#00FFFFFF";
         border.color:"#67696B"
         radius: 4
-        Canvas{
-            anchors.fill: parent
-            contextType: "2d";
-            visible: false
-            onPaint: {
-                context.lineWidth = 2;
-                context.strokeStyle = "#67696B";
-                //context.fillStyle = "#121212";
-                context.beginPath();
-                context.moveTo(0 , 0);
-                context.lineTo(width , 0);
-                context.lineTo(width , height);
-                context.lineTo(0 , height);
-                context.lineTo(0 , 0);
-                context.closePath();
-                //context.fill();
-                context.stroke();
+        Item{
+            anchors.top: parent.top
+            anchors.topMargin: 1
+            anchors.left: parent.left
+            anchors.leftMargin: 30
+            anchors.right:parent.right
+            anchors.rightMargin: 40
+            height: 10
+            visible: showHeadLine
+            LinearGradient{
+                anchors.fill: parent
+                gradient: Gradient{
+                    GradientStop{ position: 0.0; color: "#B1B1B1"}
+                    GradientStop{ position: 0.6; color: "black"}
+                    //GradientStop{ position: 1.0; color: "black"}
+                }
+                start: Qt.point(0, 0)
+                end: Qt.point(parent.width, parent.height)
             }
         }
     }

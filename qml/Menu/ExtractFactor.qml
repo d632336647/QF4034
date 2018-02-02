@@ -3,6 +3,7 @@ import QtQuick.Controls 1.4
 import QtQuick.Controls.Styles 1.4
 import QtQuick.Layouts 1.3
 import "../Inc.js" as Com
+import "../Lib.js" as Lib
 import "../UI"
 
 Rectangle{
@@ -31,8 +32,7 @@ Rectangle{
             width: parent.itemWidth
             onClick: {
                 root.state = "HIDE"
-                root.focus = false;
-
+                root.parent.focus = true
             }
         }
         RightButton {
@@ -42,8 +42,8 @@ Rectangle{
             width: parent.itemWidth
             onClick: {
                 idFlick.flick(0, 534 * 2)
-                //selected(true)
-                //setParam(0)
+                if(idFlick.currentPage > 0)
+                    idFlick.currentPage -= 1
             }
         }
         Flickable{
@@ -53,6 +53,7 @@ Rectangle{
             contentWidth: parent.itemWidth
             contentHeight: 95*14-4
             clip:true
+            property int currentPage: 0
             ColumnLayout {
                 id:flickContent
                 spacing: 4;
@@ -203,6 +204,8 @@ Rectangle{
             icon:"\uf063"
             onClick: {
                 idFlick.flick(0, -534*2)
+                if(idFlick.currentPage < 3)
+                    idFlick.currentPage += 1
             }
         }
 
@@ -213,10 +216,9 @@ Rectangle{
             width: parent.itemWidth
             onClick: {
                 root.state = "HIDE";
-                root.focus = false;
-                root.parent.state="HIDE";//非直接菜单必须加这句
-                idRightPannel.state="SHOW";
-                idRightPannel.focus=true;
+                root.parent.state = "HIDE";
+                idRightPannel.focus = true
+                idRightPannel.state = "SHOW";
             }
         }
     }
@@ -224,20 +226,43 @@ Rectangle{
     Keys.enabled: true
     Keys.forwardTo: [root]
     Keys.onPressed:{
-
-
-    }
-    function keyup()
-    {
-        globalConsoleInfo("key up")
-    }
-    function keydowm()
-    {
-        globalConsoleInfo("key down")
-    }
-    function keyenter()
-    {
-        globalConsoleInfo("key enter")
+        if(Lib.operateSpecView(event.key))
+        {
+            root.state = "HIDE"
+            root.parent.state = "HIDE"
+            event.accepted = true;
+            return
+        }
+        switch(event.key)
+        {
+        case Qt.Key_F1:
+            btn_return.keyPressed()
+            break;
+        case Qt.Key_F2:
+            btn_prevpage.keyPressed()
+            break;
+        case Qt.Key_F3:
+            selectExtractFactor(1)
+            break;
+        case Qt.Key_F4:
+            selectExtractFactor(2)
+            break;
+        case Qt.Key_F5:
+            selectExtractFactor(3)
+            break;
+        case Qt.Key_F6:
+            selectExtractFactor(4)
+            break;
+        case Qt.Key_F7:
+            btn_nextpage.keyPressed()
+            break;
+        case Qt.Key_F8:
+            btn_exit.keyPressed()
+            break;
+        default:
+            break;
+        }
+        event.accepted=true;//阻止事件继续传递
     }
     //过渡动画
     states: [
@@ -246,17 +271,6 @@ Rectangle{
             PropertyChanges { target: root; x: root.parent.width-root.width}
             onCompleted:{
                 root.focus = true;
-                globalConsoleInfo("                                    ");
-                globalConsoleInfo("                                    ");
-                globalConsoleInfo("☆☆☆☆ClockSeting.qml获得焦点☆☆☆☆");
-                globalConsoleInfo("                                    ");
-                globalConsoleInfo("                                    ");
-                //传递获得焦点的页面元素
-                idScopeView.focusPageOfrightControl=root;
-                Com.childArray=Com.resetAndgetItemOfControlPannel(root);
-                Com.GlobalTotalchildArray=Com.resetGlobalItemOfElement(root);
-
-
              }
          },
          State {
@@ -290,17 +304,31 @@ Rectangle{
             list[i].selected(false);
         }
     }
+    function selectExtractFactor(val)
+    {
+        var list = flickContent.children
+        var n    = idFlick.currentPage * 4 + val
+        var pressedval = Math.pow(2, n)
+        for(var i in list)
+        {
+            if( parseInt(list[i].textLabel) === pressedval)
+            {
+                list[i].keyPressed()
+                break;
+            }
+        }
+    }
     function loadParam()
     {
         var list = flickContent.children
         var currentval = Settings.extractFactor()
         for(var i in list)
         {
-           if( parseInt(list[i].textLabel) === currentval)
-           {
-               list[i].selected(true);
-               break;
-           }
+            if( parseInt(list[i].textLabel) === currentval)
+            {
+                list[i].selected(true);
+                break;
+            }
         }
     }
     function setParam(val)
