@@ -2,6 +2,18 @@
 
 Settings::Settings(QObject *parent) : QObject(parent)
 {
+    defaultParam();
+    _settings = new QSettings("settings.ini", QSettings::IniFormat);
+    _settings->setIniCodec("UTF8");
+
+    _view = (QQuickView *)parent;
+}
+Settings::~Settings()
+{
+    delete _settings;
+}
+void Settings::defaultParam(void)
+{
     //采集参数
     initArray(clk_mode,     1);    //时钟模式  0=外时钟     1=内时钟    2=外参考
     initArray(trigger_mode, 1);    //触发模式  0=外部触发   1=内部触发
@@ -21,7 +33,7 @@ Settings::Settings(QObject *parent) : QObject(parent)
     //bandwidth[1] = 12.000;
 
     initArray(resolution,   10000);  //分编率  单位Hz ，即将停止使用此参数，改为fft点数代替
-    initArray(fftpoints,    12000);  //fft点数
+    initArray(fftpoints,    10000);  //fft点数
     initArray(reflevel_min, -120);   //参考电平最小值 -120
     initArray(reflevel_max, 10);     //参考电平最大值 10
 
@@ -41,7 +53,7 @@ Settings::Settings(QObject *parent) : QObject(parent)
     fsb_coef = 0;        //Fs/B系数           0=1.25B(default)  1=2.5B
     base_bandwidth = 25.0;// 当前预处理参数下,内部计算实际的最大带宽值,如果要改变此参数,需要停止采集数据后再设置
     user_bandwidth = 20.0;// 当前预处理参数下,允许用户设置的最大带宽,如果要改变此参数,需要停止采集数据后再设置
-    ad_sample = 100.0;   //AD采样率,目前只有100和200 两个值
+    ad_sample = 100.0;    //AD采样率,目前只有100和200 两个值
 
     //暂时未用的参数
     mark_range      = -10;
@@ -50,19 +62,9 @@ Settings::Settings(QObject *parent) : QObject(parent)
 
 
     //通道设置
-    channel_mode = 1;  //通道模式  0 =双通道  1=通道1   2=通道2
+    channel_mode = 0;  //通道模式  0 =双通道  1=通道1   2=通道2
     current_ch   = 0;  //当前设置参数的通道    0=通道1   1=通道2
-
-    _settings = new QSettings("settings.ini", QSettings::IniFormat);
-    _settings->setIniCodec("UTF8");
-
-    _view = (QQuickView *)parent;
 }
-Settings::~Settings()
-{
-    delete _settings;
-}
-
 
 int Settings::clkMode(option op, int val, int ch)
 {
@@ -161,9 +163,10 @@ qreal Settings::centerFreq(option op, qreal val, int ch)
 
         qreal maxbw = (right>left ? left :right)*2;
 
+        center_freq[ch] = val;
+
         this->bandWidth(Settings::Set, maxbw);
 
-        center_freq[ch] = val;
         _settings->beginGroup(keyString("analyze", ch));
         _settings->setValue("center_freq", center_freq[ch]);
         _settings->endGroup();
@@ -177,6 +180,16 @@ qreal Settings::bandWidth(option op, qreal val, int ch)
     if(op == Settings::Set){
         if(val > user_bandwidth)
             val = user_bandwidth;
+        //参数校正
+        qreal max = (ddc_freq + user_bandwidth/2);
+        qreal maxbw = (max - center_freq[ch])*2;
+        if(val > maxbw)
+           val = maxbw;
+
+        //fix to %.2f
+        qint64 ival = (qint64)(val * 100);
+        val = (qreal)ival/100;
+
         bandwidth[ch] = val;
         _settings->beginGroup(keyString("analyze", ch));
         _settings->setValue("bandwidth", bandwidth[ch]);
@@ -426,6 +439,23 @@ QQuickItem *Settings::findQuickItem(QString objctName)
     }
     return nullptr;
 }
+QQuickItem *Settings::findQuickItemFocused(void)
+{
+    QQuickItem *item = _view->activeFocusItem();
+    if(item)
+        return item;
+    return nullptr;
+}
+void Settings::executeCommand(QString cmd)
+{
+    QProcess p(0);
+    p.start("cmd", QStringList()<<"/c"<<cmd);
+    p.waitForStarted();
+    p.waitForFinished();
+
+    //QString strTmp = QString::fromLocal8Bit(p.readAllStandardOutput());
+    qDebug()<<"executeCommand:"<<cmd;
+}
 
 
 QString Settings::keyString(QString group, int ch)
@@ -622,10 +652,18 @@ void Settings::load(void)
     if(ok)channel_mode = tempi;
 
 }
-
-
-
-
+void Settings::loadDefault(void)
+{
+    QString t_path         = path;
+    QString t_history1     = history1;
+    QString t_history2     = history2;
+    QString t_history3     = history3;
+    defaultParam();
+    path         = t_path;
+    history1     = t_history1;
+    history2     = t_history2;
+    history3     = t_history3;
+}
 
 
 

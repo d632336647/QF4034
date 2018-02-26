@@ -1,5 +1,6 @@
 import QtQuick 2.0
 import "../Inc.js" as Com
+//import "../Lib.js" as Lib
 
 import Qt.labs.folderlistmodel 2.0
 
@@ -471,42 +472,39 @@ Item {
     Keys.forwardTo: [root]
     Keys.onPressed:
     {
+        //窗口销毁放在父级处理,如果在本地处理会造成窗口已销毁,但按键处理程序仍试图运行,导致程序异常退出的问题
         switch(event.key)
         {
         case Qt.Key_Down:
-        case Qt.Key_PageDown:
+        case Qt.Key_PageUp:
             if(listView.currentIndex + 1 < listView.count )
                 listView.currentIndex ++
             break;
         case Qt.Key_Up:
-        case Qt.Key_PageUp:
+        case Qt.Key_PageDown:
             if(listView.currentIndex > 0 )
                 listView.currentIndex --
             break;
-        case Qt.Key_1:
+        case Qt.Key_F2:
             select1.clicked()
             break;
-        case Qt.Key_2:
+        case Qt.Key_F3:
             select2.clicked()
             break;
-        case Qt.Key_3:
+        case Qt.Key_F4:
             select3.clicked()
             break;
-        case Qt.Key_Delete:
+        case Qt.Key_F5:
             cancleBox.clicked()
             break;
-        case Qt.Key_F1:
-        case Qt.Key_F8:
-            closeBox.clicked()
-            break;
         }
-
         if(listView.currentItem !== null)
             selectedFilename = listView.currentItem.filenameText
         else
             selectedFilename = ""
-
-        event.accepted = true;
+        //窗口销毁放在父级处理,如果在本地处理会造成窗口已销毁,但按键处理程序仍试图运行,导致程序异常退出的问题
+        //此处不销毁按键消息,使之传递到父级处理
+        //event.accepted = true;
     }
 
 

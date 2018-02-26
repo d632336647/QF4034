@@ -26,14 +26,12 @@ Rectangle{
         anchors.horizontalCenter: parent.horizontalCenter;
         objectName: "rightControlColumnLayout";
         RightButton {
-            id: empty1;
-            textLabel: "退出程序";
+            id: btn_menu;
+            textLabel: "关闭菜单";
             icon:"\uf090"
             onClick: {
-                Settings.save()
-                captureThread.exit()
-                dataSource.clearPCIE()
-                Qt.quit()
+                root.state = "HIDE"
+                root.focus = true;
             }
         }
         RightButton {
@@ -101,7 +99,7 @@ Rectangle{
 
 
         RightButton {
-            id: empty4;
+            id: btn_return;
             textLabel: "关闭菜单";
             onClick: {
                     //messageBox.title = "错误"
@@ -154,21 +152,23 @@ Rectangle{
     Keys.enabled: true
     Keys.forwardTo: [root]
     Keys.onPressed:{
+        var key = [Qt.Key_F1, Qt.Key_F2, Qt.Key_F3, Qt.Key_F4, Qt.Key_F5, Qt.Key_F6, Qt.Key_F7, Qt.Key_F8]
+        var fid = [btn_menu, btn_ddcmenu, btn_capture_config, btn_analyzemode, btn_analyze_config, btn_save_config, btn_start_store, btn_return]
         if(Lib.operateSpecView(event.key))
         {
             event.accepted = true;
             return
         }
-        if(root.state == "HIDE")
-        {
-            root.state = "SHOW"
-            idScopeView.svCloseAllOpBtn()
-        }
-        else
-        {
-            var key = [/*Qt.Key_F1,*/ Qt.Key_F2, Qt.Key_F3, Qt.Key_F4, Qt.Key_F5, Qt.Key_F6, Qt.Key_F7, Qt.Key_F8]
-            var fid = [/*empty1,*/ btn_ddcmenu, btn_capture_config, btn_analyzemode, btn_analyze_config, btn_save_config, btn_start_store, empty4]
-            Lib.clickFunctionKey(event.key, key, fid);
+        if(root.state == "HIDE"){
+            for(var i=0; i<key.length; i++){
+                if(event.key === key[i]){
+                    root.state = "SHOW"
+                    idScopeView.svCloseAllOpBtn()
+                    break;
+                }
+            }
+        }else{
+            Lib.clickFunctionKey(event.key, key, fid)
         }
         event.accepted = true;
     }

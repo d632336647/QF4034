@@ -26,14 +26,12 @@ Rectangle{
         anchors.leftMargin: 4;
         property int itemWidth: root.width - 8
         RightButton {
-            id: btn_return;
-            textLabel: "返回";
-            icon:"\uf112"
+            id: btn_menu;
+            textLabel: "返回主菜单";
+            icon: "\uf090";
             width: parent.itemWidth
             onClick: {
-                root.state = "HIDE"
-                root.focus = false;
-                gatherMenu.focus = true;
+                turnToMainMenu()
             }
         }
         RightButton {
@@ -68,8 +66,6 @@ Rectangle{
                 setParam(2)
             }
         }
-
-
         RightButton {
             id: empty1;
             textLabel: "";
@@ -91,19 +87,16 @@ Rectangle{
             onClick: {
             }
         }
-
         RightButton {
-            id: btn_exit;
-            textLabel: "返回主菜单";
-            icon: "\uf090";
+            id: btn_return;
+            textLabel: "返回";
+            icon:"\uf112"
             width: parent.itemWidth
             onClick: {
-                root.state = "HIDE";
-                root.parent.state="HIDE";//非直接菜单必须加这句
-                idRightPannel.state="SHOW";
-                idRightPannel.focus=true;
+                turnToParentMenu()
             }
         }
+
     }
 
     Keys.enabled: true
@@ -111,13 +104,12 @@ Rectangle{
     Keys.onPressed:{
         if(Lib.operateSpecView(event.key))
         {
-            root.state = "HIDE"
-            root.parent.state = "HIDE"
+            hideMenu()
             event.accepted = true;
             return
         }
         var key = [Qt.Key_F1,  Qt.Key_F2,        Qt.Key_F3,         Qt.Key_F4,        Qt.Key_F8]
-        var fid = [btn_return, btn_externallock, btn_externalrefer, btn_boardcrystal, btn_exit ]
+        var fid = [btn_menu, btn_externallock, btn_externalrefer, btn_boardcrystal, btn_return]
         Lib.clickFunctionKey(event.key, key, fid);
         event.accepted = true;
     }
@@ -153,7 +145,21 @@ Rectangle{
          }
     ]
     //！--过渡动画结束
-
+    function hideMenu(){
+        root.state = "HIDE";
+        root.parent.state="HIDE";
+    }
+    function turnToMainMenu()
+    {
+        hideMenu()
+        idRightPannel.state="SHOW";
+        idRightPannel.focus=true;
+    }
+    function turnToParentMenu()
+    {
+        root.state = "HIDE"
+        gatherMenu.focus = true;
+    }
     function clearSelectBorder()
     {
         var list = content.children

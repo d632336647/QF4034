@@ -42,50 +42,16 @@ Rectangle {
         anchors.leftMargin: 4
         anchors.bottom: parent.bottom
         anchors.bottomMargin: 4
+        showName: realTimeMode
         onShowHeadLineChanged:
         {
             if(showHeadLine)
-                chName.textColor = "white"
+                cornerTextColor = "#3A005D"
             else
-                chName.textColor = "#C0C0C0"
+                cornerTextColor = "white"
         }
     }
-    Canvas{
-        id: chName
-        visible: realTimeMode
-        anchors.top: parent.top
-        anchors.topMargin: 5
-        anchors.left: parent.left
-        anchors.leftMargin: 5
-        width: 60
-        height: 18
-        contextType: "2d";
-        property color textColor: "#C0C0C0"
-        onPaint: {
-            context.lineWidth = 1;
-            context.strokeStyle = "#00000000";
-            context.fillStyle = "#343536";
-            context.beginPath();
-            context.moveTo(0, 0);
-            context.lineTo(width , 0);
-            context.lineTo(0.6*width , height);
-            context.lineTo(0 , height);
-            context.closePath();
-            context.fill();
-            context.stroke();
-        }
-        Text {
-            anchors.top: parent.top
-            anchors.topMargin: 2
-            anchors.left: parent.left
-            anchors.leftMargin: 2
-            font.pixelSize: 12
-            color: chName.textColor
-            font.family: "幼圆"
-            text: "通道"+(chIndex+1)
-        }
 
-    }
     Text {
         id: xTitle
         anchors.bottom: parent.bottom
@@ -400,14 +366,26 @@ Rectangle {
         textColor: checked ? "#C74646" : "#D3D4D4"
         disabled: !realTimeMode
         tips:"暂停/启动实时采集"
+        Timer{
+            id:singleTimer
+            interval: 50;
+            running: false
+            repeat: true
+            onTriggered: {
+                captureThread.stopCapture()
+                stop()
+            }
+        }
         onClicked:
         {
             if(checked)
             {
-                captureThread.stopCapture()
+                captureThread.startCapture()
+                singleTimer.start()
             }
             else
             {
+                singleTimer.stop()
                 captureThread.startCapture()
             }
         }
@@ -1385,7 +1363,7 @@ Rectangle {
     {
         if(ch !== chIndex)
             return false
-        console.log("setXSpan ch:",ch, en)
+        //console.log("setXSpan ch:",ch, en)
         xSpanIn.disabled = !en
         xSpanOut.disabled = !en
         return true
@@ -1395,7 +1373,7 @@ Rectangle {
     {
         if(ch !== chIndex)
             return false
-        console.log("setYSpan ch:",ch, en)
+        //console.log("setYSpan ch:",ch, en)
         ySpanIn.disabled = !en
         ySpanOut.disabled = !en
         return true
@@ -1409,13 +1387,13 @@ Rectangle {
         if(!xSpanIn.disabled)
         {
             xSpanIn.clicked()
-            console.log("setZoomIn X ch:",ch)
+            //console.log("setZoomIn X ch:",ch)
             return true
         }
         if(!ySpanIn.disabled)
         {
             ySpanIn.clicked()
-            console.log("setZoomIn Y ch:",ch)
+            //console.log("setZoomIn Y ch:",ch)
             return true
         }
         return false
@@ -1428,13 +1406,13 @@ Rectangle {
         if(!xSpanOut.disabled)
         {
             xSpanOut.clicked()
-            console.log("setZoomOut X ch:",ch)
+            //console.log("setZoomOut X ch:",ch)
             return true
         }
         if(!ySpanOut.disabled)
         {
             ySpanOut.clicked()
-            console.log("setZoomOut Y ch:",ch)
+            //console.log("setZoomOut Y ch:",ch)
             return true
         }
         return false
@@ -1451,7 +1429,7 @@ Rectangle {
         var btnArray = [specUP, specDown, specLeft, specRight]
         if(btnArray[idx].disabled)
             return false
-        console.log("setDragMove direction:",direction,"ch:",ch)
+        //console.log("setDragMove direction:",direction,"ch:",ch)
         btnArray[idx].clicked()
         return true
     }
@@ -1467,7 +1445,7 @@ Rectangle {
     {
         if(ch !== chIndex)
             return false
-        console.log("setShowPeak ch:",ch)
+        //console.log("setShowPeak ch:",ch)
         peakCtrl.checked = !peakCtrl.checked
         peakCtrl.clicked()
         return true
@@ -1477,7 +1455,7 @@ Rectangle {
     {
         if(ch !== chIndex)
             return false
-        console.log("setClosePeak ch:",ch)
+        //console.log("setClosePeak ch:",ch)
         if(peakCtrl.checked){
             peakCtrl.checked = !peakCtrl.checked
             peakCtrl.clicked()
@@ -1491,7 +1469,7 @@ Rectangle {
             return false
         if(!peakCtrl.checked)
             return false
-        console.log("setShowMark ch:",ch)
+        //console.log("setShowMark ch:",ch)
         movePeak.checked = !movePeak.checked
         movePeak.clicked()
         return true
@@ -1505,7 +1483,7 @@ Rectangle {
             return false
         if(!movePeak.checked)
             return false
-        console.log("setCloseMark ch:",ch)
+        //console.log("setCloseMark ch:",ch)
         movePeak.checked = !movePeak.checked
         movePeak.clicked()
         return true
@@ -1520,7 +1498,7 @@ Rectangle {
             return false
         if(opPeakLeft.disabled || opPeakRight.disabled)
             return false
-        console.log("setMoveMark direction:",direction, "ch:",ch)
+        //console.log("setMoveMark direction:",direction, "ch:",ch)
         if(0 === direction)
             opPeakLeft.clicked()
         else
@@ -1534,7 +1512,7 @@ Rectangle {
             return false
         if(opFileSelect.disabled)
             return false
-        console.log("setSwitchFile switch ch:",ch)
+        //console.log("setSwitchFile switch ch:",ch)
         opFileSelect.clicked()
         return true
     }
@@ -1547,7 +1525,7 @@ Rectangle {
         var mode = Settings.analyzeMode()
         if(mode < 2)
             en = false
-        console.log("setSwitchFile enable:", en, "ch:", ch)
+        //console.log("setSwitchFile enable:", en, "ch:", ch)
         //同步当前文件是否高亮
         var idx = opFileSelect.curFileIdx
         opFileSelect.fileHandle[idx].sliderOpacity = (en?1:0.5)
@@ -1561,7 +1539,7 @@ Rectangle {
             return false
         if(opFileSelect.disabled)
             en = false
-        console.log("setActiveFile disabled:", !en, "ch:",ch)
+        //console.log("setActiveFile disabled:", !en, "ch:",ch)
         opFileNext.disabled = !en
         opFilePrev.disabled = !en
         return true
@@ -1574,11 +1552,27 @@ Rectangle {
             return false
         if(opFileNext.disabled || opFilePrev.disabled)
             return false
-        console.log("setMoveFile direction:",direction, "ch:",ch)
+        //console.log("setMoveFile direction:",direction, "ch:",ch)
         if(0 === direction)
             opFilePrev.clicked()
         else
             opFileNext.clicked()
+        return true
+    }
+    //设置单步模式或者连续采集模式
+    function setSingleSweep(ch, isSweep)
+    {
+        if(!realTimeMode)
+            return false
+        if(ch !== chIndex)
+            return false
+        if(isSweep)
+            stopCapture.checked = false
+        else
+            stopCapture.checked = true
+
+        stopCapture.clicked()
+
         return true
     }
     //设置本通道样式(选中和未选中时的样式)
@@ -1589,7 +1583,7 @@ Rectangle {
             cornerLine.showHeadLine = false
             return false
         }
-        console.log("setActiveChannel ch:",ch)
+        //console.log("setActiveChannel ch:",ch)
         if(ch === chIndex)
             cornerLine.showHeadLine = true
         else

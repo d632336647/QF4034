@@ -8,7 +8,7 @@ import "../UI"
 
 Flipable{
     id:root;
-    objectName: "观测带宽翻转控件";
+    objectName: "viewBandwidth";
     width: 200
     height: 91
     signal  showComplete
@@ -23,7 +23,6 @@ Flipable{
 
     front: RightButton {
         id: btn_resolution;
-        objectName: "观测带宽翻转控件正面";
         anchors.fill: parent
         textLabel: "通道"+(Settings.paramsSetCh()+1)+" 观测带宽";
         //icon:"\uf002"
@@ -34,7 +33,6 @@ Flipable{
         }
     }
     back: LineEdit {
-        objectName: "观测带宽翻转控件背面";
         id: numberEdit;
         anchors.fill: parent
         unit: "MHz"
@@ -95,8 +93,12 @@ Flipable{
         analyzeMenu.state = "HIDE"
         idRightPannel.focus = true
     }
-    function selfPressed()
+    function selfPressed(key_code)
     {
+        if( key_code === Qt.Key_F3 )
+            numberEdit.okBtnClicked()
+        else
+            loadParam()
         numberEdit.borderColor = "#67696B"
         analyzeMenu.focus = true
     }

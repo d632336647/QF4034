@@ -11,13 +11,13 @@ Rectangle{
 
     state: "HIDE"
     width: 200
-    //anchors.topMargin: 4
+    anchors.topMargin: 4
     //anchors.bottomMargin: 4
 
     //border.color: Com.BottomBorderColor
     //border.width: 1
     color: Com.BGColor_main
-
+    signal hideCompleted
     ColumnLayout {
         id:content
         spacing: 4;
@@ -26,50 +26,44 @@ Rectangle{
         anchors.leftMargin: 4;
         property int itemWidth: root.width - 8
         RightButton {
-            id: btn_menu;
-            textLabel: "返回主菜单";
-            icon: "\uf090";
+            id: btn_return;
+            textLabel: "返回菜单";
+            icon:"\uf112"
             width: parent.itemWidth
             onClick: {
-                turnToMainMenu()
+                root.state = "HIDE";
             }
         }
         RightButton {
-            id: btn_external;
-            textLabel: "外部触发";
+            id: btn_select1;
+            textLabel: "文件1";
             width: parent.itemWidth
             onClick: {
-                clearSelectBorder()
-                selected(true)
-                setParam(0)
             }
         }
         RightButton {
-            id: btn_internal;
-            textLabel: "内部触发";
+            id: btn_select2;
+            textLabel: "文件2";
             width: parent.itemWidth
             onClick: {
-                clearSelectBorder()
-                selected(true)
-                setParam(1)
             }
         }
-
         RightButton {
-            id: empty1;
-            textLabel: "";
+            id: btn_select3;
+            textLabel: "文件3";
+            width: parent.itemWidth
             //icon:"\uf07c"
             onClick: {
             }
         }
         RightButton {
-            id: empty2;
-            textLabel: "";
+            id: btn_delete;
+            textLabel: "关闭文件";
+            width: parent.itemWidth
             //icon:"\uf07c"
             onClick: {
             }
         }
-
         RightButton {
             id: empty3;
             textLabel: "";
@@ -85,30 +79,15 @@ Rectangle{
             }
         }
         RightButton {
-            id: btn_return;
-            textLabel: "返回上级";
-            icon:"\uf112"
+            id: btn_exit;
+            textLabel: "返回主菜单";
+            icon: "\uf090";
             width: parent.itemWidth
             onClick: {
-                turnToParentMenu()
+
             }
         }
 
-    }
-
-    Keys.enabled: true
-    Keys.forwardTo: [root]
-    Keys.onPressed:{
-        if(Lib.operateSpecView(event.key))
-        {
-            hideMenu()
-            event.accepted = true;
-            return
-        }
-        var key = [Qt.Key_F1,  Qt.Key_F2,    Qt.Key_F3,    Qt.Key_F8]
-        var fid = [btn_menu, btn_external, btn_internal, btn_return ]
-        Lib.clickFunctionKey(event.key, key, fid);
-        event.accepted = true;
     }
     //过渡动画
     states: [
@@ -116,15 +95,14 @@ Rectangle{
             name: "SHOW"
             PropertyChanges { target: root; x: root.parent.width-root.width}
             onCompleted:{
-                root.focus = true;
             }
         },
         State {
             name: "HIDE"
             PropertyChanges { target: root; x: root.parent.width}
             onCompleted: {
-
-             }
+                root.hideCompleted()
+            }
          }
     ]
 
@@ -140,44 +118,29 @@ Rectangle{
              PropertyAnimation { properties: "x"; easing.type: Easing.OutCubic }
          }
     ]
-    //！--过渡动画结束
-    function hideMenu()
+    function btnReturnClick()
     {
-        root.state = "HIDE";
-        root.parent.state = "HIDE";
+        btn_return.keyPressed()
     }
-    function turnToMainMenu()
+    function btnSelect1Click()
     {
-        hideMenu()
-        idRightPannel.state="SHOW";
-        idRightPannel.focus=true;
+        btn_select1.keyPressed()
     }
-    function turnToParentMenu()
+    function btnSelect2Click()
     {
-        root.state = "HIDE";
-        gatherMenu.focus = true;
+        btn_select2.keyPressed()
     }
-    function clearSelectBorder()
+    function btnSelect3Click()
     {
-        var list = content.children
-
-        for(var i in list)
-        {
-            list[i].selected(false);
-        }
+        btn_select3.keyPressed()
     }
-    function loadParam()
+    function btnDeleteClick()
     {
-        if(Settings.triggerMode() === 0)
-            btn_external.selected(true);
-        else
-            btn_internal.selected(true);
-
+        btn_delete.keyPressed()
     }
-    function setParam(val)
+    function btnExitClick()
     {
-        Settings.triggerMode(Com.OpSet, val)
-        gatherMenu.updateParams()
+        btn_exit.keyPressed()
     }
 }
 

@@ -27,14 +27,12 @@ Rectangle{
         anchors.leftMargin: 4;
         property int itemWidth: root.width - 8
         RightButton {
-            id: btn_return;
-            textLabel: "返回上级";
-            icon:"\uf112"
+            id: btn_menu;
+            textLabel: "返回主菜单";
+            icon: "\uf090";
             width: parent.itemWidth
             onClick: {
-                root.state = "HIDE"
-                root.focus = false;
-                idRightPannel.focus=true;
+                turnToMainMenu()
             }
         }
         RightButton {
@@ -99,29 +97,26 @@ Rectangle{
             }
         }
         RightButton {
-            id: btn_exit;
-            textLabel: "返回主菜单";
-            icon: "\uf090";
+            id: btn_return;
+            textLabel: "返回上级";
+            icon:"\uf112"
             width: parent.itemWidth
             onClick: {
-                root.state = "HIDE"
-                idRightPannel.state="SHOW";
-                idRightPannel.focus=true;
+                turnToParentMenu()
             }
         }
     }
-
     Keys.enabled: true
     Keys.forwardTo: [root]
     Keys.onPressed:{
         if(Lib.operateSpecView(event.key))
         {
-            root.state = "HIDE"
+            hideMenu()
             event.accepted = true;
             return
         }
         var key = [Qt.Key_F1, Qt.Key_F2, Qt.Key_F3, Qt.Key_F4, Qt.Key_F5, Qt.Key_F6, Qt.Key_F7, Qt.Key_F8]
-        var fid = [btn_return, btn_rt_spectrum, btn_rt_walterfall, btn_files_spectrum, btn_files_walterfall, btn_files_timedomain, btn_historyfiles, btn_exit]
+        var fid = [btn_menu, btn_rt_spectrum, btn_rt_walterfall, btn_files_spectrum, btn_files_walterfall, btn_files_timedomain, btn_historyfiles, btn_return]
         Lib.clickFunctionKey(event.key, key, fid);
         event.accepted = true;
     }
@@ -157,50 +152,35 @@ Rectangle{
          }
     ]
     //！--过渡动画结束
-
+    function hideMenu(){
+        root.state = "HIDE";
+    }
+    function turnToMainMenu()
+    {
+        hideMenu()
+        idRightPannel.state = "SHOW";
+        idRightPannel.focus = true;
+    }
+    function turnToParentMenu()
+    {
+        root.state = "HIDE"
+        idRightPannel.focus = true;
+    }
     function clearSelectBorder()
     {
         var list = content.children
-
-        for(var i in list)
-        {
+        for(var i in list){
             list[i].selected(false);
         }
     }
     function loadParam()
     {
-
-        if(Settings.analyzeMode() === 0)
-        {
-            clearSelectBorder();
-            btn_rt_spectrum.selected(true);
-        }
-        else if(Settings.analyzeMode() === 1)
-        {
-            clearSelectBorder();
-            btn_rt_walterfall.selected(true);
-        }
-        else if(Settings.analyzeMode() === 2)
-        {
-            clearSelectBorder();
-            btn_files_spectrum.selected(true);
-        }
-        else if(Settings.analyzeMode() === 3)
-        {
-            clearSelectBorder();
-            btn_files_walterfall.selected(true);
-        }
-        else if(Settings.analyzeMode() === 4)
-        {
-            clearSelectBorder();
-            btn_files_timedomain.selected(true);
-        }
-        else
-        {
-            btn_return.selected(true);
-        }
-
-
+        var btn_array = [btn_rt_spectrum, btn_rt_walterfall, btn_files_spectrum, btn_files_walterfall, btn_files_timedomain]
+        var idx = Settings.analyzeMode()
+        if(idx < 0 || idx > 4)
+            return
+        clearSelectBorder();
+        btn_array[idx].selected(true);
     }
     function setParam(val)
     {

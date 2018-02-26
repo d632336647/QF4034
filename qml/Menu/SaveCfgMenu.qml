@@ -26,14 +26,12 @@ Rectangle{
         anchors.leftMargin: 4;
         property int itemWidth: root.width - 8
         RightButton {
-            id: btn_exit;
-            textLabel: "返回上级";
-            icon:"\uf112"
+            id: btn_menu;
+            textLabel: "返回主菜单";
+            icon:"\uf090"
             width: parent.itemWidth
             onClick: {
-                root.state = "HIDE"
-                root.focus = false
-                idRightPannel.focus = true
+                turnToMainMenu()
             }
         }
         RightButton {
@@ -88,16 +86,15 @@ Rectangle{
             }
         }
         RightButton {
-            id: btn_menu;
-            textLabel: "返回主菜单";
-            icon:"\uf090"
+            id: btn_return;
+            textLabel: "返回上级";
+            icon:"\uf112"
             width: parent.itemWidth
             onClick: {
-                root.state = "HIDE";
-                idRightPannel.state="SHOW";
-                idRightPannel.focus = true;
+                turnToParentMenu()
             }
         }
+
 
     }
     SaveMode{
@@ -118,17 +115,15 @@ Rectangle{
     Keys.onPressed:{
         if(Lib.operateSpecView(event.key))
         {
-            root.state = "HIDE"
+            hideMenu()
             event.accepted = true;
             return
         }
         var key = [Qt.Key_F1, Qt.Key_F2, Qt.Key_F3, Qt.Key_F8]
-        var fid = [btn_exit, btn_savemode, btn_namemode, btn_menu]
+        var fid = [btn_menu, btn_savemode, btn_namemode, btn_return]
         Lib.clickFunctionKey(event.key, key, fid);
         event.accepted = true;
     }
-
-
     //过渡动画
     states: [
         State {
@@ -145,7 +140,6 @@ Rectangle{
             }
         }
     ]
-
     transitions: [
          Transition {
              from: "SHOW"
@@ -159,7 +153,21 @@ Rectangle{
          }
     ]
     //！--过渡动画结束
-
+    function hideMenu()
+    {
+        root.state = "HIDE"
+    }
+    function turnToMainMenu()
+    {
+        hideMenu()
+        idRightPannel.state="SHOW";
+        idRightPannel.focus = true;
+    }
+    function turnToParentMenu()
+    {
+        root.state = "HIDE"
+        idRightPannel.focus = true
+    }
     function updateParams()
     {
         var saveMode = Settings.saveMode();

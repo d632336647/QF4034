@@ -75,7 +75,7 @@ Item{
             }
         }
 
-        TiDomainWave{
+        TiDomainWave {
             id:timeDomainWave
             fullMode: true
             anchors.fill: parent
@@ -464,6 +464,15 @@ Item{
         }
         var rtn1 = spectrumView.setChartReset(0)
         var rtn2 = spectrumView2.setChartReset(1)
+        return (rtn1||rtn2)
+    }
+    function svSetSingleSweep(isSweep)
+    {
+        if(analyzeMode > 1){
+            return false
+        }
+        var rtn1 = spectrumView.setSingleSweep(0, isSweep)
+        var rtn2 = spectrumView2.setSingleSweep(1, isSweep)
         return (rtn1||rtn2)
     }
     function svCloseAllOpBtn()

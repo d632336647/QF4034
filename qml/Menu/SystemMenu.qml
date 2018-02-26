@@ -11,13 +11,14 @@ Rectangle{
 
     state: "HIDE"
     width: 200
-    //anchors.topMargin: 4
+    anchors.topMargin: 4
     //anchors.bottomMargin: 4
 
     //border.color: Com.BottomBorderColor
     //border.width: 1
     color: Com.BGColor_main
-
+    property var parentPointer: undefined
+    signal hideCompleted
     ColumnLayout {
         id:content
         spacing: 4;
@@ -27,49 +28,51 @@ Rectangle{
         property int itemWidth: root.width - 8
         RightButton {
             id: btn_menu;
-            textLabel: "返回主菜单";
+            textLabel: "关闭菜单";
+            width: parent.itemWidth
+            onClick: {
+                switchSystemMenu()
+            }
+        }
+        RightButton {
+            id: btn_quit;
+            textLabel: "退出程序";
             icon: "\uf090";
             width: parent.itemWidth
             onClick: {
-                turnToMainMenu()
+                Settings.save()
+                captureThread.exit()
+                dataSource.clearPCIE()
+                Qt.quit()
             }
         }
         RightButton {
-            id: btn_external;
-            textLabel: "外部触发";
+            id: btn_reset;
+            textLabel: "重启系统";
             width: parent.itemWidth
-            onClick: {
-                clearSelectBorder()
-                selected(true)
-                setParam(0)
-            }
-        }
-        RightButton {
-            id: btn_internal;
-            textLabel: "内部触发";
-            width: parent.itemWidth
-            onClick: {
-                clearSelectBorder()
-                selected(true)
-                setParam(1)
-            }
-        }
-
-        RightButton {
-            id: empty1;
-            textLabel: "";
             //icon:"\uf07c"
             onClick: {
+                Settings.executeCommand("shutdown -r -t 5")
+                btn_quit.click()
+            }
+        }
+        RightButton {
+            id: btn_shutdown;
+            textLabel: "关机";
+            width: parent.itemWidth
+            onClick: {
+                Settings.executeCommand("shutdown -s -t 5")
+                btn_quit.click()
             }
         }
         RightButton {
             id: empty2;
             textLabel: "";
+            width: parent.itemWidth
             //icon:"\uf07c"
             onClick: {
             }
         }
-
         RightButton {
             id: empty3;
             textLabel: "";
@@ -86,29 +89,13 @@ Rectangle{
         }
         RightButton {
             id: btn_return;
-            textLabel: "返回上级";
-            icon:"\uf112"
+            textLabel: "关闭菜单";
             width: parent.itemWidth
             onClick: {
-                turnToParentMenu()
+                switchSystemMenu()
             }
         }
 
-    }
-
-    Keys.enabled: true
-    Keys.forwardTo: [root]
-    Keys.onPressed:{
-        if(Lib.operateSpecView(event.key))
-        {
-            hideMenu()
-            event.accepted = true;
-            return
-        }
-        var key = [Qt.Key_F1,  Qt.Key_F2,    Qt.Key_F3,    Qt.Key_F8]
-        var fid = [btn_menu, btn_external, btn_internal, btn_return ]
-        Lib.clickFunctionKey(event.key, key, fid);
-        event.accepted = true;
     }
     //过渡动画
     states: [
@@ -116,15 +103,14 @@ Rectangle{
             name: "SHOW"
             PropertyChanges { target: root; x: root.parent.width-root.width}
             onCompleted:{
-                root.focus = true;
             }
         },
         State {
             name: "HIDE"
             PropertyChanges { target: root; x: root.parent.width}
             onCompleted: {
-
-             }
+                root.hideCompleted()
+            }
          }
     ]
 
@@ -140,44 +126,57 @@ Rectangle{
              PropertyAnimation { properties: "x"; easing.type: Easing.OutCubic }
          }
     ]
-    //！--过渡动画结束
-    function hideMenu()
-    {
-        root.state = "HIDE";
-        root.parent.state = "HIDE";
-    }
-    function turnToMainMenu()
-    {
-        hideMenu()
-        idRightPannel.state="SHOW";
-        idRightPannel.focus=true;
-    }
-    function turnToParentMenu()
-    {
-        root.state = "HIDE";
-        gatherMenu.focus = true;
-    }
-    function clearSelectBorder()
-    {
-        var list = content.children
 
-        for(var i in list)
+    Keys.enabled: true
+    Keys.forwardTo: [root]
+    Keys.onPressed:{
+        var key = [Qt.Key_Q, Qt.Key_F21, Qt.Key_F1, Qt.Key_F2, Qt.Key_F3, Qt.Key_F4, Qt.Key_F8]
+        var fid = [btn_menu, btn_menu, btn_menu, btn_quit, btn_reset, btn_shutdown, btn_return]
+        Lib.clickFunctionKey(event.key, key, fid);
+        event.accepted = true;
+    }
+    function hideMenu(){}
+    function turnToMainMenu(){}
+    function turnToParentMenu(){}
+    function switchSystemMenu()
+    {
+        if(root.state === "HIDE")
         {
-            list[i].selected(false);
+            root.parentPointer = mainWindow.activeFocusItem
+            root.state = "SHOW"
+            root.focus = true;
+        }
+        else
+        {
+            root.state = "HIDE"
+            if(idRightPannel.state === "HIDE")
+            {
+                idRightPannel.focus = true
+                root.parentPointer = idRightPannel
+            }
+            else
+                root.parentPointer.focus = true
         }
     }
-    function loadParam()
+    function btnReturnClick()
     {
-        if(Settings.triggerMode() === 0)
-            btn_external.selected(true);
-        else
-            btn_internal.selected(true);
-
+        btn_return.keyPressed()
     }
-    function setParam(val)
+    function btnQuitClick()
     {
-        Settings.triggerMode(Com.OpSet, val)
-        gatherMenu.updateParams()
+        btn_quit.keyPressed()
+    }
+    function btnShutdownClick()
+    {
+        btn_shutdown.keyPressed()
+    }
+    function btnResetClick()
+    {
+        btn_reset.keyPressed()
+    }
+    function btnExitClick()
+    {
+        btn_exit.keyPressed()
     }
 }
 

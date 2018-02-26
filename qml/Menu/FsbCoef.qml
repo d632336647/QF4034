@@ -26,13 +26,12 @@ Rectangle{
         anchors.leftMargin: 4;
         property int itemWidth: root.width - 8
         RightButton {
-            id: btn_return;
-            textLabel: "返回上级";
-            icon:"\uf112"
+            id: btn_menu;
+            textLabel: "返回主菜单";
+            icon: "\uf090";
             width: parent.itemWidth
             onClick: {
-                root.state = "HIDE"
-                root.parent.focus = true
+                turnToMainMenu()
             }
         }
         RightButton {
@@ -85,17 +84,15 @@ Rectangle{
             }
         }
         RightButton {
-            id: btn_exit;
-            textLabel: "返回主菜单";
-            icon: "\uf090";
+            id: btn_return;
+            textLabel: "返回上级";
+            icon:"\uf112"
             width: parent.itemWidth
             onClick: {
-                root.state = "HIDE";
-                root.parent.state = "HIDE";
-                idRightPannel.state="SHOW";
-                idRightPannel.focus=true;
+                turnToParentMenu()
             }
         }
+
 
     }
 
@@ -104,22 +101,21 @@ Rectangle{
     Keys.onPressed:{
         if(Lib.operateSpecView(event.key))
         {
-            root.state = "HIDE"
-            root.parent.state = "HIDE"
+            hideMenu()
             event.accepted = true;
             return
         }
         switch(event.key)
         {
         case Qt.Key_F1:
-            btn_return.keyPressed()
+            btn_menu.keyPressed()
             break;
         case Qt.Key_F2:
             break;
         case Qt.Key_F3:
             break;
         case Qt.Key_F8:
-            btn_exit.keyPressed()
+            btn_return.keyPressed()
             break;
         default:
             break;
@@ -158,7 +154,22 @@ Rectangle{
          }
     ]
     //！--过渡动画结束
-
+    function hideMenu()
+    {
+        root.state = "HIDE"
+        root.parent.state = "HIDE"
+    }
+    function turnToMainMenu()
+    {
+        hideMenu()
+        idRightPannel.focus=true;
+        idRightPannel.state="SHOW";
+    }
+    function turnToParentMenu()
+    {
+        root.state = "HIDE"
+        root.parent.focus = true
+    }
     function clearSelectBorder()
     {
         var list = content.children

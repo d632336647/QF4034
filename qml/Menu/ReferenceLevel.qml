@@ -95,8 +95,12 @@ Flipable{
         analyzeMenu.state = "HIDE"
         idRightPannel.focus = true
     }
-    function selfPressed()
+    function selfPressed(key_code)
     {
+        if( key_code === Qt.Key_F5 )
+            numberEdit.okBtnClicked()
+        else
+            loadParam()
         numberEdit.borderColor = "#67696B"
         analyzeMenu.focus = true
     }

@@ -34,42 +34,6 @@ Rectangle{
         text:"实时频谱监测"
         visible: false
     }
-
-/*
-    //动态加载
-    Item {
-        id: idScopeView
-        anchors.top: mainTitle.bottom
-        anchors.right: parent.right//idRightPannel.left
-        anchors.bottom: idBottomPannel.top
-        anchors.left: parent.left
-        visible: true
-        Loader {
-            id: svLoder
-            anchors.fill: parent
-            source: "ScopeView2CH.qml" //"../SliChart/ScopeView2CH.qml"
-            onSourceChanged: {
-                //if(source != "")
-                //    svLoder.item
-            }
-            onLoaded: {
-                idScopeView.updateSepctrumAxisY(Settings.reflevelMin(), Settings.reflevelMax())
-            }
-        }
-        function changeAnalyzeMode()
-        {
-            svLoder.item.changeAnalyzeMode()
-        }
-        function updateSepctrumAxisY(min, max)
-        {
-            svLoder.item.updateSepctrumAxisY(min, max)
-        }
-        function changeChannelMode(mod)
-        {
-            svLoder.item.changeChannelMode(mod)
-        }
-    }
-*/
     ScopeView2CH {
         id: idScopeView
         anchors.top: mainTitle.bottom
@@ -126,7 +90,12 @@ Rectangle{
         anchors.top: mainTitle.bottom
         anchors.bottom: idBottomPannel.top
     }
-
+    SystemMenu {
+        id:systemMenu
+        x:root.width
+        anchors.top: mainTitle.bottom
+        anchors.bottom: idBottomPannel.top
+    }
 
     Rectangle{
         id: mask
@@ -159,8 +128,22 @@ Rectangle{
             onLoaded: {
                 //注意 Loader内的元素直接设置focus是无效的，必须先把Loader的focus设置为true,
                 //Loader内的元素才能设置focus
-                pageLoader.focus = true
-                pageLoader.item.focus = true
+
+                //直接在本级向子级传递按键消息,无需再设置子部件focus "Keys.forwardTo: [root, itemPointer]"
+                //pageLoader.focus = true
+                //pageLoader.item.focus = true
+                fileCtrl.state = "SHOW"
+            }
+        }
+        FileBoxCtrl{
+            id:fileCtrl
+            width: 200
+            anchors.top: parent.top
+            anchors.topMargin: 4
+            visible: fileContent.visible
+            state: "HIDE"
+            onHideCompleted: {
+                fileContent.visible = false
             }
         }
         onVisibleChanged: {
@@ -175,6 +158,31 @@ Rectangle{
                 pageLoader.source = ""
                 analyzeMode.focus = true;
             }
+        }
+        Keys.enabled: true
+        Keys.forwardTo: [root, itemPointer] //事件传递从子级开始,和写法顺序无关,也就是事件先传递到itemPointer,再传递到root
+        Keys.onPressed:
+        {
+            switch(event.key)
+            {
+            case Qt.Key_F2:
+                fileCtrl.btnSelect1Click()
+                break;
+            case Qt.Key_F3:
+                fileCtrl.btnSelect2Click()
+                break;
+            case Qt.Key_F4:
+                fileCtrl.btnSelect3Click()
+                break;
+            case Qt.Key_F5:
+                fileCtrl.btnDeleteClick()
+                break;
+            case Qt.Key_F1://退出键按下后会销毁Loder内的item,
+            case Qt.Key_F8:
+                fileCtrl.btnReturnClick()
+                break;
+            }
+            event.accepted = true;
         }
     }
 
@@ -205,19 +213,17 @@ Rectangle{
             }
             else
                 messageLoader.source = ""
-
         }
     }
 
-    ContentBox{
-        id:uartContent
-        anchors.left: parent.left
-        anchors.verticalCenter: parent.verticalCenter
-        anchors.leftMargin: 120
+    Item{
+        id:uartKey
+        anchors.centerIn: parent
+        width: 20
+        height: 20
         visible: false
         QMLUart{
             id:uart
-
             Component.onCompleted: {
                 uart.openAndSetPort(0,0,3,0,0,0)
             }
@@ -227,50 +233,8 @@ Rectangle{
         }
         VirtualKey{
             id:virKey
-        }
-        Rectangle{
-            height: 120
-            width: parent.width - 40
-            anchors.centerIn: parent
-            color: "#363636"
-            Text{
-                anchors.fill: parent
-                id: textreceive
-                color: "white"
-                font.pixelSize: 12
-                font.family: "Calibri"
-                wrapMode: Text.Wrap
-                text: uart.receivedata
-            }
-        }
-
-        StateRect{
-            id:closeBtn
-            anchors.right: uartContent.right
-            anchors.rightMargin: 40
-            anchors.bottom: uartContent.bottom
-            anchors.bottomMargin: 20
-            width: 140;
-            height: 24
-            //textLabel:"关闭"
-            btnName: "关闭"
-            onClicked:
+            Component.onCompleted:
             {
-                uartContent.visible = false
-            }
-        }
-        StateRect{
-            anchors.right: closeBtn.left
-            anchors.rightMargin: 20
-            anchors.bottom: uartContent.bottom
-            anchors.bottomMargin: 20
-            width: 140;
-            height: 24
-            //textLabel:"关闭"
-            btnName: "清空"
-            onClicked:
-            {
-                uart.receivedata=""
             }
         }
     }
@@ -280,118 +244,109 @@ Rectangle{
 
         //左侧边按钮
         if(code === Com.controlPannel["C_ESCAPE"])  //ESC
-            virKey.sendVitualKey(Qt.Key_F1)
+            virKey.sendVirtualKey(Qt.Key_F1)
         else if(code === Com.controlPannel["C_FN1"]) //主键盘 1+shift
-            virKey.sendVitualKey(Qt.Key_F2)
+            virKey.sendVirtualKey(Qt.Key_F2)
         else if(code === Com.controlPannel["C_FN2"])  //主键盘2+shift
-            virKey.sendVitualKey(Qt.Key_F3)
+            virKey.sendVirtualKey(Qt.Key_F3)
         else if(code === Com.controlPannel["C_FN3"])  //主键盘3+shift
-            virKey.sendVitualKey(Qt.Key_F4)
+            virKey.sendVirtualKey(Qt.Key_F4)
         else if(code === Com.controlPannel["C_FN4"])  //主键盘4+shift
-            virKey.sendVitualKey(Qt.Key_F5)
+            virKey.sendVirtualKey(Qt.Key_F5)
         else if(code === Com.controlPannel["C_FN5"])  //主键盘5+shift
-            virKey.sendVitualKey(Qt.Key_F6)
+            virKey.sendVirtualKey(Qt.Key_F6)
         else if(code === Com.controlPannel["C_FN6"])  //主键盘6+shift
-            virKey.sendVitualKey(Qt.Key_F7)
+            virKey.sendVirtualKey(Qt.Key_F7)
         else if(code === Com.controlPannel["C_RETURN"]) //映射 Return
-            virKey.sendVitualKey(Qt.Key_F8)
+            virKey.sendVirtualKey(Qt.Key_F8)
         //方向区
         else if(code === Com.controlPannel["C_UP_ARROW"])//↑
-            virKey.sendVitualKey(Qt.Key_Up)
+            virKey.sendVirtualKey(Qt.Key_Up)
         else if(code === Com.controlPannel["C_DOWN_ARROW"])//↓
-            virKey.sendVitualKey(Qt.Key_Down)
+            virKey.sendVirtualKey(Qt.Key_Down)
         else if(code === Com.controlPannel["C_LEFT_ARROW"])//←
-            virKey.sendVitualKey(Qt.Key_Left)
+            virKey.sendVirtualKey(Qt.Key_Left)
         else if(code === Com.controlPannel["C_WRIGHT_ARROW"])//→
-            virKey.sendVitualKey(Qt.Key_Right)
+            virKey.sendVirtualKey(Qt.Key_Right)
         else if(code === Com.controlPannel["C_POS_ENTER"])//→
-            virKey.sendVitualKey(Qt.Key_Enter) //Enter
+            virKey.sendVirtualKey(Qt.Key_Enter) //Enter
         //参数区
         else if(code === Com.controlPannel["C_DIGIT_ZERO"])
-            virKey.sendVitualKey(Qt.Key_0,"0");
+            virKey.sendVirtualKey(Qt.Key_0,"0");
         else if(code === Com.controlPannel["C_DIGIT_ONE"])
-            virKey.sendVitualKey(Qt.Key_1,"1");
+            virKey.sendVirtualKey(Qt.Key_1,"1");
         else if(code === Com.controlPannel["C_DIGIT_TWO"])
-            virKey.sendVitualKey(Qt.Key_2,"2");            
+            virKey.sendVirtualKey(Qt.Key_2,"2");
         else if(code === Com.controlPannel["C_DIGIT_THREE"])
-            virKey.sendVitualKey(Qt.Key_3,"3");
+            virKey.sendVirtualKey(Qt.Key_3,"3");
         else if(code === Com.controlPannel["C_DIGIT_FOUR"])
-            virKey.sendVitualKey(Qt.Key_4,"4");
+            virKey.sendVirtualKey(Qt.Key_4,"4");
         else if(code === Com.controlPannel["C_DIGIT_FIVE"])
-            virKey.sendVitualKey(Qt.Key_5,"5");
+            virKey.sendVirtualKey(Qt.Key_5,"5");
         else if(code === Com.controlPannel["C_DIGIT_SIX"])
-            virKey.sendVitualKey(Qt.Key_6,"6");
+            virKey.sendVirtualKey(Qt.Key_6,"6");
         else if(code === Com.controlPannel["C_DIGIT_SEVEN"])
-            virKey.sendVitualKey(Qt.Key_7,"7");
+            virKey.sendVirtualKey(Qt.Key_7,"7");
         else if(code === Com.controlPannel["C_DIGIT_EIGHT"])
-            virKey.sendVitualKey(Qt.Key_8,"8");
+            virKey.sendVirtualKey(Qt.Key_8,"8");
         else if(code === Com.controlPannel["C_DIGIT_NINE"])
-            virKey.sendVitualKey(Qt.Key_9,"9");
+            virKey.sendVirtualKey(Qt.Key_9,"9");
         else if(code === Com.controlPannel["C_DIGIT_POINT"])
-            virKey.sendVitualKey(Qt.Key_Period,".");
+            virKey.sendVirtualKey(Qt.Key_Period,".");
         else if(code === Com.controlPannel["C_DIGIT_PLUS_MINUS"])//小键盘-
-            virKey.sendVitualKey(Qt.Key_Minus)
+            virKey.sendVirtualKey(Qt.Key_Minus)
         else if(code === Com.controlPannel["C_BK_SP"])//backspace
-            virKey.sendVitualKey(Qt.Key_Backspace)
+            virKey.sendVirtualKey(Qt.Key_Backspace)
         else if(code === Com.controlPannel["C_ENTER"])//Enter
-            virKey.sendVitualKey(Qt.Key_Enter)
+            virKey.sendVirtualKey(Qt.Key_Enter)
         //控制区域
         else if(code === Com.controlPannel["C_FREQUENCY_CHANNEL"])//FREQUENCY
-            virKey.sendVitualKey(Qt.Key_F9)
+            virKey.sendVirtualKey(Qt.Key_F9)
         else if(code === Com.controlPannel["C_MEASURE"])//MEASURE
-            virKey.sendVitualKey(Qt.Key_F10)
+            virKey.sendVirtualKey(Qt.Key_F10)
         else if(code === Com.controlPannel["C_DET_DEMOD"])//DET_DEMOD
-            virKey.sendVitualKey(Qt.Key_F11)
+            virKey.sendVirtualKey(Qt.Key_F11)
         else if(code === Com.controlPannel["C_AUTO_COUPLE"])//AUTO_COUPLE
-            virKey.sendVitualKey(Qt.Key_F12)
+            virKey.sendVirtualKey(Qt.Key_F12)
         else if(code === Com.controlPannel["C_SPAN_X_SCALE"])//SPAN_X_SCALE
-            virKey.sendVitualKey(Qt.Key_F13)
+            virKey.sendVirtualKey(Qt.Key_F13)
         else if(code === Com.controlPannel["C_TRACE_VIEW"])//TRACE_VIEW
-            virKey.sendVitualKey(Qt.Key_F14)
+            virKey.sendVirtualKey(Qt.Key_F14)
         else if(code === Com.controlPannel["C_BW_AVG"])//BW_AVG
-            virKey.sendVitualKey(Qt.Key_F15)
+            virKey.sendVirtualKey(Qt.Key_F15)
         else if(code === Com.controlPannel["C_TRIG"])//TRIG
-            virKey.sendVitualKey(Qt.Key_F16)
+            virKey.sendVirtualKey(Qt.Key_F16)
         else if(code === Com.controlPannel["C_AMPLITUDE_Y_SCALE"])//AMPLITUDE_Y_SCALE
-            virKey.sendVitualKey(Qt.Key_F17)
+            virKey.sendVirtualKey(Qt.Key_F17)
         else if(code === Com.controlPannel["C_DISPLAY"])//DISPLAY
-            virKey.sendVitualKey(Qt.Key_F18)
+            virKey.sendVirtualKey(Qt.Key_F18)
         else if(code === Com.controlPannel["C_SINGLE"])//SINGLE
-            virKey.sendVitualKey(Qt.Key_F19)
+            virKey.sendVirtualKey(Qt.Key_F19)
         else if(code === Com.controlPannel["C_SWEEP"])//SWEEP
-            virKey.sendVitualKey(Qt.Key_F20)
+            virKey.sendVirtualKey(Qt.Key_F20)
         //系统区域
         else if(code === Com.controlPannel["C_SYSTEM"])//SYSTEM
-            virKey.sendVitualKey(Qt.Key_F21)
+            virKey.sendVirtualKey(Qt.Key_F21)
         else if(code === Com.controlPannel["C_PRESET"])//PRESET
-            virKey.sendVitualKey(Qt.Key_F22)
+            virKey.sendVirtualKey(Qt.Key_F22)
         else if(code === Com.controlPannel["C_MARKER"])//MARKER
-            virKey.sendVitualKey(Qt.Key_F23)
+            virKey.sendVirtualKey(Qt.Key_F23)
         else if(code === Com.controlPannel["C_PEAK_SEARCH"])//PEAK_SEARCH
-            virKey.sendVitualKey(Qt.Key_F24)
+            virKey.sendVirtualKey(Qt.Key_F24)
         else if(code === Com.controlPannel["C_MARKER_FCTN"])//MARKER_FCTN
-            virKey.sendVitualKey(Qt.Key_F25)
+            virKey.sendVirtualKey(Qt.Key_F25)
         else if(code === Com.controlPannel["C_MAKER_ARROW"])//MAKER_ARROW
-            virKey.sendVitualKey(Qt.Key_F26)
+            virKey.sendVirtualKey(Qt.Key_F26)
         else if(code === Com.controlPannel["C_SOURCE"])//C_SOURCE
-            virKey.sendVitualKey(Qt.Key_F27)
+            virKey.sendVirtualKey(Qt.Key_F27)
 
         //滚轮操作
         else if(code === Com.controlPannel["C_WHEEL_CLOCKWISE"])//C_WHEEL_CLOCKWISE
-            virKey.sendVitualKey(Qt.Key_PageDown)
+            virKey.sendVirtualKey(Qt.Key_PageDown)
         else if(code === Com.controlPannel["C_WHEEL_ANTICLOCKWISE"])//C_WHEEL_ANTICLOCKWISE
-            virKey.sendVitualKey(Qt.Key_PageUp)
+            virKey.sendVirtualKey(Qt.Key_PageUp)
     }
     
-    //全局打印函数
-    function globalConsoleInfo(infostr)
-    {
-        var debugInfoFlag=false;
-        if(debugInfoFlag)
-            console.info(infostr);
-
-    }
-
     Component.onCompleted: {
 
     }

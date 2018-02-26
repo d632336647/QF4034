@@ -51,7 +51,9 @@
         <file>qml/Menu/FFTPoints.qml</file>
         <file>qml/Menu/DDCFreq.qml</file>
         <file>qml/Menu/ExtractFactor.qml</file>
-        <file>qml/Menu/FsbCoef.qml</file>
         <file>qml/UI/FileBox.qml</file>
+        <file>qml/UI/FileBoxCtrl.qml</file>
+        <file>qml/Menu/FsbCoef.qml</file>
+        <file>qml/Menu/SystemMenu.qml</file>
     </qresource>
 </RCC>

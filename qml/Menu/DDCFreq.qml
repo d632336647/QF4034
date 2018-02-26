@@ -91,8 +91,12 @@ Flipable{
         preconditionMenu.state = "HIDE"
         idRightPannel.focus = true
     }
-    function selfPressed()
+    function selfPressed(key_code)
     {
+        if( key_code === Qt.Key_F6 )
+            numberEdit.okBtnClicked()
+        else
+            loadParam()
         numberEdit.borderColor = "#67696B"
         preconditionMenu.focus = true
     }

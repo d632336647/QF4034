@@ -93,17 +93,23 @@ Flipable{
         analyzeMenu.state = "HIDE"
         idRightPannel.focus = true
     }
-    function selfPressed()
+    function selfPressed(key_code)
     {
+        if( key_code === Qt.Key_F2 )
+            numberEdit.okBtnClicked()
+        else
+            loadParam()
         numberEdit.borderColor = "#67696B"
         analyzeMenu.focus = true
     }
     function keyPressed()
     {
         numberEdit.showSelectStyle()
+
     }
     function loadParam()
     {
+
         numberEdit.text = Settings.centerFreq()
         btn_centerfreq.textLabel = "通道"+(Settings.paramsSetCh()+1)+" 中心频率";
     }

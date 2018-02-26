@@ -6,7 +6,7 @@
 #include <QVariant>
 #include <QQuickView>
 #include <QQuickItem>
-
+#include <QProcess>
 
 #define MAXCH (2)
 #define SAME  (0)
@@ -25,6 +25,7 @@ public:
 
     Q_INVOKABLE void save(void);
     Q_INVOKABLE void load(void);
+    Q_INVOKABLE void loadDefault(void);
 
     Q_INVOKABLE int   clkMode(option     op=Get, int   val=0, int ch=MAXCH);
     Q_INVOKABLE int   triggerMode(option op=Get, int   val=0, int ch=MAXCH);
@@ -65,10 +66,13 @@ public:
     Q_INVOKABLE int paramsSetCh(option op=Get, int val=0);
 
     Q_INVOKABLE QQuickItem *findQuickItem(QString objctName);
+    Q_INVOKABLE QQuickItem *findQuickItemFocused(void);
+    Q_INVOKABLE void executeCommand(QString cmd);
     QString keyString(QString group, int ch=-1);
     void    initArray(int   array[], int   val);
     void    initArray(qreal array[], qreal val);
     bool    adjustMaxBandWidth(void);
+    void    defaultParam(void);
 signals:
 
 public slots:

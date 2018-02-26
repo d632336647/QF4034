@@ -136,7 +136,19 @@ Rectangle {
                 height: 1
                 color: "white"
             }
-
+            Keys.enabled: true
+            Keys.forwardTo: [input]
+            Keys.onPressed:{
+                switch(event.key)
+                {
+                case Qt.Key_Up:
+                case Qt.Key_Down:
+                    event.accepted = true;
+                    break;
+                default:
+                    break;
+                }
+            }
         }
         Item{
             id: rangeInput
@@ -177,6 +189,10 @@ Rectangle {
                         console.log("cursorPosition:", cursorPosition)
                         maxval.focus = true
                         maxval.selectAll()
+                        event.accepted = true;
+                        break;
+                    case Qt.Key_Up:
+                    case Qt.Key_Down:
                         event.accepted = true;
                         break;
                     default:
@@ -227,6 +243,10 @@ Rectangle {
                     case Qt.Key_Left:
                         minval.focus = true
                         minval.selectAll()
+                        event.accepted = true;
+                        break;
+                    case Qt.Key_Up:
+                    case Qt.Key_Down:
                         event.accepted = true;
                         break;
                     default:
@@ -312,7 +332,6 @@ Rectangle {
     Keys.enabled: true
     Keys.forwardTo: [input, minval, maxval]
     Keys.onPressed:{
-        console.log("event.key:",event.key)
         if(Lib.operateSpecView(event.key))
         {
             root.borderColor = "#67696B"
@@ -334,7 +353,7 @@ Rectangle {
         case Qt.Key_F4:
         case Qt.Key_F5:
         case Qt.Key_F6:
-            root.parent.selfPressed()
+            root.parent.selfPressed(event.key)
             return;
         case Qt.Key_Enter:
             root.okBtnClicked();
