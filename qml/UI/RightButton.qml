@@ -3,7 +3,7 @@ import "../Inc.js" as Com
 
 Rectangle{
     id: rightBtn;
-    width: 192;
+    width: Com.RightMenuWidth-8;
     height: 91;
     radius: 4;
     color: "#121212";
@@ -23,7 +23,7 @@ Rectangle{
         anchors.top: parent.top;
         anchors.topMargin: btnData.text.length ? 20 : 30;
         font.family: Com.fontFamily
-        font.pixelSize: 20;
+        font.pixelSize: 18;
         text: textLabel;
         color: rightBtn.readOnly ? "#646464" : "white";
         horizontalAlignment: Text.AlignHCenter;
@@ -50,7 +50,7 @@ Rectangle{
         anchors.bottomMargin: 12
         font.family: "FontAwesome"
         color:btnLabel.color
-        font.pixelSize: 24
+        font.pixelSize: 20
         text: ""
         verticalAlignment: Text.AlignVCenter
     }

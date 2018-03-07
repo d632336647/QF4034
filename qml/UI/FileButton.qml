@@ -27,7 +27,7 @@ Rectangle{
         anchors.top: parent.top;
         anchors.topMargin: btnData.text.length ? 20 : 30;
         font.family: Com.fontFamily
-        font.pixelSize: 20;
+        font.pixelSize: 18;
         text: textLabel;
         color: fileBtn.readOnly ? "#646464" : "white";
         horizontalAlignment: Text.AlignHCenter;
@@ -54,7 +54,7 @@ Rectangle{
         anchors.bottomMargin: 12
         font.family: "FontAwesome"
         color:btnLabel.color
-        font.pixelSize: 24
+        font.pixelSize: 20
         text: ""
         verticalAlignment: Text.AlignVCenter
     }

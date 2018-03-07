@@ -81,7 +81,7 @@ void testCPCI(){
 
         cpciCard->setClockTrigger();
         cpciCard->setDDC();
-//        Sleep(3000);
+//      Sleep(3000);
         StoreParam &storeParam = cpciCard->getStoreParam();
         storeParam.m_storeMode = SizeFixedType;
         storeParam.m_recordSource = TestDataSource;
@@ -195,8 +195,6 @@ int main(int argc, char *argv[])
 
     //将viewer注册为mainWindow对象
     viewer.rootContext()->setContextProperty("mainWindow",&viewer);
-
-
 
     viewer.show();
 

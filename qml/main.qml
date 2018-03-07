@@ -20,7 +20,7 @@ Rectangle{
     visible: true
     width: 1027
     height: 768
-    color: "black"//Com.BGColor_main
+    color: "black"//Com.bgColorMain
 
 
     WindTitle{
@@ -137,7 +137,7 @@ Rectangle{
         }
         FileBoxCtrl{
             id:fileCtrl
-            width: 200
+            width: Com.RightMenuWidth
             anchors.top: parent.top
             anchors.topMargin: 4
             visible: fileContent.visible

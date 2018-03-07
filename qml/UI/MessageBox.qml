@@ -6,7 +6,7 @@ import Qt.labs.folderlistmodel 2.0
 //
 Item {
     id: root
-    width: 200
+    width: Com.RightMenuWidth
     height: 100
     visible: false
     property string title:"消息框"

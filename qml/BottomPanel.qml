@@ -11,7 +11,7 @@ Rectangle {
     anchors.rightMargin: 4
     anchors.bottomMargin: 2
     anchors.leftMargin: 4
-    color: Com.BottomBGColor
+    color: Com.bottomBGColor
     property var captureMode:["即采即停","时长采集","大小采集","分段采集"]
     property var triggerMode:["外部触发","内部触发"]
     property var clkMode:["外时钟","内时钟","外参考"]
@@ -25,7 +25,7 @@ Rectangle {
     property var menuBtn:undefined;//菜单显示
     Rectangle {
         anchors.fill: parent;
-        color: Com.BottomBGColor;
+        color: Com.bottomBGColor;
 
         Grid{
             id: bottoms;

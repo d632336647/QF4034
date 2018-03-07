@@ -7,7 +7,7 @@ import "../qml/Inc.js" as Com
 Item {
     id:root
     visible: true
-    width: 200
+    width: Com.RightMenuWidth
     height: 10
     property real  min: 0
     property real  max: 100

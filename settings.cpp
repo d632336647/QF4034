@@ -232,7 +232,7 @@ int Settings::fftPoints(option op, int val, int ch)
     Q_UNUSED(ch)
     //此参数所有通道一致
     if(op == Settings::Set){
-        fftpoints[SAME] = val;
+        fftpoints[SAME] = val;// 加1个FFT点， 算横坐标最后一个点
         _settings->beginGroup(keyString("analyze", SAME));
         _settings->setValue("fftpoints", fftpoints[SAME]);
         _settings->endGroup();

@@ -131,10 +131,8 @@ Item {
         }
     }
 
-
     function checkboxClick()
     {
-
         checked = !checked
         root.clicked()
     }

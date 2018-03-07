@@ -8,14 +8,14 @@ import "UI"
 Rectangle{
     id:root
 
-    width: 200
+    width: Com.RightMenuWidth
 
     anchors.topMargin: 4
     anchors.bottomMargin: 4
 
-    //border.color: Com.BottomBorderColor
+    //border.color: Com.bottomBorderColor
     //border.width: 1
-    color: Com.BGColor_main
+    color: Com.bgColorMain
     focus: true
 
     state: "SHOW"
@@ -23,12 +23,17 @@ Rectangle{
     ColumnLayout {
         spacing: 4;
         anchors.top: parent.top;
-        anchors.horizontalCenter: parent.horizontalCenter;
+        //anchors.horizontalCenter: parent.horizontalCenter;   //dhy
+        //anchors.left: parent.left;
+        anchors.left: parent.left
+        anchors.leftMargin: 4;
+        property int itemWidth: root.width - 8
         objectName: "rightControlColumnLayout";
         RightButton {
             id: btn_menu;
             textLabel: "关闭菜单";
             icon:"\uf090"
+            width: parent.itemWidth
             onClick: {
                 root.state = "HIDE"
                 root.focus = true;
@@ -38,6 +43,7 @@ Rectangle{
             id: btn_ddcmenu;
             textLabel: "预处理设置";
             //icon:"\uf07c"
+            width: parent.itemWidth
             onClick: {
                 preconditionMenu.state = "SHOW"
                 preconditionMenu.focus = true;
@@ -46,6 +52,7 @@ Rectangle{
         RightButton {
             id: btn_capture_config;
             textLabel: "采集设置";
+            width: parent.itemWidth
             onClick: {
                 gatherMenu.state = "SHOW"
                 gatherMenu.focus = true;
@@ -54,6 +61,7 @@ Rectangle{
         RightButton {
             id: btn_analyzemode;
             textLabel: "分析模式";
+            width: parent.itemWidth
             onClick: {
                 analyzeMode.loadParam()
                 analyzeMode.state = "SHOW"
@@ -62,6 +70,7 @@ Rectangle{
         RightButton {
             id: btn_analyze_config;
             textLabel: "分析参数";
+            width: parent.itemWidth
             onClick: {
                 //showPopup(idPopAnalyzeCfg, textLabel);
                 analyzeMenu.state = "SHOW"
@@ -72,6 +81,7 @@ Rectangle{
         RightButton {
             id: btn_save_config;
             textLabel: "存储设置";
+            width: parent.itemWidth
             onClick: {
                 saveCfgMenu.state = "SHOW"
                 saveCfgMenu.focus = true;
@@ -81,6 +91,7 @@ Rectangle{
             property bool isStoring: false
             id: btn_start_store
             textLabel: "启动存储";
+            width: parent.itemWidth
             onClick: {
                 //contentBox.visible = true
                 isStoring = !isStoring;
@@ -101,6 +112,7 @@ Rectangle{
         RightButton {
             id: btn_return;
             textLabel: "关闭菜单";
+            width: parent.itemWidth
             onClick: {
                     //messageBox.title = "错误"
                     //messageBox.note  = "暂时不支持关闭菜单功能!"
@@ -117,7 +129,7 @@ Rectangle{
     states: [
         State {
             name: "SHOW"
-            PropertyChanges { target: root; x: root.parent.width-200}
+            PropertyChanges { target: root; x: root.parent.width-Com.RightMenuWidth}
             onCompleted:{
                 root.focus = true;
             }

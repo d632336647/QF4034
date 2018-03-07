@@ -8,7 +8,7 @@ import "../UI"
 
 Flipable{
     id:root;
-    width: 200
+    width: Com.RightMenuWidth
     height: 91
     signal  showComplete
     property int angle : 0  //翻转角度
@@ -16,7 +16,7 @@ Flipable{
     property alias inputFocus:numberEdit.inputFocus
     property var parentPointer: undefined
     Rectangle{
-        color: Com.BGColor_main
+        color: Com.bgColorMain
     }
 
     front: RightButton {

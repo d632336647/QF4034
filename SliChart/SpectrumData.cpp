@@ -160,7 +160,7 @@ void SpectrumData::smartUpdateSeries(QAbstractSeries *series)
     if(m_force_refresh)
         m_force_refresh = false;
 
-    int total = eidx-sidx;
+    int total = eidx-sidx + 1;// 索引0值开始到10，总共点其实有10-0 + 1个，因此 + 1
     if(total<=0)
         return;
     //qDebug()<<"sidx:"<<sidx<<" eidx:"<<eidx<<" total:"<<total+1<< "idx:"<<idx<<"refresh_peak:"<<refresh_peak[idx];
@@ -216,6 +216,7 @@ int SpectrumData::getPointIndexByX(qreal x, QAbstractSeries *series)
     int i=0, idx=0;
     double div = 1;
     double cur_min = 1;
+    //qDebug()<<"getPointIndexByX pointsList size:"<<pointsList.size();
     for(i = 0; i < pointsList.size(); ++i) {
         div = fabs(pointsList.at(i).x()-x);
         if (div < cur_min)
@@ -237,6 +238,7 @@ int SpectrumData::getPointIndexByX(qreal x, QVector<QPointF> &show_points)
     double div = 1;
 
     double cur_min = 1;
+    //qDebug()<<"getPointIndexByX show_points size:"<<show_points.size();
     for(i = 0; i < show_points.size(); ++i) {
         div = fabs(show_points.at(i).x() - x);
         //qDebug()<<"getPointYByX x:"<<show_points.at(i).x()<<"y:"<<show_points.at(i).y()<<"index:"<<i;

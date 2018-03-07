@@ -8,7 +8,7 @@ import "../UI"
 
 Flipable{
     id:root;
-    width: 200
+    width: Com.RightMenuWidth
     height: 91
     signal  showComplete
     property int angle : 0  //翻转角度
@@ -18,7 +18,7 @@ Flipable{
     objectName: "referLevel";
     property bool  readOnly:false //为了和采样率的属性保持一致
     Rectangle{
-        color: Com.BGColor_main
+        color: Com.bgColorMain
     }
 
     front: RightButton {
@@ -34,7 +34,7 @@ Flipable{
     back:LineEdit {
         id: numberEdit;
         anchors.fill: parent
-        unit: "dBm"
+        unit: " dBm"
         rangeMode: true
         min:"-120"
         max:"10"

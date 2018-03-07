@@ -4,28 +4,31 @@ var animationSpeed = 200
 
 ///mj;mkl;lkm
 ///mj;mkl;lkm
-var SDColor_success="#5cb85c";
-var SDColor_default="#999";
-var SDColor_primary="#428bca";
-var SDColor_info="#5bc0de";
-var SDColor_warning="#f0ad4e";
-var SDColor_danger="#d9534f";
+//var SDColor_success="#5cb85c";
+//var SDColor_default="#999";
+//var SDColor_primary="#428bca";
+//var SDColor_info="#5bc0de";
+//var SDColor_warning="#f0ad4e";
+//var SDColor_danger="#d9534f";
 
-//var BGColor_main="#404040";
+//RightMenuWidth
+var RightMenuWidth =150;
+
+//var bgColorMain="#404040";
 
 // PC
-var BGColor_main="black";
+var bgColorMain="black";
 // 4034
-//var BGColor_main="#00000000";
+//var bgColorMain="#00000000";
 
-//var BGColor_main="#247aa9";
-//var BGColor_main="#0c3247"
+//var bgColorMain="#247aa9";
+//var bgColorMain="#0c3247"
 
-var BottomBGColor= "black";
-//var BottomBorderColor="#0f3f4d";
-var BottomBorderColor="#552815";
-//var BottomBorderColor="#404040";
-//var BottomBorderColor="#0c3247";
+var bottomBGColor= "black";
+//var bottomBorderColor="#0f3f4d";
+var bottomBorderColor="#552815";
+//var bottomBorderColor="#404040";
+//var bottomBorderColor="#0c3247";
 
 var selectBorderColor="#d29928";
 

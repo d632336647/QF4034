@@ -16,7 +16,7 @@ Rectangle {
     property alias inputFocus: input.focus
     property alias rangeMinFocus: minval.focus
     property alias rangeMaxFocus: maxval.focus
-    property int  fontSize: 18 //定义字体大小
+    property int  fontSize: 15 //定义字体大小
     property bool showHint:false
     property bool hovered:false
     property bool focused:false
@@ -203,7 +203,7 @@ Rectangle {
             Text {
                 id:mid
                 font.family: "FontAwesome"
-                font.pixelSize: 16
+                font.pixelSize: 13
                 color: "white"
                 text: "\uf07e"
                 anchors.top: parent.top
@@ -258,7 +258,7 @@ Rectangle {
         Text{
             id:unit
             anchors { left: input.right; right: parent.right; top: input.top; bottom: input.bottom }
-            anchors.rightMargin: 20
+            anchors.rightMargin: 14
             verticalAlignment: Text.AlignVCenter  //垂直对齐
             horizontalAlignment: Text.AlignRight
             font.pixelSize: fontSize

@@ -33,7 +33,7 @@ Item {
         anchors.right: parent.right
         anchors.top: parent.top
         //color: "#D6CF9A";
-        color: "black"//Com.BGColor_main
+        color: "black"//Com.bgColorMain
         clip: true
         Rectangle{
             id: topMidRect
@@ -63,7 +63,7 @@ Item {
             width:  parent.height*2
             height: width
             rotation: 45
-            color: Com.BGColor_main//"red"
+            color: Com.bgColorMain//"red"
         }
     }
 
@@ -79,7 +79,7 @@ Item {
         width: parent.width * 0.2
         anchors.bottom: parent.bottom
         height: parent.height * 0.2
-        color: Com.BottomBGColor;
+        color: Com.bottomBGColor;
         clip: true
         Rectangle{
             id: bottomBackground
@@ -103,7 +103,7 @@ Item {
             width: parent.height*2
             height: width
             rotation: 45
-            color: Com.BottomBGColor;
+            color: Com.bottomBGColor;
         }
     }
     Text{

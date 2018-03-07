@@ -8,7 +8,7 @@ import "../UI"
 
 Flipable{
     id:root;
-    width: 200
+    width: Com.RightMenuWidth
     height: 91
     signal  showComplete
     property int angle : 0  //翻转角度
@@ -18,7 +18,7 @@ Flipable{
     property bool  readOnly:false //为了和采样率的属性保持一致
     objectName: "FFT点数翻转控件";
     Rectangle{
-        color: Com.BGColor_main
+        color: Com.bgColorMain
     }
 
     front: RightButton {

@@ -10,13 +10,13 @@ Rectangle{
     id:root
 
     state: "HIDE"
-    width: 200
+    width: Com.RightMenuWidth
     anchors.topMargin: 4
     anchors.bottomMargin: 4
 
-    //border.color: Com.BottomBorderColor
+    //border.color: Com.bottomBorderColor
     //border.width: 1
-    color: Com.BGColor_main
+    color: Com.bgColorMain
 
     ColumnLayout {
         id:content
@@ -128,7 +128,7 @@ Rectangle{
     states: [
         State {
             name: "SHOW"
-            PropertyChanges { target: root; x: root.parent.width-200}
+            PropertyChanges { target: root; x: root.parent.width-Com.RightMenuWidth}
             onCompleted:{
                 root.focus = true;
             }

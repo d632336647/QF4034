@@ -8,7 +8,7 @@ import "../UI"
 
 Flipable{
     id:root;
-    width: 200
+    width: Com.RightMenuWidth
     height: 91
     objectName: "centerFreq"
     signal  showComplete
@@ -18,7 +18,7 @@ Flipable{
     property alias inputFocus:numberEdit.inputFocus
     property bool  readOnly:false //为了和采样率的属性保持一致
     Rectangle{
-        color: Com.BGColor_main
+        color: Com.bgColorMain
     }
 
     front: RightButton {

@@ -158,7 +158,6 @@ void DataSource::updateFreqDodminFromData(void)
 
     //1FFT点 = 1对IQ = 2个short类型 = 4 char类型，
     //对于多通道， 还要 x通道数
-
     qint64 max_count = m_settings->fftPoints() * 4 * CHNUM;
 
     //qint64 max_count = m_bandwidth*1000000/m_resolution * 8;
@@ -574,6 +573,7 @@ int DataSource::getPointIndexByX(qreal x, QAbstractSeries *series)
     int i=0, idx=0;
     double div = 1;
     double cur_min = 1;
+
     for(i = 0; i < pointsList.size(); ++i) {
         div = fabs(pointsList.at(i).x()-x);
         if (div < cur_min)
@@ -844,7 +844,7 @@ void DataSource::cutShowPoint(int ch, QVector<QPointF> &source_points, QVector<Q
         m_bandwidth[ch] = user_bandwidht;
     int   capture_count = source_points.size();
     int   cut_count     = (base_bandwidht - m_bandwidth[ch]) * capture_count / base_bandwidht ;
-    int   show_count    = capture_count - cut_count;
+    int   show_count    = capture_count - cut_count + 1;//用户设置10个FFT点，从0~9, +1 即为最后一个点
     qreal offsetMHz     = 70 - m_centerFreq[ch];
     if(fabs(offsetMHz) >= (base_bandwidht/2) ){
         offsetMHz = 0;
@@ -866,7 +866,8 @@ void DataSource::cutShowPoint(int ch, QVector<QPointF> &source_points, QVector<Q
         show_points.append(source_points.at(show_start + i));
     }
 
-    //qDebug()<<" "<<show_points.at(0)<<" "<<show_points.last();
+    //qDebug()<<"cutShowPoint last point:"<<show_points.last()<<"size:"<<show_points.size();
+
 }
 void DataSource::cutShowPoint(int ch, QVector<double> &source_points, QVector<double> &show_points)
 {
@@ -879,7 +880,7 @@ void DataSource::cutShowPoint(int ch, QVector<double> &source_points, QVector<do
         m_bandwidth[ch] = user_bandwidht;
     int   capture_count = source_points.size();
     int   cut_count     = (base_bandwidht - m_bandwidth[ch]) * capture_count / base_bandwidht ;
-    int   show_count    = capture_count - cut_count;
+    int   show_count    = capture_count - cut_count + 1;//用户设置10个FFT点，从0~9, +1 即为最后一个点
     qreal offsetMHz     = 70 - m_centerFreq[ch];
     if(fabs(offsetMHz) >= (base_bandwidht/2) ){
         offsetMHz = 0;
@@ -901,7 +902,7 @@ void DataSource::cutShowPoint(int ch, QVector<double> &source_points, QVector<do
         show_points.append(source_points.at(show_start + i));
     }
 
-    //qDebug()<<" "<<show_points.at(0)<<" "<<show_points.last();
+    //qDebug()<<"cutShowPoint last point:"<<show_points.last()<<"size:"<<show_points.size();
 }
 
 
@@ -919,6 +920,7 @@ void DataSource::workAllPoint(QVector<double> &fftData, QVector<QPointF> &points
         y = fftData[i];
         points.append(QPointF(x, y));
     }
+    //qDebug()<<"workAllPoint last point:"<<points.last();
 }
 void DataSource::freeVVector(QVector<QVector<double>> &vvector)
 {
@@ -935,6 +937,7 @@ int  DataSource::getPointIndexByX(qreal x, QVector<QPointF> &show_points)
     double div = 1;
 
     double cur_min = 1;
+
     for(i = 0; i < show_points.size(); ++i) {
         div = fabs(show_points.at(i).x() - x);
         //qDebug()<<"getPointYByX x:"<<show_points.at(i).x()<<"y:"<<show_points.at(i).y()<<"index:"<<i;

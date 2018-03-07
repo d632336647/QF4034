@@ -10,7 +10,6 @@
         <file>qml/UI/BottomRect.qml</file>
         <file>qml/UI/PopupLabel.qml</file>
         <file>qml/UI/PopupComboBox.qml</file>
-        <file>qml/Spectrum.qml</file>
         <file>qml/Lib.js</file>
         <file>qml/UI/WindTitle.qml</file>
         <file>qml/Menu/ClockSeting.qml</file>

@@ -8,7 +8,7 @@ import "../UI"
 
 Flipable{
     id:root;
-    width: 200
+    width: Com.RightMenuWidth
     height: 91
     signal  showComplete
     property int angle : 0  //翻转角度
@@ -17,7 +17,7 @@ Flipable{
     property alias unit:numberEdit.unit
     property alias readOnly:btn_capturetime.readOnly
     Rectangle{
-        color: Com.BGColor_main
+        color: Com.bgColorMain
     }
 
     front: RightButton {

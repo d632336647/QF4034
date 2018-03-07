@@ -6,7 +6,7 @@ import "../qml/Inc.js" as Com
 
 Item {
     id:root
-    width: 200;
+    width: Com.RightMenuWidth;
     height: 200;
     //border.color: "#808080";
 
