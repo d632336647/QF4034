@@ -51,7 +51,7 @@ QT_END_NAMESPACE
 QT_CHARTS_USE_NAMESPACE
 
 #define NATIVE_DEBUG 1
-
+//通道数
 #define CHNUM (2)
 
 class DataSource : public QObject

@@ -197,6 +197,8 @@ Rectangle{
         {
             idScopeView.changeAnalyzeMode()
             dataSource.forceUpdateAllSeries()
+            //dhy 更新完预处理参数后更新底部显示
+            idBottomPannel.updateParams()
         }
     }
 

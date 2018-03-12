@@ -3,8 +3,8 @@ import "../Inc.js" as Com
 
 Item {
     id:root
-    implicitWidth: 160;
-    implicitHeight: 28;
+    implicitWidth: 167.5;
+    implicitHeight: 20;
 
     //border.color: "#808080";
 
@@ -19,8 +19,6 @@ Item {
     property color titleColor: "#ffffff"
     property color iconColor:  "#ffffff"
     signal clicked;
-
-
 
 
     Rectangle{

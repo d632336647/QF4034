@@ -494,6 +494,9 @@ bool Settings::adjustMaxBandWidth(void)
             user_bandwidth = 36;
         else
             user_bandwidth = base_bandwidth * 0.8;
+
+
+        qDebug()<<"user_bandwidth1::::"<<user_bandwidth;
     }
     if(ddc_freq == 140 && fsb_coef==0 && ad_sample == 200)
     {
@@ -502,6 +505,8 @@ bool Settings::adjustMaxBandWidth(void)
             user_bandwidth = 72;
         else
             user_bandwidth = base_bandwidth * 0.8;
+
+        qDebug()<<"user_bandwidth2::::"<<user_bandwidth;
     }
 
     for(int ch=0; ch<MAXCH; ch++){

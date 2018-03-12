@@ -442,16 +442,16 @@ void DataSource::setCaptureParam(int clkMode, double captureFreq, int triggerMod
 bool DataSource::setPreConditionParam(int outMode, int chCount, double ddcFreq, int extractFactor, int fsbCoef)
 {
     Q_UNUSED(outMode)
-
+    qDebug()<<"setPreConditionParam";
     bool rtn = false;
     if(m_settings->adjustMaxBandWidth())
     {
         for(int ch=0; ch<CHNUM; ch++)
         {
+            //ddcfreq变换 cneterFreq也要变
             m_settings->centerFreq(Settings::Set, ddcFreq, ch);
             m_centerFreq[ch] = ddcFreq;
             m_bandwidth[ch]  = m_settings->bandWidth(Settings::Get, 0, ch);
-
         }
         m_fftpoints = m_settings->fftPoints();
         rtn = true;
@@ -809,7 +809,6 @@ void DataSource::separateData(int ch_count, uchar *source, qint64 size, QVector<
     signed short *pdata = (signed short *)source;
     qint64 total = (size / 2);
 
-
     //截取整数
     total = (total/2)/ch_count;
     total = total*ch_count*2;
@@ -820,14 +819,13 @@ void DataSource::separateData(int ch_count, uchar *source, qint64 size, QVector<
     for(int ch_idx=0; ch_idx<ch_count; ch_idx++)
     {
         QVector<signed short> vdata;
-
         for(qint64 idx=0; idx<total;)
         {
-            int I = idx+ch_idx*ch_count;
-            int Q = I+1;
+            int I = idx+ch_idx*ch_count;                //I1 :0,4,8,12,16,20        I2 :2,6,10,14,18,22
+            int Q = I+1;                                //Q1 :1,5,9,13,17,21        Q2 :3,7,11,15,19,23
             vdata.append(pdata[I]);
             vdata.append(pdata[Q]);
-            idx = idx+ch_count*2;
+            idx = idx+ch_count*2;                       //0,4,8,12,16,20
         }
         sampdata.append(vdata);
     }

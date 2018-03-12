@@ -30,8 +30,9 @@ Rectangle {
         Grid{
             id: bottoms;
             columns: 6;
-            spacing: 4;
-            rowSpacing: 8
+            spacing: 3;
+            rowSpacing: 0
+            /**********************显示栏实现表**********************/
             StateRect{
                 id:idCaptureRate
                 textLabel:"采样率:"
@@ -49,17 +50,24 @@ Rectangle {
             }
             StateRect{
                 id:idFreqResolution
-                textLabel:"分辨率:"
-                textData:Settings.freqResolution()
+                textLabel:"FFT点数:"
+                //textData:Settings.freqResolution()
+                textData:Settings.fftPoints()
             }
             StateRect{
-                id:idMarkRange
-                textLabel:"Mark幅度:"
-                textData:Settings.markRange()
+                id:idExtractFactor
+                textLabel:"抽取因子:"
+                textData:Settings.extractFactor()
+            }
+            StateRect{
+                id:idDDCFreq
+                textLabel:"DDC频率:"
+                textData:Settings.ddcFreq()
             }
             StateRect{
                 objectName: "modeSwitch"  //模式切换
                 id:idChannel1
+                visible: false
                 btnName:showMode(Settings.channelMode())
                 onClicked: {
                     var mode = Settings.channelMode()
@@ -77,15 +85,34 @@ Rectangle {
                     Settings.channelMode(Com.OpSet, mode)
                     idScopeView.changeChannelMode(mode);
                     idScopeView.svSetActiveChannel()
+                    updateParams()      //更新
                 }
                 function showMode(mode)
                 {
                     if(0 === mode)
+                    {
                         btnName = "模式切换 双通道"
+                        //dhy  切换模式同时切换通道 切回双 默认1
+                        var ch = 0
+                        Settings.paramsSetCh(Com.OpSet, ch);
+                        idChannel2.showName(ch)
+                    }
                     else if(1 === mode)
+                    {
                         btnName = "模式切换 通道1"
+                        //dhy  切换模式同时切换通道
+                        var ch = 0
+                        Settings.paramsSetCh(Com.OpSet, ch);
+                        idChannel2.showName(ch)
+                    }
                     else
+                    {
                         btnName = "模式切换 通道2"
+                        //dhy  切换模式同时切换通道
+                        var ch = 1
+                        Settings.paramsSetCh(Com.OpSet, ch);
+                        idChannel2.showName(ch)
+                    }
                     return btnName;
                 }
             }
@@ -123,15 +150,56 @@ Rectangle {
                 }
             }
             StateRect{
+                id:idbak1
+                textLabel:"---备用---"
+                //textData:Settings.xxx
+            }
+            StateRect{
+                id:idbak2
+                textLabel:"---备用---"
+                //textData:Settings.xxx
+            }
+            StateRect{
+                id:idbak3
+                textLabel:"---备用---"
+                //textData:Settings.xxx
+            }
+            StateRect{
+                id:idbak4
+                textLabel:"---备用---"
+                //textData:Settings.xxx
+            }
+            StateRect{
+                id:idbak5
+                textLabel:"---备用---"
+                //textData:Settings.xxx
+            }
+            StateRect{
+                id:idbak6
+                textLabel:"---备用---"
+                //textData:Settings.xxx
+            }
+            StateRect{
+                id:idbak7
+                textLabel:"---备用---"
+                //textData:Settings.xxx
+            }
+            /*****************END--显示栏实现表**********************/
+            StateRect{
                 objectName: "paramUpdate"
+                visible: false
                 id:idChannel2
                 btnName:showName(Settings.paramsSetCh())
                 onClicked: {
-                    var ch = Settings.paramsSetCh();
-                    ch = ch?0:1;
-                    Settings.paramsSetCh(Com.OpSet, ch);
-                    idScopeView.svSetActiveChannel()
-                    showName(ch);
+                    if(Settings.channelMode() === 0)    //dhy 增加判断是否为双通道
+                    {
+                        var ch = Settings.paramsSetCh();
+                        ch = ch?0:1;
+                        Settings.paramsSetCh(Com.OpSet, ch);
+                        idScopeView.svSetActiveChannel()
+                        showName(ch);
+                        updateParams();
+                    }
                 }
                 function showName(ch)
                 {
@@ -145,12 +213,12 @@ Rectangle {
         }
         StateRect{
             id:showMenu
+            visible: false
             objectName: "menuBtn"
             width: 36
             height: 64
             anchors.right: parent.right
             btnName:"菜单"
-            visible: true
             onClicked:{
                 idRightPannel.focus=true;
                 if(idRightPannel.state==="SHOW")
@@ -162,27 +230,80 @@ Rectangle {
             }
         }
     }
+    //dhy 备份
+//    function updateParams()
+//    {
+//        idCaptureRate.textData = Settings.captureRate()+" Msps"
+//        idCaptureMode.textData = captureMode[Settings.captureMode()]
+//        idTriggerMode.textData = triggerMode[Settings.triggerMode()]
+//        idClkMode.textData     = clkMode[Settings.clkMode(2)]
+//        idCenterFreq.textData  = Settings.centerFreq()+" MHz"
+//        idBandWidth.textData   = Settings.bandWidth()+" MHz"
+//        //idExtractFactor.textData = Settings.markRange()+" dBm"
+//        idExtractFactor.textData   = "---- dBm"
+//        idFreqResolution.textData  = Settings.resolutionSize()+" Hz"//Settings.freqResolution()
+//        idSourceMode.textData  = workMode[Settings.sourceMode()]
+//        idSaveMode.textData    = "--------"
+//    }
+
     function updateParams()
     {
-        idCaptureRate.textData = Settings.captureRate()+" Msps"
+        if(Settings.channelMode() === 0)             //双通道
+        {
+            if(Settings.paramsSetCh() === 0)         //双通道 下 通道1
+            {
+                idCaptureRate.textData = Settings.captureRate()+"/"+Settings.captureRate()+" Msps"
+                idCenterFreq.textData  = Settings.centerFreq(Com.OpGet, 0, 0)+"/"+Settings.centerFreq(Com.OpGet, 0, 1)+" MHz"
+                idBandWidth.textData   = Settings.bandWidth(Com.OpGet, 0, 0)+"/"+Settings.bandWidth(Com.OpGet, 0, 1)+" MHz"
+                idFreqResolution.textData  = Settings.fftPoints(Com.OpGet, 0, 0)+"/"+Settings.fftPoints(Com.OpGet, 0, 1)+" Hz"
+                idExtractFactor.textData   = Settings.extractFactor(Com.OpGet, 0)+"/"+Settings.extractFactor(Com.OpGet, 0)
+                idDDCFreq.textData = Settings.ddcFreq(Com.OpGet, 0)+"/"+Settings.ddcFreq(Com.OpGet, 0)+" MHz"
+                //idCaptureRate.textData = "<h2><font color =red>1</font></h2>"+" Msps"
+            }
+            else                                      //双通道 下 通道2
+            {
+                idCaptureRate.textData = "2"+" Msps"
+                idCenterFreq.textData  = Settings.centerFreq(Com.OpGet, 0, 0)+"/"+Settings.centerFreq(Com.OpGet, 0, 1)+" MHz"
+                idBandWidth.textData   = Settings.bandWidth(Com.OpGet, 0, 0)+"/"+Settings.bandWidth(Com.OpGet, 0, 1)+" MHz"
+                idFreqResolution.textData  = Settings.fftPoints(Com.OpGet, 0, 0)+"/"+Settings.fftPoints(Com.OpGet, 0, 1)+" Hz"
+                idExtractFactor.textData   = Settings.extractFactor(Com.OpGet, 0)+"/"+Settings.extractFactor(Com.OpGet, 0)
+                idDDCFreq.textData = Settings.ddcFreq(Com.OpGet, 0)+"/"+Settings.ddcFreq(Com.OpGet, 0)+" MHz"
+            }
+        }
+        else if(Settings.channelMode() === 1)        //通道1
+        {
+            idCaptureRate.textData = Settings.captureRate()+" Msps"
+            idCenterFreq.textData  = Settings.centerFreq(Com.OpGet, 0, 0)+" MHz"
+            idBandWidth.textData   = Settings.bandWidth(Com.OpGet, 0, 0)+" MHz"
+            idFreqResolution.textData  = Settings.fftPoints(Com.OpGet, 0, 0)+" Hz"
+            idExtractFactor.textData   = Settings.extractFactor(Com.OpGet, 0)
+            idDDCFreq.textData = Settings.ddcFreq(Com.OpGet, 0)+" MHz"
+        }
+        else                                         //通道2
+        {
+            idCaptureRate.textData = Settings.captureRate()+" Msps"
+            idCenterFreq.textData  = Settings.centerFreq(Com.OpGet, 0, 1)+" MHz"
+            idBandWidth.textData   = Settings.bandWidth(Com.OpGet, 0, 1)+" MHz"
+            idFreqResolution.textData  = Settings.fftPoints(Com.OpGet, 0, 1)+" Hz"
+            idExtractFactor.textData   = Settings.extractFactor(Com.OpGet, 0)
+            idDDCFreq.textData = Settings.ddcFreq(Com.OpGet, 0)+" MHz"
+        }
         idCaptureMode.textData = captureMode[Settings.captureMode()]
         idTriggerMode.textData = triggerMode[Settings.triggerMode()]
         idClkMode.textData     = clkMode[Settings.clkMode(2)]
-        idCenterFreq.textData  = Settings.centerFreq()+" MHz"
-        idBandWidth.textData   = Settings.bandWidth()+" MHz"
-        //idMarkRange.textData = Settings.markRange()+" dBm"
-        idMarkRange.textData   = "---- dBm"
-        idFreqResolution.textData  = Settings.resolutionSize()+" Hz"//Settings.freqResolution()
+
+
         idSourceMode.textData  = workMode[Settings.sourceMode()]
         idSaveMode.textData    = "--------"
     }
-    function updateMarkRange(enable, range)
-    {
-        if(enable)
-            idMarkRange.textData   = range +" dBm"
-        else
-            idMarkRange.textData   = "---- dBm"
-    }
+
+//    function updateMarkRange(enable, range)
+//    {
+//        if(enable)
+//          idExtractFactorge.textData   = range +" dBm"
+//        else
+//          idExtractFactorge.textData   = "---- dBm"
+//    }
     function chanegParamSetCh()
     {
         idChannel2.clicked()

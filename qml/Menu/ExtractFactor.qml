@@ -344,6 +344,7 @@ Rectangle{
     {
         Settings.extractFactor(Com.OpSet, val)
         preconditionMenu.updateParams()
+        idBottomPannel.updateParams()
     }
 }
 

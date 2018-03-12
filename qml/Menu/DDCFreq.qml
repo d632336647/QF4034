@@ -120,7 +120,7 @@ Flipable{
             Settings.ddcFreq(Com.OpSet, val)
             preconditionMenu.updateParams();
         }
-
+        idBottomPannel.updateParams()
     }
 
 }

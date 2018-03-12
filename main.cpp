@@ -157,6 +157,7 @@ int main(int argc, char *argv[])
 
     QQuickView viewer;
     Settings settings(&viewer);
+    qDebug()<<"main";
     settings.load();
 
     QObject::connect(viewer.engine(), &QQmlEngine::quit, &viewer, &QWindow::close);
@@ -182,9 +183,7 @@ int main(int argc, char *argv[])
     qmlRegisterType<WaterfallPlot>("WaterfallPlot", 1, 0, "WaterfallPlot");
     qmlRegisterType<SpectrumData>("SpectrumData", 1, 0, "SpectrumData");
 
-
     //QObject::connect(viewer.engine(), SIGNAL(quit()), &captureThread, SLOT(exit()));
-
 
     viewer.setSource(QUrl("qrc:/qml/main.qml"));
     viewer.setResizeMode(QQuickView::SizeRootObjectToView);
