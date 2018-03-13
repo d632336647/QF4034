@@ -65,6 +65,25 @@ function clickFunctionKey(key_code, key_array, id_array)
     callback()
     return true
 }
+//dhy 更新底部信息框的显示
+function updateBottomShow(showitemvhannel1,showitemvhannel2,columnsval,channel1Visible,channel2Visible)
+{
+    var i
+    for(i=0;i<showitemvhannel1.length;i++)
+    {
+        //调整显示或隐藏
+        showitemvhannel1[i].visible = channel1Visible
+        //调整宽度
+        showitemvhannel1[i].width = 1022/columnsval -3
+    }
+    for(i=0;i<showitemvhannel2.length;i++)
+    {
+        //调整显示或隐藏
+        showitemvhannel2[i].visible = channel2Visible
+        //调整宽度
+        showitemvhannel2[i].width = 1022/columnsval -3
+    }
+}
 function dPrintf(text)
 {
     console.log(text)

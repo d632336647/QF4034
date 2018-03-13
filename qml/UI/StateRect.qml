@@ -3,9 +3,12 @@ import "../Inc.js" as Com
 
 Item {
     id:root
-    implicitWidth: 167.5;
-    implicitHeight: 20;
-
+    //implicitWidth: 167.5;
+    //implicitWidth: 1022/Com.columnsval -3;
+    //implicitHeight: 22;
+    width: 1022/Com.columnsval -3;
+    height: 22;
+    //visible: Com.channel1Visible
     //border.color: "#808080";
 
 
@@ -44,8 +47,6 @@ Item {
         color: titleColor;
         font.pixelSize: 14
     }
-
-
 
     Text{
         //anchors.bottom: parent.bottom

@@ -1,6 +1,7 @@
 import QtQuick 2.0
 //import QtQuick.Particles 2.0
 import "Inc.js" as Com
+import "Lib.js" as Lib
 import "UI"
 import "../SliChart"
 
@@ -29,7 +30,7 @@ Rectangle {
 
         Grid{
             id: bottoms;
-            columns: 6;
+            columns: Com.columnsval
             spacing: 3;
             rowSpacing: 0
             /**********************显示栏实现表**********************/
@@ -39,31 +40,117 @@ Rectangle {
                 textData:Settings.captureRate()+" Msps"
             }
             StateRect{
+                visible: Com.channel1Visible
                 id:idCenterFreq
                 textLabel:"中心频率:"
                 textData:Settings.centerFreq()+" MHz"
             }
             StateRect{
+                visible: Com.channel1Visible
                 id:idBandWidth
                 textLabel:"观测带宽:"
                 textData:Settings.bandWidth()+" MHz"
             }
             StateRect{
+                visible: Com.channel1Visible
                 id:idFreqResolution
                 textLabel:"FFT点数:"
                 //textData:Settings.freqResolution()
                 textData:Settings.fftPoints()
             }
             StateRect{
+                visible: Com.channel1Visible
                 id:idExtractFactor
                 textLabel:"抽取因子:"
                 textData:Settings.extractFactor()
             }
             StateRect{
+                visible: Com.channel1Visible
                 id:idDDCFreq
                 textLabel:"DDC频率:"
                 textData:Settings.ddcFreq()
             }
+            StateRect{
+                visible: Com.channel1Visible
+                id:idClkMode
+                textLabel:"时钟模式:"
+                textData:clkMode[Settings.clkMode(2)]
+            }
+            StateRect{
+                visible: Com.channel1Visible
+                id:idTriggerMode
+                textLabel:"触发模式:"
+                textData:triggerMode[Settings.triggerMode()]
+            }
+            StateRect{
+                visible: Com.channel1Visible
+                id:idCaptureMode
+                textLabel:"采集模式:"
+                textData: captureMode[Settings.captureMode()]
+            }
+            StateRect{
+                visible: Com.channel2Visible
+                id:idSourceMode
+                textLabel:"工作模式:"
+                textData:workMode[Settings.sourceMode()]
+            }
+            StateRect{
+                visible: Com.channel2Visible
+                id:idSaveMode
+                textLabel:"存储模式:"
+                textData:saveMode[Settings.saveMode()]
+                RoundLight{
+                    id: saveAnimated;
+                    visible: false
+                    anchors.right: parent.right
+                    anchors.rightMargin: 2
+                    width: parent.height
+                    color: "red"//"#56FF00"
+                }
+            }
+            StateRect{
+                visible: Com.channel2Visible
+                id:idbak1
+                textLabel:"---备用---"
+                //textData:Settings.xxx
+            }
+            StateRect{
+                visible: Com.channel2Visible
+                id:idbak2
+                textLabel:"---备用---"
+                //textData:Settings.xxx
+            }
+            StateRect{
+                visible: Com.channel2Visible
+                id:idbak3
+                textLabel:"---备用---"
+                //textData:Settings.xxx
+            }
+            StateRect{
+                visible: Com.channel2Visible
+                id:idbak4
+                textLabel:"---备用---"
+                //textData:Settings.xxx
+            }
+            StateRect{
+                visible: Com.channel2Visible
+                id:idbak5
+                textLabel:"---备用---"
+                //textData:Settings.xxx
+            }
+            StateRect{
+                visible: Com.channel2Visible
+                id:idbak6
+                textLabel:"---备用---"
+                //textData:Settings.xxx
+            }StateRect{
+                visible: Com.channel2Visible
+                id:idbak7
+                textLabel:"---备用---"
+                //textData:Settings.xxx
+            }
+
+            /*****************END--显示栏实现表**********************/
             StateRect{
                 objectName: "modeSwitch"  //模式切换
                 id:idChannel1
@@ -86,6 +173,7 @@ Rectangle {
                     idScopeView.changeChannelMode(mode);
                     idScopeView.svSetActiveChannel()
                     updateParams()      //更新
+                    //console.log("idCaptureRate:"+idCaptureRate.visible.toString()+"columnsval:"+Com.columnsval+" channel1Visible:"+Com.channel1Visible+" channel2Visible:"+Com.channel2Visible)
                 }
                 function showMode(mode)
                 {
@@ -96,6 +184,11 @@ Rectangle {
                         var ch = 0
                         Settings.paramsSetCh(Com.OpSet, ch);
                         idChannel2.showName(ch)
+                        Com.columnsval =6
+                        Com.channel1Visible =true;
+                        Com.channel2Visible =true;
+                        idCaptureRate.visible = true;
+                        updateColumnsval()
                     }
                     else if(1 === mode)
                     {
@@ -104,6 +197,11 @@ Rectangle {
                         var ch = 0
                         Settings.paramsSetCh(Com.OpSet, ch);
                         idChannel2.showName(ch)
+                        Com.columnsval =3
+                        Com.channel1Visible =true;
+                        Com.channel2Visible =false;
+                        idCaptureRate.visible = true;
+                        updateColumnsval()
                     }
                     else
                     {
@@ -112,79 +210,16 @@ Rectangle {
                         var ch = 1
                         Settings.paramsSetCh(Com.OpSet, ch);
                         idChannel2.showName(ch)
+                        Com.columnsval =3;
+                        Com.channel1Visible =false;
+                        Com.channel2Visible =true;
+                        idCaptureRate.visible = false;
+                        updateColumnsval()
                     }
                     return btnName;
                 }
+
             }
-            StateRect{
-                id:idClkMode
-                textLabel:"时钟模式:"
-                textData:clkMode[Settings.clkMode(2)]
-            }
-            StateRect{
-                id:idTriggerMode
-                textLabel:"触发模式:"
-                textData:triggerMode[Settings.triggerMode()]
-            }
-            StateRect{
-                id:idCaptureMode
-                textLabel:"采集模式:"
-                textData: captureMode[Settings.captureMode()]
-            }
-            StateRect{
-                id:idSourceMode
-                textLabel:"工作模式:"
-                textData:workMode[Settings.sourceMode()]
-            }
-            StateRect{
-                id:idSaveMode
-                textLabel:"存储模式:"
-                textData:saveMode[Settings.saveMode()]
-                RoundLight{
-                    id: saveAnimated;
-                    visible: false
-                    anchors.right: parent.right
-                    anchors.rightMargin: 2
-                    width: parent.height
-                    color: "red"//"#56FF00"
-                }
-            }
-            StateRect{
-                id:idbak1
-                textLabel:"---备用---"
-                //textData:Settings.xxx
-            }
-            StateRect{
-                id:idbak2
-                textLabel:"---备用---"
-                //textData:Settings.xxx
-            }
-            StateRect{
-                id:idbak3
-                textLabel:"---备用---"
-                //textData:Settings.xxx
-            }
-            StateRect{
-                id:idbak4
-                textLabel:"---备用---"
-                //textData:Settings.xxx
-            }
-            StateRect{
-                id:idbak5
-                textLabel:"---备用---"
-                //textData:Settings.xxx
-            }
-            StateRect{
-                id:idbak6
-                textLabel:"---备用---"
-                //textData:Settings.xxx
-            }
-            StateRect{
-                id:idbak7
-                textLabel:"---备用---"
-                //textData:Settings.xxx
-            }
-            /*****************END--显示栏实现表**********************/
             StateRect{
                 objectName: "paramUpdate"
                 visible: false
@@ -250,7 +285,7 @@ Rectangle {
     {
         if(Settings.channelMode() === 0)             //双通道
         {
-            if(Settings.paramsSetCh() === 0)         //双通道 下 通道1
+            if(Settings.paramsSetCh() === 0)         //双通道 下 备用区分通道1
             {
                 idCaptureRate.textData = Settings.captureRate()+"/"+Settings.captureRate()+" Msps"
                 idCenterFreq.textData  = Settings.centerFreq(Com.OpGet, 0, 0)+"/"+Settings.centerFreq(Com.OpGet, 0, 1)+" MHz"
@@ -260,7 +295,7 @@ Rectangle {
                 idDDCFreq.textData = Settings.ddcFreq(Com.OpGet, 0)+"/"+Settings.ddcFreq(Com.OpGet, 0)+" MHz"
                 //idCaptureRate.textData = "<h2><font color =red>1</font></h2>"+" Msps"
             }
-            else                                      //双通道 下 通道2
+            else                                      //双通道 下 备用区分通道2
             {
                 idCaptureRate.textData = "2"+" Msps"
                 idCenterFreq.textData  = Settings.centerFreq(Com.OpGet, 0, 0)+"/"+Settings.centerFreq(Com.OpGet, 0, 1)+" MHz"
@@ -288,12 +323,10 @@ Rectangle {
             idExtractFactor.textData   = Settings.extractFactor(Com.OpGet, 0)
             idDDCFreq.textData = Settings.ddcFreq(Com.OpGet, 0)+" MHz"
         }
-        idCaptureMode.textData = captureMode[Settings.captureMode()]
-        idTriggerMode.textData = triggerMode[Settings.triggerMode()]
-        idClkMode.textData     = clkMode[Settings.clkMode(2)]
-
-
-        idSourceMode.textData  = workMode[Settings.sourceMode()]
+        idCaptureMode.textData = captureMode[Settings.captureMode()]/*+"/"+captureMode[Settings.captureMode()]*/
+        idTriggerMode.textData = triggerMode[Settings.triggerMode()]/*+"/"+triggerMode[Settings.triggerMode()]*/
+        idClkMode.textData     = clkMode[Settings.clkMode(2)]/*+"/"+clkMode[Settings.clkMode(2)]*/
+        idSourceMode.textData  = workMode[Settings.sourceMode()]/*+"/"+workMode[Settings.sourceMode()]*/
         idSaveMode.textData    = "--------"
     }
 
@@ -323,5 +356,21 @@ Rectangle {
     Component.onCompleted:
     {
 
+    }
+    function updateColumnsval()
+    {
+        //修改显示列数
+        bottoms.columns =  Com.columnsval
+        //接下来是对应通道修改每个显示框的 显示状态以及宽度
+        var showitemvhannel1 = [
+                        idCaptureRate,idCenterFreq,idBandWidth,
+                        idFreqResolution,idExtractFactor,idDDCFreq,
+                        idClkMode,idTriggerMode,idCaptureMode
+                       ]
+        var showitemvhannel2 = [
+                        idSourceMode,idSaveMode,idbak1,idbak2,idbak3,
+                        idbak4,idbak5,idbak6,idbak7
+                       ]
+        Lib.updateBottomShow(showitemvhannel1,showitemvhannel2,Com.columnsval,Com.channel1Visible,Com.channel2Visible);
     }
 }

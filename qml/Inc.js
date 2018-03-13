@@ -13,7 +13,9 @@ var animationSpeed = 200
 
 //RightMenuWidth
 var RightMenuWidth =150;
-
+var columnsval = 6;         //菜单列数
+var channel1Visible = false;    //用于定义 单通道双通道下 底部菜单栏通道1的显示状态
+var channel2Visible = false;    //用于定义 单通道双通道下 底部菜单栏通道2的显示状态
 //var bgColorMain="#404040";
 
 // PC

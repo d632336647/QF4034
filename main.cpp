@@ -141,7 +141,7 @@ int main(int argc, char *argv[])
 
     //SecureProtect sp(ss.toStdString());
 
-#if (NATIVE_DEBUG == 1)
+#if (NATIVE_DEBUG == 0)
     //注册MessageHandler
     clearLog();
     qInstallMessageHandler(outputMessage);
